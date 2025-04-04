@@ -1,16 +1,24 @@
+version: "3.8"
+
 services:
   database:
     image: postgres:17-alpine
     container_name: lockin-postgres
     environment:
+      POSTGRES_PASSWORD: password123
       POSTGRES_DB: lockin_db
       POSTGRES_USER: lockin_user
-      POSTGRES_PASSWORD: password123
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lockin_user -d lockin_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
+    driver: local
