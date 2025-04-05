@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -20,15 +21,22 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name is required")
-    @Size(min = 2, max = 100)
-    private String fullName;
+    @NotBlank(message = "First name is required")
+    @Size(min = 2, max = 50)
+    @Column(name = "first_name", nullable = false)
+    private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    @Size(min = 2, max = 50)
+    @Column(name = "last_name", nullable = false)
+    private String lastName;
 
     @NotBlank
     @Email
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     @NotBlank
     @Size(min = 8)
     private String password;
