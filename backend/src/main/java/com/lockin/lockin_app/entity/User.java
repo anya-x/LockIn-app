@@ -31,7 +31,7 @@ public class User {
 
     @NotBlank
     @Size(min = 8)
-    private String password;  // BUG: Will be exposed in JSON!
+    private String password;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
