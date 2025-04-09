@@ -11,6 +11,8 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -24,8 +26,10 @@ import TaskList from "../components/TaskList";
 const drawerWidth = 240;
 
 const Dashboard: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { logout, user } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);

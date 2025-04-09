@@ -15,15 +15,18 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { taskService, type Task } from "../services/taskService";
+import TaskFormModal from "./TaskFormModal";
 
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
   useEffect(() => {
     fetchTasks();
-  }, []); // Missing dependency array optimization
+  }, []);
 
   const fetchTasks = async () => {
     try {
@@ -33,19 +36,39 @@ const TaskList: React.FC = () => {
       setError("");
     } catch (err: any) {
       setError("Failed to load tasks");
-      console.error("Fetch error:", err); // Debug log left in
+      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleOpenModal = (task?: Task) => {
+    setEditingTask(task);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingTask(undefined);
+  };
+
+  const handleSaveTask = async (taskData: Partial<Task>) => {
+    if (editingTask) {
+      const updated = await taskService.updateTask(editingTask.id!, taskData);
+      setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
+    } else {
+      const created = await taskService.createTask(taskData);
+      setTasks([...tasks, created]);
+    }
+    handleCloseModal();
+  };
+
   const handleDelete = async (id: number) => {
-    // BUG: No confirmation dialog!
     try {
       await taskService.deleteTask(id);
       setTasks(tasks.filter((t) => t.id !== id));
     } catch (err) {
-      alert("Failed to delete task"); // Using alert() - not ideal UX
+      alert("Failed to delete task");
     }
   };
 
@@ -91,9 +114,7 @@ const TaskList: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => {
-            /* TODO: modal */
-          }}
+          onClick={() => handleOpenModal()}
         >
           Add Task
         </Button>
@@ -118,7 +139,7 @@ const TaskList: React.FC = () => {
                     </Typography>
                     <Box mt={2} display="flex" gap={1}>
                       <Chip
-                        label={task.status}
+                        label={task.status.replace("_", " ")}
                         color={getStatusColor(task.status)}
                         size="small"
                       />
@@ -131,11 +152,7 @@ const TaskList: React.FC = () => {
                     </Box>
                   </Box>
                   <Box>
-                    <IconButton
-                      onClick={() => {
-                        /* TODO: Edit */
-                      }}
-                    >
+                    <IconButton onClick={() => handleOpenModal(task)}>
                       <EditIcon />
                     </IconButton>
                     <IconButton onClick={() => handleDelete(task.id!)}>
@@ -148,6 +165,13 @@ const TaskList: React.FC = () => {
           ))}
         </Box>
       )}
+
+      <TaskFormModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveTask}
+        task={editingTask}
+      />
     </Box>
   );
 };
