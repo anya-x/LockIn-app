@@ -8,6 +8,11 @@ import {
   Chip,
   IconButton,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -23,6 +28,8 @@ const TaskList: React.FC = () => {
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -63,15 +70,6 @@ const TaskList: React.FC = () => {
     handleCloseModal();
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await taskService.deleteTask(id);
-      setTasks(tasks.filter((t) => t.id !== id));
-    } catch (err) {
-      alert("Failed to delete task");
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "TODO":
@@ -83,6 +81,29 @@ const TaskList: React.FC = () => {
       default:
         return "default";
     }
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setTaskToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (taskToDelete === null) return;
+
+    try {
+      await taskService.deleteTask(taskToDelete);
+      setTasks(tasks.filter((t) => t.id !== taskToDelete));
+      setDeleteDialogOpen(false);
+      setTaskToDelete(null);
+    } catch (err) {
+      alert("Failed to delete task");
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setTaskToDelete(null);
   };
 
   if (loading) {
@@ -155,7 +176,7 @@ const TaskList: React.FC = () => {
                     <IconButton onClick={() => handleOpenModal(task)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(task.id!)}>
+                    <IconButton onClick={() => handleDeleteClick(task.id!)}>
                       <DeleteIcon />
                     </IconButton>
                   </Box>
@@ -165,6 +186,26 @@ const TaskList: React.FC = () => {
           ))}
         </Box>
       )}
+
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Delete Task?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this task? This action cannot be
+            undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <TaskFormModal
         open={modalOpen}
