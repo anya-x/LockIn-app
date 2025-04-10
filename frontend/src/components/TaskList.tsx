@@ -31,6 +31,7 @@ const TaskList: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  const [operationLoading, setOperationLoading] = useState(false); // NEW
 
   useEffect(() => {
     fetchTasks();
@@ -61,14 +62,21 @@ const TaskList: React.FC = () => {
   };
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
-    if (editingTask) {
-      const updated = await taskService.updateTask(editingTask.id!, taskData);
-      setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
-    } else {
-      const created = await taskService.createTask(taskData);
-      setTasks([...tasks, created]);
+    setOperationLoading(true);
+    try {
+      if (editingTask) {
+        const updated = await taskService.updateTask(editingTask.id!, taskData);
+        setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
+      } else {
+        const created = await taskService.createTask(taskData);
+        setTasks([...tasks, created]);
+      }
+      handleCloseModal();
+    } catch (err) {
+      throw err;
+    } finally {
+      setOperationLoading(false);
     }
-    handleCloseModal();
   };
 
   const getStatusColor = (status: string) => {
@@ -92,6 +100,7 @@ const TaskList: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (taskToDelete === null) return;
 
+    setOperationLoading(true);
     try {
       await taskService.deleteTask(taskToDelete);
       setTasks(tasks.filter((t) => t.id !== taskToDelete));
@@ -99,6 +108,8 @@ const TaskList: React.FC = () => {
       setTaskToDelete(null);
     } catch (err) {
       alert("Failed to delete task");
+    } finally {
+      setOperationLoading(false);
     }
   };
 
@@ -209,13 +220,16 @@ const TaskList: React.FC = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button onClick={handleDeleteCancel} disabled={operationLoading}>
+            Cancel
+          </Button>
           <Button
             onClick={handleDeleteConfirm}
             color="error"
             variant="contained"
+            disabled={operationLoading}
           >
-            Delete
+            {operationLoading ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
