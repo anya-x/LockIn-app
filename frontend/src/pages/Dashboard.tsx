@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Box,
   Drawer,
@@ -7,6 +7,7 @@ import {
   Typography,
   IconButton,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -31,40 +32,52 @@ const Dashboard: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout, user } = useAuth();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = useCallback(() => {
+    setMobileOpen((prev) => !prev);
+  }, []);
+
+  const handleMenuItemClick = useCallback(() => {
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  }, [isMobile]);
 
   const drawer = (
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap>
-          FlowState
+          Lockin
         </Typography>
       </Toolbar>
       <Divider />
       <List>
-        <ListItemButton>
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItemButton>
-        <ListItemButton>
-          <ListItemIcon>
-            <TaskIcon />
-          </ListItemIcon>
-          <ListItemText primary="Tasks" />
-        </ListItemButton>
+        <ListItem disablePadding>
+          <ListItemButton onClick={handleMenuItemClick}>
+            <ListItemIcon>
+              <DashboardIcon />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={handleMenuItemClick}>
+            <ListItemIcon>
+              <TaskIcon />
+            </ListItemIcon>
+            <ListItemText primary="Tasks" />
+          </ListItemButton>
+        </ListItem>
       </List>
       <Divider />
       <List>
-        <ListItemButton>
-          <ListItemIcon>
-            <LogoutIcon />
-          </ListItemIcon>
-          <ListItemText primary="Logout" />
-        </ListItemButton>
+        <ListItem disablePadding>
+          <ListItemButton onClick={logout}>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItemButton>
+        </ListItem>
       </List>
     </div>
   );
@@ -88,7 +101,7 @@ const Dashboard: React.FC = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Welcome, {user?.email || "User"}{" "}
+            Welcome, {user?.firstName || user?.email || "User"}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -97,7 +110,6 @@ const Dashboard: React.FC = () => {
         component="nav"
         sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
       >
-        {/* mobile */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -114,7 +126,6 @@ const Dashboard: React.FC = () => {
           {drawer}
         </Drawer>
 
-        {/* desktop */}
         <Drawer
           variant="permanent"
           sx={{
