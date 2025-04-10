@@ -21,6 +21,7 @@ import {
 } from "@mui/icons-material";
 import { taskService, type Task } from "../services/taskService";
 import TaskFormModal from "./TaskFormModal";
+import { getErrorMessage } from "../utils/errorHandler";
 
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -41,8 +42,8 @@ const TaskList: React.FC = () => {
       const data = await taskService.getTasks();
       setTasks(data);
       setError("");
-    } catch (err: any) {
-      setError("Failed to load tasks");
+    } catch (err) {
+      setError(getErrorMessage(err));
       console.error("Fetch error:", err);
     } finally {
       setLoading(false);
@@ -158,12 +159,24 @@ const TaskList: React.FC = () => {
                     <Typography color="text.secondary" variant="body2">
                       {task.description}
                     </Typography>
+                    {task.dueDate && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        mt={1}
+                      >
+                        Due:{" "}
+                        {new Date(task.dueDate).toLocaleString(undefined, {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Typography>
+                    )}
                     <Box mt={2} display="flex" gap={1}>
-                      <Chip
-                        label={task.status.replace("_", " ")}
-                        color={getStatusColor(task.status)}
-                        size="small"
-                      />
                       {task.isUrgent && (
                         <Chip label="Urgent" color="error" size="small" />
                       )}

@@ -39,7 +39,10 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
   useEffect(() => {
     if (task) {
-      setFormData(task);
+      setFormData({
+        ...task,
+        dueDate: task.dueDate ? task.dueDate.substring(0, 16) : "",
+      });
     } else {
       setFormData({
         title: "",
@@ -68,7 +71,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     try {
       const taskData = {
         ...formData,
-        dueDate: formData.dueDate ? `${formData.dueDate}T00:00:00` : undefined,
+        dueDate: formData.dueDate || undefined,
       };
 
       await onSave(taskData);
@@ -123,9 +126,9 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
             </TextField>
 
             <TextField
-              label="Due Date"
+              label="Due Date & Time"
               name="dueDate"
-              type="date"
+              type="datetime-local"
               value={formData.dueDate || ""}
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
