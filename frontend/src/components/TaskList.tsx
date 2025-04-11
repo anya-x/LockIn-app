@@ -22,6 +22,7 @@ import {
 import { taskService, type Task } from "../services/taskService";
 import TaskFormModal from "./TaskFormModal";
 import { getErrorMessage } from "../utils/errorHandler";
+import TaskStats from "./TaskStats";
 
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -152,6 +153,8 @@ const TaskList: React.FC = () => {
           Add Task
         </Button>
       </Box>
+
+      <TaskStats tasks={tasks} />
 
       {tasks.length === 0 ? (
         <Typography>No tasks yet. Create your first task!</Typography>
