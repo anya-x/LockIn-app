@@ -13,6 +13,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  TextField,
+  MenuItem,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -21,7 +23,6 @@ import {
 } from "@mui/icons-material";
 import { taskService, type Task } from "../services/taskService";
 import TaskFormModal from "./TaskFormModal";
-import { getErrorMessage } from "../utils/errorHandler";
 import TaskStats from "./TaskStats";
 
 const TaskList: React.FC = () => {
@@ -32,7 +33,7 @@ const TaskList: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
-  const [operationLoading, setOperationLoading] = useState(false); // NEW
+  const [sortBy, setSortBy] = useState<"date" | "priority" | "status">("date");
 
   useEffect(() => {
     fetchTasks();
@@ -44,8 +45,8 @@ const TaskList: React.FC = () => {
       const data = await taskService.getTasks();
       setTasks(data);
       setError("");
-    } catch (err) {
-      setError(getErrorMessage(err));
+    } catch (err: any) {
+      setError("Failed to load tasks");
       console.error("Fetch error:", err);
     } finally {
       setLoading(false);
@@ -63,21 +64,37 @@ const TaskList: React.FC = () => {
   };
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
-    setOperationLoading(true);
-    try {
-      if (editingTask) {
-        const updated = await taskService.updateTask(editingTask.id!, taskData);
-        setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
-      } else {
-        const created = await taskService.createTask(taskData);
-        setTasks([...tasks, created]);
-      }
-      handleCloseModal();
-    } catch (err) {
-      throw err;
-    } finally {
-      setOperationLoading(false);
+    if (editingTask) {
+      const updated = await taskService.updateTask(editingTask.id!, taskData);
+      setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
+    } else {
+      const created = await taskService.createTask(taskData);
+      setTasks([...tasks, created]);
     }
+    handleCloseModal();
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setTaskToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (taskToDelete === null) return;
+
+    try {
+      await taskService.deleteTask(taskToDelete);
+      setTasks(tasks.filter((t) => t.id !== taskToDelete));
+      setDeleteDialogOpen(false);
+      setTaskToDelete(null);
+    } catch (err) {
+      alert("Failed to delete task");
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setTaskToDelete(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -93,31 +110,31 @@ const TaskList: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = (id: number) => {
-    setTaskToDelete(id);
-    setDeleteDialogOpen(true);
-  };
+  const sortedTasks = [...tasks].sort((a, b) => {
+    switch (sortBy) {
+      case "date":
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
 
-  const handleDeleteConfirm = async () => {
-    if (taskToDelete === null) return;
+      case "priority":
+        // eisenhower matrix: urgent + important = highest priority
+        const getPriority = (task: Task) => {
+          if (task.isUrgent && task.isImportant) return 4;
+          if (task.isUrgent) return 3;
+          if (task.isImportant) return 2;
+          return 1;
+        };
+        return getPriority(b) - getPriority(a);
 
-    setOperationLoading(true);
-    try {
-      await taskService.deleteTask(taskToDelete);
-      setTasks(tasks.filter((t) => t.id !== taskToDelete));
-      setDeleteDialogOpen(false);
-      setTaskToDelete(null);
-    } catch (err) {
-      alert("Failed to delete task");
-    } finally {
-      setOperationLoading(false);
+      case "status":
+        const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
+        return statusOrder[a.status] - statusOrder[b.status];
+
+      default:
+        return 0;
     }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
-    setTaskToDelete(null);
-  };
+  });
 
   if (loading) {
     return (
@@ -142,25 +159,41 @@ const TaskList: React.FC = () => {
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        mb={3}
+        mb={2}
       >
         <Typography variant="h4">My Tasks</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenModal()}
-        >
-          Add Task
-        </Button>
+        <Box display="flex" gap={2} alignItems="center">
+          <TextField
+            select
+            size="small"
+            label="Sort by"
+            value={sortBy}
+            onChange={(e) =>
+              setSortBy(e.target.value as "date" | "priority" | "status")
+            }
+            sx={{ minWidth: 150 }}
+          >
+            <MenuItem value="date">Due Date</MenuItem>
+            <MenuItem value="priority">Priority</MenuItem>
+            <MenuItem value="status">Status</MenuItem>
+          </TextField>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenModal()}
+          >
+            Add Task
+          </Button>
+        </Box>
       </Box>
 
       <TaskStats tasks={tasks} />
 
-      {tasks.length === 0 ? (
+      {sortedTasks.length === 0 ? (
         <Typography>No tasks yet. Create your first task!</Typography>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {tasks.map((task) => (
+          {sortedTasks.map((task) => (
             <Card key={task.id}>
               <CardContent>
                 <Box
@@ -191,6 +224,11 @@ const TaskList: React.FC = () => {
                       </Typography>
                     )}
                     <Box mt={2} display="flex" gap={1}>
+                      <Chip
+                        label={task.status.replace("_", " ")}
+                        color={getStatusColor(task.status)}
+                        size="small"
+                      />
                       {task.isUrgent && (
                         <Chip label="Urgent" color="error" size="small" />
                       )}
@@ -213,7 +251,6 @@ const TaskList: React.FC = () => {
           ))}
         </Box>
       )}
-
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Delete Task?</DialogTitle>
         <DialogContent>
@@ -223,16 +260,13 @@ const TaskList: React.FC = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel} disabled={operationLoading}>
-            Cancel
-          </Button>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
           <Button
             onClick={handleDeleteConfirm}
             color="error"
             variant="contained"
-            disabled={operationLoading}
           >
-            {operationLoading ? "Deleting..." : "Delete"}
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
