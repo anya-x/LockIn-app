@@ -1,8 +1,8 @@
 package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.dto.AuthResponseDTO;
-import com.lockin.lockin_app.dto.LoginDTO;
-import com.lockin.lockin_app.dto.RegisterDTO;
+import com.lockin.lockin_app.dto.LoginRequestDTO;
+import com.lockin.lockin_app.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.security.JwtUtil;
@@ -26,7 +26,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
 
-    public AuthResponseDTO register(RegisterDTO request) {
+    public AuthResponseDTO register(RegisterRequestDTO request) {
         if (userService.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
@@ -46,7 +46,7 @@ public class AuthService {
                 token, savedUser.getEmail(), savedUser.getFirstName(), savedUser.getLastName());
     }
 
-    public AuthResponseDTO login(LoginDTO request) {
+    public AuthResponseDTO login(LoginRequestDTO request) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(

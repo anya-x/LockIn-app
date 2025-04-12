@@ -1,6 +1,6 @@
 package com.lockin.lockin_app.service;
 
-import com.lockin.lockin_app.dto.TaskDTO;
+import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
@@ -27,7 +27,7 @@ public class TaskService {
     private final UserService userService;
 
     @Transactional
-    public TaskResponseDTO createTask(Long userId, TaskDTO request) {
+    public TaskResponseDTO createTask(Long userId, TaskRequestDTO request) {
         log.info("Creating task for user: {}", userId);
 
         User user = userService.getUserById(userId);
@@ -43,7 +43,7 @@ public class TaskService {
         return TaskResponseDTO.fromEntity(saved);
     }
 
-    private void updateTaskFromRequest(Task task, TaskDTO request) {
+    private void updateTaskFromRequest(Task task, TaskRequestDTO request) {
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
 
@@ -84,7 +84,7 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponseDTO updateTask(Long taskId, Long userId, TaskDTO request) {
+    public TaskResponseDTO updateTask(Long taskId, Long userId, TaskRequestDTO request) {
         log.info("Updating task: {} for user: {}", taskId, userId);
 
         Task task =

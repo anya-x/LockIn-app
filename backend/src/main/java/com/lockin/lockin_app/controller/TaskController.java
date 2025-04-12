@@ -1,6 +1,6 @@
 package com.lockin.lockin_app.controller;
 
-import com.lockin.lockin_app.dto.TaskDTO;
+import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.service.TaskService;
 import com.lockin.lockin_app.service.UserService;
@@ -53,7 +53,8 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(
-            @Valid @RequestBody TaskDTO request, @AuthenticationPrincipal UserDetails userDetails) {
+            @Valid @RequestBody TaskRequestDTO request,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("POST /api/tasks : User: {}", userDetails.getUsername());
 
@@ -66,7 +67,7 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponseDTO> updateTask(
             @PathVariable Long id,
-            @Valid @RequestBody TaskDTO request,
+            @Valid @RequestBody TaskRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("PUT /api/tasks/{} : User: {}", id, userDetails.getUsername());

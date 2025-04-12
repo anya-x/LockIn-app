@@ -1,8 +1,8 @@
 package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.AuthResponseDTO;
-import com.lockin.lockin_app.dto.LoginDTO;
-import com.lockin.lockin_app.dto.RegisterDTO;
+import com.lockin.lockin_app.dto.LoginRequestDTO;
+import com.lockin.lockin_app.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -31,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(
-            @Valid @RequestBody RegisterDTO request, BindingResult bindingResult) {
+            @Valid @RequestBody RegisterRequestDTO request, BindingResult bindingResult) {
         log.info("POST /api/auth/register : email: {}", request.getEmail());
 
         if (bindingResult.hasErrors()) {
@@ -57,7 +57,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
-            @Valid @RequestBody LoginDTO request, BindingResult bindingResult) {
+            @Valid @RequestBody LoginRequestDTO request, BindingResult bindingResult) {
         log.info("POST /api/auth/login : email: {}", request.getEmail());
 
         if (bindingResult.hasErrors()) {
