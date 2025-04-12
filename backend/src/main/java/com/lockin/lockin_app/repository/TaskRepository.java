@@ -16,4 +16,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByUserIdAndIsUrgentAndIsImportant(
             Long userId, Boolean isUrgent, Boolean isImportant);
+
+    List<Task> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

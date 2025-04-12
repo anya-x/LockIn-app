@@ -7,6 +7,7 @@ import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.security.JwtUtil;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,28 +17,18 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
-
-    public AuthService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil,
-            AuthenticationManager authenticationManager) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
-        this.authenticationManager = authenticationManager;
-    }
+    private final UserService userService;
 
     public AuthResponseDTO register(RegisterDTO request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            log.warn("Registration failed, email already exists: {}", request.getEmail());
-            throw new RuntimeException("Email already exists");
+        if (userService.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already registered");
         }
 
         User user = new User();
@@ -70,14 +61,7 @@ public class AuthService {
             throw e;
         }
 
-        User user =
-                userRepository
-                        .findByEmail(request.getEmail())
-                        .orElseThrow(
-                                () -> {
-                                    log.error("User not found: {}", request.getEmail());
-                                    return new RuntimeException("User not found");
-                                });
+        User user = userService.getUserByEmail(request.getEmail());
 
         String token = jwtUtil.generateToken(user.getEmail());
         log.debug("JWT token generated");

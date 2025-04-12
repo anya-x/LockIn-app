@@ -3,133 +3,89 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.TaskDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.service.TaskService;
+import com.lockin.lockin_app.service.UserService;
 
 import jakarta.validation.Valid;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/tasks")
+@RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService taskService;
+    private final UserService userService;
 
-    public TaskController(TaskService taskService) {
-        this.taskService = taskService;
+    @GetMapping
+    public ResponseEntity<List<TaskResponseDTO>> getAllTasks(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/tasks: User: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        List<TaskResponseDTO> tasks = taskService.getUserTasks(userId);
+
+        return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TaskResponseDTO> getTask(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/tasks/{} : User: {}", id, userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        TaskResponseDTO task = taskService.getTask(id, userId);
+
+        return ResponseEntity.ok(task);
     }
 
     @PostMapping
-    public ResponseEntity<?> createTask(
-            @Valid @RequestBody TaskDTO request,
-            BindingResult bindingResult,
-            Authentication authentication) {
+    public ResponseEntity<TaskResponseDTO> createTask(
+            @Valid @RequestBody TaskDTO request, @AuthenticationPrincipal UserDetails userDetails) {
 
-        String email = authentication.getName();
-        log.info("POST /api/tasks : User: {}, Title: {}", email, request.getTitle());
+        log.debug("POST /api/tasks : User: {}", userDetails.getUsername());
 
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult
-                    .getFieldErrors()
-                    .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-            log.warn("Task creation validation failed {}: {}", email, errors);
-            return ResponseEntity.badRequest().body(errors);
-        }
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        TaskResponseDTO created = taskService.createTask(userId, request);
 
-        try {
-            TaskResponseDTO response = taskService.createTask(request, email);
-            log.info("Task created: ID: {} for user: {}", response.getId(), email);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (RuntimeException e) {
-            log.error("Task creation failed {}: {}", email, e.getMessage());
-            Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-
-    @GetMapping
-    public ResponseEntity<?> getUserTasks(Authentication authentication) {
-        String email = authentication.getName();
-        log.info("GET /api/tasks : User: {}", email);
-
-        try {
-            List<TaskResponseDTO> tasks = taskService.getUserTasks(email);
-            log.debug("Returning {} tasks for : {}", tasks.size(), email);
-            return ResponseEntity.ok(tasks);
-        } catch (RuntimeException e) {
-            log.error("Failed to fetch tasks for {}: {}", email, e.getMessage());
-            Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTask(
+    public ResponseEntity<TaskResponseDTO> updateTask(
             @PathVariable Long id,
             @Valid @RequestBody TaskDTO request,
-            BindingResult bindingResult,
-            Authentication authentication) {
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        String email = authentication.getName();
-        log.info("PUT /api/tasks/{} : User: {}", id, email);
+        log.debug("PUT /api/tasks/{} : User: {}", id, userDetails.getUsername());
 
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult
-                    .getFieldErrors()
-                    .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-            log.warn("Task update validation failed {} by {}: {}", id, email, errors);
-            return ResponseEntity.badRequest().body(errors);
-        }
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        TaskResponseDTO updated = taskService.updateTask(id, userId, request);
 
-        try {
-            TaskResponseDTO response = taskService.updateTask(id, request, email);
-            log.info("Task updated  ID: {} by: {}", id, email);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            log.error("Task update failed for  {} by {}: {}", id, email, e.getMessage());
-            Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
-
-            if (e.getMessage().contains("Not authorized")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
-            }
-            return ResponseEntity.badRequest().body(error);
-        }
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteTask(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
 
-        String email = authentication.getName();
-        log.info("DELETE /api/tasks/{} : User: {}", id, email);
+        log.debug("DELETE /api/tasks/{} : User: {}", id, userDetails.getUsername());
 
-        try {
-            taskService.deleteTask(id, email);
-            log.info("Task deleted successfully - ID: {} by user: {}", id, email);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.error("Task deletion failed for {} by {}: {}", id, email, e.getMessage());
-            Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        taskService.deleteTask(id, userId);
 
-            if (e.getMessage().contains("Not authorized")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
-            }
-            return ResponseEntity.badRequest().body(error);
-        }
+        return ResponseEntity.noContent().build();
     }
 }

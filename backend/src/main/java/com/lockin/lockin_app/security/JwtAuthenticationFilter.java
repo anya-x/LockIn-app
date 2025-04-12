@@ -1,5 +1,7 @@
 package com.lockin.lockin_app.security;
 
+import com.lockin.lockin_app.service.CustomUserDetailsService;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
