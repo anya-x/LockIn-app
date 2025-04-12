@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,9 +16,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
 
@@ -41,7 +43,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             final String jwt = authHeader.substring(7);
-
             final String userEmail = jwtUtil.extractEmail(jwt);
 
             if (userEmail != null
@@ -50,30 +51,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtUtil.validateToken(jwt, userEmail)) {
+                    log.debug("Valid token: {}", userEmail);
 
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("✅ Authentication set in SecurityContext");
-                    System.out.println("✅ User is now authenticated!");
                 } else {
-                    System.out.println("❌ Token validation FAILED!");
+                    log.warn("Invalid token: {}", userEmail);
                 }
             } else {
                 if (userEmail == null) {
-                    System.out.println("❌ Could not extract email from token");
+                    log.warn("Could not extract email");
                 }
                 if (SecurityContextHolder.getContext().getAuthentication() != null) {
-                    System.out.println("ℹ️ User already authenticated");
+                    log.debug("user already authentificated");
                 }
             }
         } catch (Exception e) {
-            System.out.println("❌ JWT FILTER ERROR:");
-            System.out.println("   Error type: " + e.getClass().getName());
-            System.out.println("   Error message: " + e.getMessage());
-            e.printStackTrace();
+            log.error("JWT authentification error:", e);
         }
 
         filterChain.doFilter(request, response);

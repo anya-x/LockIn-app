@@ -3,6 +3,8 @@ package com.lockin.lockin_app.config;
 import com.lockin.lockin_app.security.CustomUserDetailsService;
 import com.lockin.lockin_app.security.JwtAuthenticationFilter;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -39,16 +42,16 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(
-                        auth ->
-                                auth.requestMatchers("/api/auth/**")
-                                        .permitAll()
-                                        .anyRequest()
-                                        .authenticated())
+                        auth -> {
+                            auth.requestMatchers("/api/auth/**")
+                                    .permitAll()
+                                    .anyRequest()
+                                    .authenticated();
+                        })
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .userDetailsService(userDetailsService)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

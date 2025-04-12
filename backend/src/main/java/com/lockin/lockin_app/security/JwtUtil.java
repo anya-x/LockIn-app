@@ -5,6 +5,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+@Slf4j
 @Service
 public class JwtUtil {
 
@@ -26,8 +29,11 @@ public class JwtUtil {
 
     // Generate token with email as subject
     public String generateToken(String email) {
+        log.debug("Generating JWT token: {}", email);
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email);
+        String token = createToken(claims, email);
+        log.debug("JWT token generated successfully: {}", email);
+        return token;
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -48,7 +54,14 @@ public class JwtUtil {
 
     // Extract email from token
     public String extractEmail(String token) {
-        return extractClaim(token, Claims::getSubject);
+        try {
+            String email = extractClaim(token, Claims::getSubject);
+            log.debug("Extracted email from token");
+            return email;
+        } catch (Exception e) {
+            log.error("Failed to extract email from token: {}", e.getMessage());
+            throw e;
+        }
     }
 
     // Extract expiration date
@@ -76,7 +89,14 @@ public class JwtUtil {
 
     // Validate token
     public Boolean validateToken(String token, String email) {
-        final String tokenEmail = extractEmail(token);
-        return (tokenEmail.equals(email) && !isTokenExpired(token));
+        try {
+            final String tokenEmail = extractEmail(token);
+            boolean isValid = tokenEmail.equals(email) && !isTokenExpired(token);
+            log.debug("Token validation for {}: {}", email, isValid ? "SUCCESS" : "FAILED");
+            return isValid;
+        } catch (Exception e) {
+            log.error("Token validation error for {}: {}", email, e.getMessage());
+            return false;
+        }
     }
 }
