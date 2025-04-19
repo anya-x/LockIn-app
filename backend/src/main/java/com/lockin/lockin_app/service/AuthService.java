@@ -14,6 +14,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -26,6 +27,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
 
+    @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
         if (userService.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -38,12 +40,18 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         User savedUser = userRepository.save(user);
-        log.info("user registered successfully: {}", savedUser.getEmail());
-
         String token = jwtUtil.generateToken(savedUser.getEmail());
 
-        return new AuthResponseDTO(
-                token, savedUser.getEmail(), savedUser.getFirstName(), savedUser.getLastName());
+        return AuthResponseDTO.builder()
+                .token(token)
+                .user(
+                        AuthResponseDTO.UserInfo.builder()
+                                .id(savedUser.getId())
+                                .email(savedUser.getEmail())
+                                .firstName(savedUser.getFirstName())
+                                .lastName(savedUser.getLastName())
+                                .build())
+                .build();
     }
 
     public AuthResponseDTO login(LoginRequestDTO request) {
@@ -66,6 +74,15 @@ public class AuthService {
         String token = jwtUtil.generateToken(user.getEmail());
         log.debug("JWT token generated");
 
-        return new AuthResponseDTO(token, user.getEmail(), user.getFirstName(), user.getLastName());
+        return AuthResponseDTO.builder()
+                .token(token)
+                .user(
+                        AuthResponseDTO.UserInfo.builder()
+                                .id(user.getId())
+                                .email(user.getEmail())
+                                .firstName(user.getFirstName())
+                                .lastName(user.getLastName())
+                                .build())
+                .build();
     }
 }

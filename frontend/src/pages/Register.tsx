@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   Container,
   Box,
@@ -8,10 +9,10 @@ import {
   Typography,
   Alert,
 } from "@mui/material";
-import { authService } from "../services/authService";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -46,7 +47,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await authService.register({
+      await register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
@@ -55,7 +56,6 @@ const Register: React.FC = () => {
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed");
-      console.log("Register error:", err);
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ const Register: React.FC = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          Create LockIn Account
+          Create an account
         </Typography>
 
         {error && (

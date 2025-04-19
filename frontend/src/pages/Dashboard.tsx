@@ -22,11 +22,13 @@ import {
   ExitToApp as LogoutIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import TaskList from "../components/TaskList";
 
 const drawerWidth = 240;
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
