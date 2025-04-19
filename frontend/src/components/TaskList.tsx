@@ -21,9 +21,10 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { taskService, type Task } from "../services/taskService";
+import { taskService } from "../services/taskService";
 import TaskFormModal from "./TaskFormModal";
 import TaskStats from "./TaskStats";
+import type { Task, TaskRequest } from "../types/task";
 
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -47,7 +48,6 @@ const TaskList: React.FC = () => {
       setError("");
     } catch (err: any) {
       setError("Failed to load tasks");
-      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -63,17 +63,28 @@ const TaskList: React.FC = () => {
     setEditingTask(undefined);
   };
 
-  const handleSaveTask = async (taskData: Partial<Task>) => {
-    if (editingTask) {
-      const updated = await taskService.updateTask(editingTask.id!, taskData);
-      setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
-    } else {
-      const created = await taskService.createTask(taskData);
-      setTasks([...tasks, created]);
+  const handleSaveTask = async (taskData: TaskRequest) => {
+    try {
+      if (editingTask) {
+        const updated = await taskService.updateTask(editingTask.id, taskData);
+        setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
+      } else {
+        const created = await taskService.createTask(taskData);
+        setTasks([...tasks, created]);
+      }
+      handleCloseModal();
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        alert("You don't have permission to perform this action.");
+      } else if (err.response?.status === 401) {
+        alert("Your session has expired. Please log in again.");
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      } else {
+        alert("Failed to save task. Please try again.");
+      }
     }
-    handleCloseModal();
   };
-
   const handleDeleteClick = (id: number) => {
     setTaskToDelete(id);
     setDeleteDialogOpen(true);

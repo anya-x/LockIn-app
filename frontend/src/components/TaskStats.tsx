@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Card, CardContent, Typography, Grid } from "@mui/material";
-import { type Task } from "../services/taskService";
+import type { Task } from "../types/task";
 
 interface TaskStatsProps {
   tasks: Task[];

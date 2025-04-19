@@ -1,16 +1,5 @@
 import api from "./api";
-
-export interface Task {
-  id?: number;
-  title: string;
-  description?: string;
-  status: "TODO" | "IN_PROGRESS" | "COMPLETED";
-  isUrgent: boolean;
-  isImportant: boolean;
-  dueDate?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import type { Task, TaskRequest } from "../types/task";
 
 export const taskService = {
   async getTasks(): Promise<Task[]> {
@@ -18,13 +7,18 @@ export const taskService = {
     return response.data;
   },
 
-  async createTask(task: Partial<Task>): Promise<Task> {
-    const response = await api.post<Task>("/tasks", task);
+  async getTask(id: number): Promise<Task> {
+    const response = await api.get<Task>(`/tasks/${id}`);
     return response.data;
   },
 
-  async updateTask(id: number, task: Partial<Task>): Promise<Task> {
-    const response = await api.put<Task>(`/tasks/${id}`, task);
+  async createTask(request: TaskRequest): Promise<Task> {
+    const response = await api.post<Task>("/tasks", request);
+    return response.data;
+  },
+
+  async updateTask(id: number, request: TaskRequest): Promise<Task> {
+    const response = await api.put<Task>(`/tasks/${id}`, request);
     return response.data;
   },
 
