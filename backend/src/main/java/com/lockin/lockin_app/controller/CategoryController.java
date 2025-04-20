@@ -7,6 +7,7 @@ import com.lockin.lockin_app.service.UserService;
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
@@ -28,6 +30,8 @@ public class CategoryController {
     public ResponseEntity<List<Category>> getCategories(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("GET /api/categries: User: {}", userDetails.getUsername());
+
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         List<Category> categories = categoryService.getUserCategories(userId);
         return ResponseEntity.ok(categories);
@@ -37,6 +41,11 @@ public class CategoryController {
     public ResponseEntity<Category> createCategory(
             @Valid @RequestBody Category category,
             @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug(
+                "POST /api/categries: User: {} Category: {}",
+                userDetails.getUsername(),
+                category.getName());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         Category created = categoryService.createCategory(userId, category);
@@ -49,6 +58,12 @@ public class CategoryController {
             @Valid @RequestBody Category category,
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug(
+                "PUT /api/categries/{}: User: {} Category: {}",
+                id,
+                userDetails.getUsername(),
+                category.getName());
+
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         Category updated = categoryService.updateCategory(id, userId, category);
         return ResponseEntity.ok(updated);
@@ -57,6 +72,8 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(
             @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("DELETE /api/categries/ Category: {}", id);
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         categoryService.deleteCategory(id, userId);
