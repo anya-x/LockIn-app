@@ -5,12 +5,13 @@ import com.lockin.lockin_app.repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.Collections;
 
 @Slf4j
 @Service
@@ -39,7 +40,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         log.debug("User loading success");
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(), user.getPassword(), new ArrayList<>() // TODO: Add role system
-                );
+                user.getEmail(),
+                user.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
     }
 }
