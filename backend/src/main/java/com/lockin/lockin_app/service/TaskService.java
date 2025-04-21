@@ -2,11 +2,11 @@ package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
+import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.TaskRepository;
-import com.lockin.lockin_app.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
     private final UserService userService;
+    private final CategoryService categoryService;
 
     @Transactional
     public TaskResponseDTO createTask(Long userId, TaskRequestDTO request) {
@@ -57,6 +57,15 @@ public class TaskService {
         } else {
             task.setStatus(TaskStatus.TODO);
         }
+
+        if (request.getCategoryId() != null) {
+            Category category =
+                    categoryService.getCategoryForUser(
+                            request.getCategoryId(), task.getUser().getId());
+            task.setCategory(category);
+        } else {
+            task.setCategory(null);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +85,7 @@ public class TaskService {
                 taskRepository
                         .findById(taskId)
                         .orElseThrow(() -> new RuntimeException("Task not found"));
+
         if (!task.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorised");
         }

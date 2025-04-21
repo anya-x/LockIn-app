@@ -21,6 +21,10 @@ public class TaskResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private Long categoryId;
+    private String categoryName;
+    private String categoryColor;
+
     public static TaskResponseDTO fromEntity(Task task) {
         TaskResponseDTOBuilder builder =
                 TaskResponseDTO.builder()
@@ -33,6 +37,13 @@ public class TaskResponseDTO {
                         .dueDate(task.getDueDate())
                         .createdAt(task.getCreatedAt())
                         .updatedAt(task.getUpdatedAt());
+
+        if (task.getCategory() != null) {
+            builder.categoryId(task.getCategory().getId())
+                    .categoryName(task.getCategory().getName())
+                    .categoryColor(task.getCategory().getColor());
+        }
+
         return builder.build();
     }
 }

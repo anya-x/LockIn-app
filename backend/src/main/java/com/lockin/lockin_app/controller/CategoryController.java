@@ -1,5 +1,7 @@
 package com.lockin.lockin_app.controller;
 
+import com.lockin.lockin_app.dto.CategoryRequestDTO;
+import com.lockin.lockin_app.dto.CategoryResponseDTO;
 import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.service.CategoryService;
 import com.lockin.lockin_app.service.UserService;
@@ -16,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -27,46 +30,79 @@ public class CategoryController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<Category>> getCategories(
+    public ResponseEntity<List<CategoryResponseDTO>> getAllCategories(
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("GET /api/categries: User: {}", userDetails.getUsername());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         List<Category> categories = categoryService.getUserCategories(userId);
-        return ResponseEntity.ok(categories);
+
+        List<CategoryResponseDTO> response =
+                categories.stream()
+                        .map(CategoryResponseDTO::fromEntity)
+                        .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryResponseDTO> getCategoryById(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/categories/{} : User: {}", id, userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Category category = categoryService.getCategoryForUser(id, userId);
+
+        return ResponseEntity.ok(CategoryResponseDTO.fromEntity(category));
     }
 
     @PostMapping
-    public ResponseEntity<Category> createCategory(
-            @Valid @RequestBody Category category,
+    public ResponseEntity<CategoryResponseDTO> createCategory(
+            @Valid @RequestBody CategoryRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug(
                 "POST /api/categries: User: {} Category: {}",
                 userDetails.getUsername(),
-                category.getName());
+                request.getName());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        Category category = new Category();
+        category.setName(request.getName());
+        category.setColor(request.getColor());
+        category.setIcon(request.getIcon());
+
         Category created = categoryService.createCategory(userId, category);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(CategoryResponseDTO.fromEntity(created));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(
+    public ResponseEntity<CategoryResponseDTO> updateCategory(
             @PathVariable Long id,
-            @Valid @RequestBody Category category,
+            @Valid @RequestBody CategoryRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug(
                 "PUT /api/categries/{}: User: {} Category: {}",
                 id,
                 userDetails.getUsername(),
-                category.getName());
+                request.getName());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
-        Category updated = categoryService.updateCategory(id, userId, category);
-        return ResponseEntity.ok(updated);
+
+        Category updatedCategory = new Category();
+        updatedCategory.setName(request.getName());
+        updatedCategory.setColor(request.getColor());
+        updatedCategory.setIcon(request.getIcon());
+
+        Category updated = categoryService.updateCategory(id, userId, updatedCategory);
+
+        return ResponseEntity.ok(CategoryResponseDTO.fromEntity(updated));
     }
 
     @DeleteMapping("/{id}")
@@ -77,6 +113,7 @@ public class CategoryController {
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         categoryService.deleteCategory(id, userId);
+
         return ResponseEntity.noContent().build();
     }
 }

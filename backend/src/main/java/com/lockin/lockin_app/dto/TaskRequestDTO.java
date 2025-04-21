@@ -24,4 +24,6 @@ public class TaskRequestDTO {
     private Boolean isImportant;
 
     private LocalDateTime dueDate;
+
+    private Long categoryId;
 }

@@ -6,9 +6,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import lombok.*;
-
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,8 +16,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "categories")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Category {
@@ -42,11 +41,18 @@ public class Category {
     @JsonIgnore
     private User user;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "category",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+            orphanRemoval = false)
     @JsonIgnore
     private List<Task> tasks = new ArrayList<>();
 
-    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 }
