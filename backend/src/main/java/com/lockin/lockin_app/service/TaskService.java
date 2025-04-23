@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.service;
 
+import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.entity.Category;
@@ -141,5 +142,19 @@ public class TaskService {
         List<Task> tasks = taskRepository.findByQuadrant(userId, isUrgent, isImportant);
 
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
+
+    public EisenhowerMatrixDTO getEisenhowerMatrix(Long userId) {
+        EisenhowerMatrixDTO matrix = new EisenhowerMatrixDTO();
+
+        matrix.setDoFirst(taskRepository.findByQuadrant(userId, true, true));
+
+        matrix.setSchedule(taskRepository.findByQuadrant(userId, false, true));
+
+        matrix.setDelegate(taskRepository.findByQuadrant(userId, true, false));
+
+        matrix.setEliminate(taskRepository.findByQuadrant(userId, false, false));
+
+        return matrix;
     }
 }

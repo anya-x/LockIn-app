@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.controller;
 
+import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.service.TaskService;
@@ -99,5 +100,14 @@ public class TaskController {
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         List<TaskResponseDTO> tasks = taskService.getTasksByQuadrant(userId, isUrgent, isImportant);
         return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/matrix")
+    public ResponseEntity<EisenhowerMatrixDTO> getEisenhowerMatrix(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        EisenhowerMatrixDTO matrix = taskService.getEisenhowerMatrix(userId);
+        return ResponseEntity.ok(matrix);
     }
 }
