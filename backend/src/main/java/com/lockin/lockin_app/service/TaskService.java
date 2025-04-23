@@ -126,7 +126,7 @@ public class TaskService {
                         .orElseThrow(() -> new RuntimeException("Task not found"));
 
         if (!task.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized: You don't own this task");
+            throw new RuntimeException("Unauthorised: You don't own this task");
         }
 
         taskRepository.delete(task);
@@ -145,6 +145,9 @@ public class TaskService {
     }
 
     public EisenhowerMatrixDTO getEisenhowerMatrix(Long userId) {
+
+        log.debug("Fetching Einshenhower matrix for user: {}", userId);
+
         EisenhowerMatrixDTO matrix = new EisenhowerMatrixDTO();
 
         matrix.setDoFirst(taskRepository.findByQuadrant(userId, true, true));
@@ -156,5 +159,29 @@ public class TaskService {
         matrix.setEliminate(taskRepository.findByQuadrant(userId, false, false));
 
         return matrix;
+    }
+
+    public TaskResponseDTO updateTaskQuadrant(
+            Long taskId, Long userId, Boolean isUrgent, Boolean isImportant) {
+
+        log.info("Updating task quadrant: {} for user: {}", taskId, userId);
+
+        Task task =
+                taskRepository
+                        .findById(taskId)
+                        .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorised");
+        }
+
+        task.setIsUrgent(isUrgent);
+        task.setIsImportant(isImportant);
+
+        Task updated = taskRepository.save(task);
+
+        log.info("Updated task quadrant: {}", updated.getId());
+
+        return TaskResponseDTO.fromEntity(updated);
     }
 }

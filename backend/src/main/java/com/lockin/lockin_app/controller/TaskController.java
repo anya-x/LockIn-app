@@ -97,6 +97,8 @@ public class TaskController {
             @RequestParam Boolean isImportant,
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("GET /api/tasks/quadrant : User: {}", userDetails.getUsername());
+
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         List<TaskResponseDTO> tasks = taskService.getTasksByQuadrant(userId, isUrgent, isImportant);
         return ResponseEntity.ok(tasks);
@@ -106,8 +108,24 @@ public class TaskController {
     public ResponseEntity<EisenhowerMatrixDTO> getEisenhowerMatrix(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("GET /api/tasks/matrix : User: {}", userDetails.getUsername());
+
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         EisenhowerMatrixDTO matrix = taskService.getEisenhowerMatrix(userId);
         return ResponseEntity.ok(matrix);
+    }
+
+    @PatchMapping("/{id}/quadrant")
+    public ResponseEntity<TaskResponseDTO> updateTaskQuadrant(
+            @PathVariable Long id,
+            @RequestParam Boolean isUrgent,
+            @RequestParam Boolean isImportant,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("PATCH /api/tasks/{}/quadrant : User: {}", id, userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        TaskResponseDTO task = taskService.updateTaskQuadrant(id, userId, isUrgent, isImportant);
+        return ResponseEntity.ok(task);
     }
 }
