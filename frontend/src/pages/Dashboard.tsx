@@ -19,30 +19,42 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   Assignment as TaskIcon,
+  Category as CategoryIcon,
+  GridOn as GridOnIcon,
   ExitToApp as LogoutIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import TaskList from "../components/TaskList";
+import CategoryList from "../components/CategoryList.tsx";
+import EisenhowerMatrix from "../components/EisenhowerMatrix";
 
 const drawerWidth = 240;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<
+    "tasks" | "categories" | "matrix"
+  >("tasks");
   const { logout, user } = useAuth();
 
   const handleDrawerToggle = useCallback(() => {
     setMobileOpen((prev) => !prev);
   }, []);
 
-  const handleMenuItemClick = useCallback(() => {
-    if (isMobile) {
-      setMobileOpen(false);
-    }
-  }, [isMobile]);
+  const handleMenuItemClick = useCallback(
+    (view: "tasks" | "categories" | "matrix") => {
+      setCurrentView(view);
+      if (isMobile) {
+        setMobileOpen(false);
+      }
+    },
+    [isMobile]
+  );
 
   const drawer = (
     <div>
@@ -54,19 +66,36 @@ const Dashboard: React.FC = () => {
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={handleMenuItemClick}>
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleMenuItemClick}>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("tasks")}
+            selected={currentView === "tasks"}
+          >
             <ListItemIcon>
               <TaskIcon />
             </ListItemIcon>
             <ListItemText primary="Tasks" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("categories")}
+            selected={currentView === "categories"}
+          >
+            <ListItemIcon>
+              <CategoryIcon />
+            </ListItemIcon>
+            <ListItemText primary="Categories" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("matrix")}
+            selected={currentView === "matrix"}
+          >
+            <ListItemIcon>
+              <GridOnIcon />
+            </ListItemIcon>
+            <ListItemText primary="Matrix" />
           </ListItemButton>
         </ListItem>
       </List>
@@ -83,6 +112,19 @@ const Dashboard: React.FC = () => {
       </List>
     </div>
   );
+
+  const renderContent = () => {
+    switch (currentView) {
+      case "tasks":
+        return <TaskList />;
+      case "categories":
+        return <CategoryList />;
+      case "matrix":
+        return <EisenhowerMatrix />;
+      default:
+        return <TaskList />;
+    }
+  };
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -152,7 +194,7 @@ const Dashboard: React.FC = () => {
           mt: 8,
         }}
       >
-        <TaskList />
+        {renderContent()}
       </Box>
     </Box>
   );
