@@ -132,4 +132,14 @@ public class TaskService {
 
         log.info("Deleted task: {}", taskId);
     }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponseDTO> getTasksByQuadrant(
+            Long userId, Boolean isUrgent, Boolean isImportant) {
+        log.debug("Fetching tasks for user by quadrant: {}", userId);
+
+        List<Task> tasks = taskRepository.findByQuadrant(userId, isUrgent, isImportant);
+
+        return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
 }

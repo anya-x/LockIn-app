@@ -89,4 +89,15 @@ public class TaskController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/quadrant")
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByQuadrant(
+            @RequestParam Boolean isUrgent,
+            @RequestParam Boolean isImportant,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        List<TaskResponseDTO> tasks = taskService.getTasksByQuadrant(userId, isUrgent, isImportant);
+        return ResponseEntity.ok(tasks);
+    }
 }
