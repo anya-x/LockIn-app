@@ -103,6 +103,19 @@ const EisenhowerMatrix: React.FC = () => {
     }
   };
 
+  const getActiveTask = (): Task | undefined => {
+    if (!activeId || !matrix) return undefined;
+
+    const allTasks = [
+      ...matrix.doFirst,
+      ...matrix.schedule,
+      ...matrix.delegate,
+      ...matrix.eliminate,
+    ];
+
+    return allTasks.find((task) => task.id === activeId);
+  };
+
   interface DroppableQuadrantProps {
     id: string;
     title: string;
@@ -284,6 +297,28 @@ const EisenhowerMatrix: React.FC = () => {
           ))}
         </Grid>
       </Box>
+      <DragOverlay>
+        {activeId ? (
+          <Paper
+            sx={{
+              p: 1.5,
+              opacity: 0.5,
+              cursor: "grabbing",
+              boxShadow: 4,
+              backgroundColor: "white",
+            }}
+          >
+            <Typography variant="body2" fontWeight="medium">
+              {getActiveTask()?.title || "Task"}
+            </Typography>
+            {getActiveTask()?.dueDate && (
+              <Typography variant="caption" color="text.secondary">
+                Due: {new Date(getActiveTask()?.dueDate!).toLocaleDateString()}
+              </Typography>
+            )}
+          </Paper>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 };
