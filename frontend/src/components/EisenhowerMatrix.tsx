@@ -140,7 +140,7 @@ const EisenhowerMatrix: React.FC = () => {
         ref={setNodeRef}
         sx={{
           p: 2,
-          minHeight: 300,
+          minHeight: { xs: 200, md: 300 },
           backgroundColor: isOver ? "#e0e0e0" : color,
           borderLeft: `4px solid ${borderColor}`,
           transition: "background-color 0.2s",
@@ -198,8 +198,12 @@ const EisenhowerMatrix: React.FC = () => {
           p: 1.5,
           mb: 1,
           cursor: isDragging ? "grabbing" : "grab",
+          backgroundColor: "white",
+          borderRadius: 1,
           "&:hover": {
-            boxShadow: 2,
+            boxShadow: 3,
+            transform: "translateY(-3px)",
+            transition: "all 0.2s ease-in-out",
           },
         }}
       >
@@ -235,34 +239,38 @@ const EisenhowerMatrix: React.FC = () => {
   const quadrants = [
     {
       id: "doFirst",
-      title: "Do First",
+      title: "🔥 Do First",
       subtitle: "Urgent & Important",
       tasks: matrix.doFirst,
       color: "#ffebee",
+      hoverColor: "#ffcdd2",
       borderColor: "#f44336",
     },
     {
       id: "schedule",
-      title: "Schedule",
+      title: "📅 Schedule",
       subtitle: "Not Urgent & Important",
       tasks: matrix.schedule,
       color: "#e3f2fd",
+      hoverColor: "#bbdefb",
       borderColor: "#2196f3",
     },
     {
       id: "delegate",
-      title: "Delegate",
+      title: "👥 Delegate",
       subtitle: "Urgent & Not Important",
       tasks: matrix.delegate,
       color: "#fff3e0",
+      hoverColor: "#ffe0b2",
       borderColor: "#ff9800",
     },
     {
       id: "eliminate",
-      title: "Eliminate",
+      title: "🗑️ Eliminate",
       subtitle: "Not Urgent & Not Important",
       tasks: matrix.eliminate,
       color: "#f3e5f5",
+      hoverColor: "#e1bee7",
       borderColor: "#9c27b0",
     },
   ];
