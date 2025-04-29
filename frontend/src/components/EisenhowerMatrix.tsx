@@ -146,17 +146,38 @@ const EisenhowerMatrix: React.FC = () => {
           transition: "background-color 0.2s",
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          {title}
-        </Typography>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
           mb={2}
         >
-          {subtitle}
-        </Typography>
+          <Box>
+            <Typography variant="h6" sx={{ mb: 0 }}>
+              {title}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {subtitle}
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              backgroundColor: borderColor,
+              color: "white",
+              borderRadius: "50%",
+              width: 32,
+              height: 32,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              fontSize: "0.875rem",
+            }}
+          >
+            {tasks.length}
+          </Box>
+        </Box>
 
         <Box>
           {tasks.length === 0 ? (
@@ -198,8 +219,6 @@ const EisenhowerMatrix: React.FC = () => {
           p: 1.5,
           mb: 1,
           cursor: isDragging ? "grabbing" : "grab",
-          backgroundColor: "white",
-          borderRadius: 1,
           "&:hover": {
             boxShadow: 3,
             transform: "translateY(-3px)",
@@ -243,7 +262,6 @@ const EisenhowerMatrix: React.FC = () => {
       subtitle: "Urgent & Important",
       tasks: matrix.doFirst,
       color: "#ffebee",
-      hoverColor: "#ffcdd2",
       borderColor: "#f44336",
     },
     {
@@ -252,7 +270,6 @@ const EisenhowerMatrix: React.FC = () => {
       subtitle: "Not Urgent & Important",
       tasks: matrix.schedule,
       color: "#e3f2fd",
-      hoverColor: "#bbdefb",
       borderColor: "#2196f3",
     },
     {
@@ -261,7 +278,6 @@ const EisenhowerMatrix: React.FC = () => {
       subtitle: "Urgent & Not Important",
       tasks: matrix.delegate,
       color: "#fff3e0",
-      hoverColor: "#ffe0b2",
       borderColor: "#ff9800",
     },
     {
@@ -270,7 +286,6 @@ const EisenhowerMatrix: React.FC = () => {
       subtitle: "Not Urgent & Not Important",
       tasks: matrix.eliminate,
       color: "#f3e5f5",
-      hoverColor: "#e1bee7",
       borderColor: "#9c27b0",
     },
   ];
@@ -305,6 +320,7 @@ const EisenhowerMatrix: React.FC = () => {
           ))}
         </Grid>
       </Box>
+
       <DragOverlay>
         {activeId ? (
           <Paper
