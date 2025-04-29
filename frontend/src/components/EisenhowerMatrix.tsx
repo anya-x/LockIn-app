@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, Grid, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
 import type { Task } from "../types/task";
 import api from "../services/api";
+import { categoryService, type Category } from "../services/categoryService";
 import {
   DndContext,
   DragOverlay,
@@ -27,6 +38,11 @@ const EisenhowerMatrix: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<number | null>(null);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | "all">(
+    "all"
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -36,8 +52,18 @@ const EisenhowerMatrix: React.FC = () => {
   );
 
   useEffect(() => {
+    loadCategories();
     fetchMatrix();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
 
   const fetchMatrix = async () => {
     try {
@@ -114,6 +140,11 @@ const EisenhowerMatrix: React.FC = () => {
     ];
 
     return allTasks.find((task) => task.id === activeId);
+  };
+
+  const filterByCategory = (tasks: Task[]): Task[] => {
+    if (selectedCategory === "all") return tasks;
+    return tasks.filter((task) => task.category?.id === selectedCategory);
   };
 
   interface DroppableQuadrantProps {
@@ -260,7 +291,7 @@ const EisenhowerMatrix: React.FC = () => {
       id: "doFirst",
       title: "🔥 Do First",
       subtitle: "Urgent & Important",
-      tasks: matrix.doFirst,
+      tasks: filterByCategory(matrix.doFirst),
       color: "#ffebee",
       borderColor: "#f44336",
     },
@@ -268,7 +299,7 @@ const EisenhowerMatrix: React.FC = () => {
       id: "schedule",
       title: "📅 Schedule",
       subtitle: "Not Urgent & Important",
-      tasks: matrix.schedule,
+      tasks: filterByCategory(matrix.schedule),
       color: "#e3f2fd",
       borderColor: "#2196f3",
     },
@@ -276,7 +307,7 @@ const EisenhowerMatrix: React.FC = () => {
       id: "delegate",
       title: "👥 Delegate",
       subtitle: "Urgent & Not Important",
-      tasks: matrix.delegate,
+      tasks: filterByCategory(matrix.delegate),
       color: "#fff3e0",
       borderColor: "#ff9800",
     },
@@ -284,7 +315,7 @@ const EisenhowerMatrix: React.FC = () => {
       id: "eliminate",
       title: "🗑️ Eliminate",
       subtitle: "Not Urgent & Not Important",
-      tasks: matrix.eliminate,
+      tasks: filterByCategory(matrix.eliminate),
       color: "#f3e5f5",
       borderColor: "#9c27b0",
     },
@@ -298,12 +329,42 @@ const EisenhowerMatrix: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Eisenhower Matrix
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3}>
-          Organise your tasks by urgency and importance
-        </Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
+          <Box>
+            <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
+              Eisenhower Matrix
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Organise your tasks by urgency and importance
+            </Typography>
+          </Box>
+
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel id="category-filter-label">
+              Filter by Category
+            </InputLabel>
+            <Select
+              labelId="category-filter-label"
+              value={selectedCategory}
+              label="Filter by Category"
+              onChange={(e) =>
+                setSelectedCategory(e.target.value as number | "all")
+              }
+            >
+              <MenuItem value="all">All Categories</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
 
         <Grid container spacing={2}>
           {quadrants.map((quadrant) => (

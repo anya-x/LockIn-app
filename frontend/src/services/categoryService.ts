@@ -5,6 +5,7 @@ export interface Category {
   name: string;
   color: string;
   icon: string;
+  taskCount?: number;
   createdAt?: string;
 }
 
@@ -15,7 +16,7 @@ export const categoryService = {
   },
 
   createCategory: async (
-    category: Omit<Category, "id" | "createdAt">
+    category: Omit<Category, "id" | "createdAt" | "taskCount">
   ): Promise<Category> => {
     const response = await api.post("/categories", category);
     return response.data;
@@ -23,7 +24,7 @@ export const categoryService = {
 
   updateCategory: async (
     id: number,
-    category: Partial<Category>
+    category: Partial<Omit<Category, "id" | "createdAt" | "taskCount">>
   ): Promise<Category> => {
     const response = await api.put(`/categories/${id}`, category);
     return response.data;
