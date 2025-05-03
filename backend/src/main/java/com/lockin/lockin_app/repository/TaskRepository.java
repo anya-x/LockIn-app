@@ -32,7 +32,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query(
             "SELECT t FROM Task t WHERE t.user.id = :userId "
-                    + "AND (t.title LIKE %:searchTerm% OR t.description LIKE %:searchTerm%) "
+                    + "AND (LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) "
+                    + "OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) "
                     + "ORDER BY t.createdAt DESC")
     List<Task> searchTasks(@Param("userId") Long userId, @Param("searchTerm") String searchTerm);
 }
