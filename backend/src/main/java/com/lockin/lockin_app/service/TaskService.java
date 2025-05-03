@@ -144,6 +144,7 @@ public class TaskService {
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public EisenhowerMatrixDTO getEisenhowerMatrix(Long userId) {
 
         log.debug("Fetching Einshenhower matrix for user: {}", userId);
@@ -183,5 +184,14 @@ public class TaskService {
         log.info("Updated task quadrant: {}", updated.getId());
 
         return TaskResponseDTO.fromEntity(updated);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponseDTO> searchTasks(Long userId, String searchTerm) {
+
+        log.debug("Fetching tasks for user {} by searchTerm: {}", userId, searchTerm);
+
+        List<Task> tasks = taskRepository.searchTasks(userId, searchTerm);
+        return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
 }

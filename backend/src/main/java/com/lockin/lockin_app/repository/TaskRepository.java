@@ -29,4 +29,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("userId") Long userId,
             @Param("isUrgent") Boolean isUrgent,
             @Param("isImportant") Boolean isImportant);
+
+    @Query(
+            "SELECT t FROM Task t WHERE t.user.id = :userId "
+                    + "AND (t.title LIKE %:searchTerm% OR t.description LIKE %:searchTerm%) "
+                    + "ORDER BY t.createdAt DESC")
+    List<Task> searchTasks(@Param("userId") Long userId, @Param("searchTerm") String searchTerm);
 }

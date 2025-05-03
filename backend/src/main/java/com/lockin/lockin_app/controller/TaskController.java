@@ -128,4 +128,18 @@ public class TaskController {
         TaskResponseDTO task = taskService.updateTaskQuadrant(id, userId, isUrgent, isImportant);
         return ResponseEntity.ok(task);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TaskResponseDTO>> searchTasks(
+            @RequestParam String query, @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug(
+                "GET /api/tasks/search : User: {} Search term: {}",
+                userDetails.getUsername(),
+                query);
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        List<TaskResponseDTO> tasks = taskService.searchTasks(userId, query);
+        return ResponseEntity.ok(tasks);
+    }
 }
