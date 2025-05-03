@@ -25,4 +25,11 @@ export const taskService = {
   async deleteTask(id: number): Promise<void> {
     await api.delete(`/tasks/${id}`);
   },
+
+  searchTasks: async (searchTerm: string): Promise<Task[]> => {
+    const response = await api.get(
+      `/tasks/search?query=${encodeURIComponent(searchTerm)}`
+    );
+    return response.data;
+  },
 };

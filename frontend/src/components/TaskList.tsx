@@ -15,11 +15,13 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import { taskService } from "../services/taskService";
 import TaskFormModal from "./TaskFormModal";
@@ -36,6 +38,8 @@ const TaskList: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "priority" | "status">("date");
 
+  const [searchTerm, setSearchTerm] = useState("");
+
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -48,6 +52,26 @@ const TaskList: React.FC = () => {
       setError("");
     } catch (err: any) {
       setError("Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+
+    if (!term.trim()) {
+      fetchTasks();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const results = await taskService.searchTasks(term);
+      setTasks(results);
+      setError("");
+    } catch (err: any) {
+      setError("Search failed");
     } finally {
       setLoading(false);
     }
@@ -85,6 +109,7 @@ const TaskList: React.FC = () => {
       }
     }
   };
+
   const handleDeleteClick = (id: number) => {
     setTaskToDelete(id);
     setDeleteDialogOpen(true);
@@ -175,6 +200,22 @@ const TaskList: React.FC = () => {
         <Typography variant="h4">My Tasks</Typography>
         <Box display="flex" gap={2} alignItems="center">
           <TextField
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
+          <TextField
             select
             size="small"
             label="Sort by"
@@ -201,7 +242,11 @@ const TaskList: React.FC = () => {
       <TaskStats tasks={tasks} />
 
       {sortedTasks.length === 0 ? (
-        <Typography>No tasks yet. Create your first task!</Typography>
+        <Typography>
+          {searchTerm
+            ? "No tasks found matching your search"
+            : "No tasks yet. Create your first task!"}
+        </Typography>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {sortedTasks.map((task) => (
