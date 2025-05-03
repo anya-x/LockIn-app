@@ -131,7 +131,9 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               setFormData({ ...formData, dueDate: e.target.value })
             }
             margin="normal"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{
+              inputLabel: { shrink: true },
+            }}
           />
 
           <Box sx={{ mt: 2 }}>
