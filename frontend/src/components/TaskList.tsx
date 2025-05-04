@@ -25,9 +25,12 @@ import {
 } from "@mui/icons-material";
 import { debounce } from "lodash";
 import { taskService } from "../services/taskService";
-import TaskFormModal from "./TaskFormModal";
+import { categoryService, type Category } from "../services/categoryService";
 import TaskStats from "./TaskStats";
+import TaskFilters from "./TaskFilters";
+import type { FilterState } from "./TaskFilters";
 import type { Task, TaskRequest } from "../types/task";
+import TaskFormModal from "./TaskFormModal";
 
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -41,8 +44,18 @@ const TaskList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  const [filters, setFilters] = useState<FilterState>({
+    status: "all",
+    category: "all",
+    urgent: "all",
+    important: "all",
+  });
+
+  const [categories, setCategories] = useState<Category[]>([]);
+
   useEffect(() => {
     fetchTasks();
+    fetchCategories();
   }, []);
 
   const fetchTasks = async () => {
@@ -55,6 +68,15 @@ const TaskList: React.FC = () => {
       setError("Failed to load tasks");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (err: any) {
+      console.error("Failed to load categories:", err);
     }
   };
 
@@ -91,6 +113,33 @@ const TaskList: React.FC = () => {
       setIsSearching(true);
     }
     debouncedSearch(term);
+  };
+
+  const handleFilterChange = async (newFilters: FilterState) => {
+    setFilters(newFilters);
+
+    const hasActiveFilters =
+      newFilters.status !== "all" ||
+      newFilters.category !== "all" ||
+      newFilters.urgent !== "all" ||
+      newFilters.important !== "all";
+
+    if (!hasActiveFilters) {
+      fetchTasks();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const filtered = await taskService.filterTasks(newFilters);
+      setTasks(filtered);
+      setError("");
+    } catch (err: any) {
+      console.error("Error filtering tasks:", err);
+      setError("Failed to filter tasks");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOpenModal = (task?: Task) => {
@@ -261,10 +310,20 @@ const TaskList: React.FC = () => {
 
       <TaskStats tasks={tasks} />
 
+      <TaskFilters
+        filters={filters}
+        categories={categories}
+        onFilterChange={handleFilterChange}
+      />
+
       {sortedTasks.length === 0 ? (
         <Typography>
-          {searchTerm
-            ? "No tasks found matching your search"
+          {searchTerm ||
+          filters.status !== "all" ||
+          filters.category !== "all" ||
+          filters.urgent !== "all" ||
+          filters.important !== "all"
+            ? "No tasks match your search or filters"
             : "No tasks yet. Create your first task!"}
         </Typography>
       ) : (
@@ -311,6 +370,15 @@ const TaskList: React.FC = () => {
                       {task.isImportant && (
                         <Chip label="Important" color="warning" size="small" />
                       )}
+                      {task.category && (
+                        <Chip
+                          label={`${task.category.icon || ""} ${
+                            task.category.name
+                          }`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
                     </Box>
                   </Box>
                   <Box>
@@ -327,6 +395,7 @@ const TaskList: React.FC = () => {
           ))}
         </Box>
       )}
+
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Delete Task?</DialogTitle>
         <DialogContent>
