@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
@@ -23,6 +23,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
+import { debounce } from "lodash";
 import { taskService } from "../services/taskService";
 import TaskFormModal from "./TaskFormModal";
 import TaskStats from "./TaskStats";
@@ -37,8 +38,8 @@ const TaskList: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "priority" | "status">("date");
-
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -57,24 +58,39 @@ const TaskList: React.FC = () => {
     }
   };
 
-  const handleSearch = async (term: string) => {
+  const debouncedSearch = useCallback(
+    debounce(async (term: string) => {
+      if (!term.trim()) {
+        setIsSearching(false);
+        try {
+          const data = await taskService.getTasks();
+          setTasks(data);
+        } catch (err: any) {
+          setError("Failed to load tasks");
+        }
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await taskService.searchTasks(term);
+        setTasks(results);
+        setError("");
+      } catch (err: any) {
+        setError("Search failed");
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300),
+    []
+  );
+
+  const handleSearch = (term: string) => {
     setSearchTerm(term);
-
-    if (!term.trim()) {
-      fetchTasks();
-      return;
+    if (term.trim()) {
+      setIsSearching(true);
     }
-
-    setLoading(true);
-    try {
-      const results = await taskService.searchTasks(term);
-      setTasks(results);
-      setError("");
-    } catch (err: any) {
-      setError("Search failed");
-    } finally {
-      setLoading(false);
-    }
+    debouncedSearch(term);
   };
 
   const handleOpenModal = (task?: Task) => {
@@ -154,7 +170,6 @@ const TaskList: React.FC = () => {
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
 
       case "priority":
-        // eisenhower matrix: urgent + important = highest priority
         const getPriority = (task: Task) => {
           if (task.isUrgent && task.isImportant) return 4;
           if (task.isUrgent) return 3;
@@ -210,6 +225,11 @@ const TaskList: React.FC = () => {
                     <SearchIcon />
                   </InputAdornment>
                 ),
+                endAdornment: isSearching ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={16} />
+                  </InputAdornment>
+                ) : null,
               },
             }}
             size="small"
