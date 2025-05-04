@@ -3,6 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
+import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.service.TaskService;
 import com.lockin.lockin_app.service.UserService;
 
@@ -140,6 +141,34 @@ public class TaskController {
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         List<TaskResponseDTO> tasks = taskService.searchTasks(userId, query);
+        return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<TaskResponseDTO>> filterTasks(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean isUrgent,
+            @RequestParam(required = false) Boolean isImportant,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/tasks/filter : User: {}", userDetails.getUsername());
+        log.debug("filters status: {}", status);
+        log.debug("filters category: {}", categoryId);
+        log.debug("filters IsUrgent: {}", isUrgent);
+        log.debug("filters IsImportant: {}", isImportant);
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        TaskStatus taskStatus = null;
+        if (status != null && !status.equals("all")) {
+            taskStatus = TaskStatus.valueOf(status);
+        }
+
+        List<TaskResponseDTO> tasks =
+                taskService.getTasksWithFilters(
+                        userId, taskStatus, categoryId, isUrgent, isImportant);
+
         return ResponseEntity.ok(tasks);
     }
 }

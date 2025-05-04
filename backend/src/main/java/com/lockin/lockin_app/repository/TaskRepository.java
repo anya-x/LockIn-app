@@ -36,4 +36,18 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                     + "OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) "
                     + "ORDER BY t.createdAt DESC")
     List<Task> searchTasks(@Param("userId") Long userId, @Param("searchTerm") String searchTerm);
+
+    @Query(
+            "SELECT t FROM Task t WHERE t.user.id = :userId "
+                    + "AND (:status IS NULL OR t.status = :status) "
+                    + "AND (:categoryId IS NULL OR t.category.id = :categoryId) "
+                    + "AND (:isUrgent IS NULL OR t.isUrgent = :isUrgent) "
+                    + "AND (:isImportant IS NULL OR t.isImportant = :isImportant) "
+                    + "ORDER BY t.createdAt DESC")
+    List<Task> findByFilters(
+            @Param("userId") Long userId,
+            @Param("status") TaskStatus status,
+            @Param("categoryId") Long categoryId,
+            @Param("isUrgent") Boolean isUrgent,
+            @Param("isImportant") Boolean isImportant);
 }

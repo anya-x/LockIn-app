@@ -194,4 +194,26 @@ public class TaskService {
         List<Task> tasks = taskRepository.searchTasks(userId, searchTerm);
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponseDTO> getTasksWithFilters(
+            Long userId,
+            TaskStatus status,
+            Long categoryId,
+            Boolean isUrgent,
+            Boolean isImportant) {
+
+        log.debug(
+                "=========================== Fetching tasks for user : {} ===========================",
+                userId);
+        log.debug("filters status: {}", status);
+        log.debug("filters category: {}", categoryId);
+        log.debug("filters IsUrgent: {}", isUrgent);
+        log.debug("filters IsImportant: {}", isImportant);
+
+        List<Task> tasks =
+                taskRepository.findByFilters(userId, status, categoryId, isUrgent, isImportant);
+
+        return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
 }
