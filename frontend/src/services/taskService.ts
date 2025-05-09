@@ -1,6 +1,5 @@
 import api from "./api";
-import type { Task, TaskRequest } from "../types/task";
-import type { FilterState } from "../components/TaskFilters";
+import type { Task, TaskRequest, FilterState } from "../types/task";
 
 export const taskService = {
   async getTasks(): Promise<Task[]> {
@@ -37,12 +36,21 @@ export const taskService = {
   filterTasks: async (filters: FilterState): Promise<Task[]> => {
     const params: any = {};
 
-    if (filters.status !== "all") params.status = filters.status;
-    if (filters.category !== "all")
+    if (filters.status !== "all") {
+      params.status = filters.status;
+    }
+
+    if (filters.category !== "all") {
       params.categoryId = Number(filters.category);
-    if (filters.urgent !== "all") params.isUrgent = filters.urgent === "true";
-    if (filters.important !== "all")
+    }
+
+    if (filters.urgent !== "all") {
+      params.isUrgent = filters.urgent === "true";
+    }
+
+    if (filters.important !== "all") {
       params.isImportant = filters.important === "true";
+    }
 
     const response = await api.get("/tasks/filter", { params });
     return response.data;

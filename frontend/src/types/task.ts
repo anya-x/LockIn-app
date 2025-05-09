@@ -10,6 +10,7 @@ export interface Task {
   dueDate?: string;
   createdAt: string;
   updatedAt: string;
+  categoryId?: number | null;
   category?: Category;
 }
 
@@ -20,4 +21,12 @@ export interface TaskRequest {
   isImportant?: boolean;
   status?: "TODO" | "IN_PROGRESS" | "COMPLETED";
   dueDate?: string;
+  categoryId?: number | null;
+}
+
+export interface FilterState {
+  status: string;
+  category: string;
+  urgent: "all" | "true" | "false";
+  important: "all" | "true" | "false";
 }

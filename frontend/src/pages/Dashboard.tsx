@@ -17,23 +17,19 @@ import {
 } from "@mui/material";
 import {
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
   Assignment as TaskIcon,
   Category as CategoryIcon,
   GridOn as GridOnIcon,
   ExitToApp as LogoutIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
 import TaskList from "../components/TaskList";
-import CategoryList from "../components/CategoryList.tsx";
+import CategoryList from "../components/CategoryList";
 import EisenhowerMatrix from "../components/EisenhowerMatrix";
 
 const drawerWidth = 240;
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);

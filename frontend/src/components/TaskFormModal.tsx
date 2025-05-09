@@ -4,19 +4,20 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Button,
+  TextField,
   FormControlLabel,
   Checkbox,
   MenuItem,
   Box,
 } from "@mui/material";
-import type { Task, TaskRequest } from "../types/task";
+import type { Task } from "../types/task";
+import CategorySelector from "./CategorySelector";
 
 interface TaskFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (taskData: TaskRequest) => Promise<void>;
+  onSave: (task: Partial<Task>) => Promise<void>;
   task?: Task;
 }
 
@@ -26,52 +27,58 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   onSave,
   task,
 }) => {
-  const [formData, setFormData] = useState<TaskRequest>({
+  const [formData, setFormData] = useState<Partial<Task>>({
     title: "",
     description: "",
+    status: "TODO",
     isUrgent: false,
     isImportant: false,
-    status: "TODO",
     dueDate: "",
+    categoryId: null,
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (task) {
-      setFormData({
-        title: task.title,
-        description: task.description || "",
-        isUrgent: task.isUrgent,
-        isImportant: task.isImportant,
-        status: task.status,
-        dueDate: task.dueDate || "",
-      });
+      setFormData(task);
     } else {
       setFormData({
         title: "",
         description: "",
+        status: "TODO",
         isUrgent: false,
         isImportant: false,
-        status: "TODO",
         dueDate: "",
+        categoryId: null,
       });
     }
   }, [task, open]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
-      alert("Title is required");
+    if (!formData.title?.trim()) {
+      setError("Title is required");
       return;
     }
 
     setLoading(true);
+    setError("");
 
     try {
       await onSave(formData);
-    } catch (err) {
-      alert("Failed to save task");
+      onClose();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to save task");
     } finally {
       setLoading(false);
     }
@@ -79,71 +86,70 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{task ? "Edit Task" : "Create New Task"}</DialogTitle>
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{task ? "Edit Task" : "Create Task"}</DialogTitle>
-
         <DialogContent>
-          <TextField
-            fullWidth
-            label="Title"
-            value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
-            required
-            margin="normal"
-            autoFocus
-          />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {error && <Box color="error.main">{error}</Box>}
 
-          <TextField
-            fullWidth
-            label="Description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            multiline
-            rows={3}
-            margin="normal"
-          />
+            <TextField
+              label="Title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              fullWidth
+              autoFocus
+            />
 
-          <TextField
-            fullWidth
-            select
-            label="Status"
-            value={formData.status}
-            onChange={(e) =>
-              setFormData({ ...formData, status: e.target.value as any })
-            }
-            margin="normal"
-          >
-            <MenuItem value="TODO">To Do</MenuItem>
-            <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-            <MenuItem value="COMPLETED">Completed</MenuItem>
-          </TextField>
+            <TextField
+              label="Description"
+              name="description"
+              value={formData.description || ""}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              fullWidth
+            />
 
-          <TextField
-            fullWidth
-            type="datetime-local"
-            label="Due Date"
-            value={formData.dueDate}
-            onChange={(e) =>
-              setFormData({ ...formData, dueDate: e.target.value })
-            }
-            margin="normal"
-            slotProps={{
-              inputLabel: { shrink: true },
-            }}
-          />
+            <CategorySelector
+              value={formData.categoryId || null}
+              onChange={(categoryId) =>
+                setFormData({ ...formData, categoryId })
+              }
+            />
 
-          <Box sx={{ mt: 2 }}>
+            <TextField
+              select
+              label="Status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              fullWidth
+            >
+              <MenuItem value="TODO">To Do</MenuItem>
+              <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+              <MenuItem value="COMPLETED">Completed</MenuItem>
+            </TextField>
+
+            <TextField
+              label="Due Date"
+              name="dueDate"
+              type="date"
+              value={formData.dueDate || ""}
+              onChange={handleChange}
+              slotProps={{
+                inputLabel: { shrink: true },
+              }}
+              fullWidth
+            />
+
             <FormControlLabel
               control={
                 <Checkbox
+                  name="isUrgent"
                   checked={formData.isUrgent || false}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isUrgent: e.target.checked })
-                  }
+                  onChange={handleChange}
                 />
               }
               label="Urgent"
@@ -152,21 +158,17 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
             <FormControlLabel
               control={
                 <Checkbox
+                  name="isImportant"
                   checked={formData.isImportant || false}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isImportant: e.target.checked })
-                  }
+                  onChange={handleChange}
                 />
               }
               label="Important"
             />
           </Box>
         </DialogContent>
-
         <DialogActions>
-          <Button onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
+          <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="contained" disabled={loading}>
             {loading ? "Saving..." : "Save"}
           </Button>

@@ -11,20 +11,17 @@ import {
 } from "@mui/material";
 
 import type { SelectChangeEvent } from "@mui/material";
-import type { Category } from "../services/categoryService";
 
-export interface FilterState {
-  status: string;
-  category: string;
-  urgent: "all" | "true" | "false";
-  important: "all" | "true" | "false";
-}
+import type { Category } from "../services/categoryService";
+import type { FilterState } from "../types/task";
 
 interface TaskFiltersProps {
   filters: FilterState;
   categories: Category[];
   onFilterChange: (filters: FilterState) => void;
 }
+
+//FIXME: when creating a new category along with task, category filter doesnt refresh with new category
 
 const TaskFilters: React.FC<TaskFiltersProps> = ({
   filters,
@@ -38,9 +35,11 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
     });
   };
 
-  const activeFilterCount = Object.values(filters).filter(
-    (val) => val !== "all" && val !== ""
-  ).length;
+  const activeFilterCount =
+    (filters.status !== "all" ? 1 : 0) +
+    (filters.category !== "all" ? 1 : 0) +
+    (filters.urgent !== "all" ? 1 : 0) +
+    (filters.important !== "all" ? 1 : 0);
 
   return (
     <Paper sx={{ p: 2, mb: 3 }}>
@@ -91,10 +90,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
             value={filters.category}
             label="Category"
             onChange={(e: SelectChangeEvent) =>
-              handleChange(
-                "category",
-                e.target.value === "all" ? "all" : Number(e.target.value)
-              )
+              handleChange("category", e.target.value)
             }
           >
             <MenuItem value="all">All Categories</MenuItem>

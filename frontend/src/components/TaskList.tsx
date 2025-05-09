@@ -28,8 +28,7 @@ import { taskService } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
 import TaskStats from "./TaskStats";
 import TaskFilters from "./TaskFilters";
-import type { FilterState } from "./TaskFilters";
-import type { Task, TaskRequest } from "../types/task";
+import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "./TaskFormModal";
 
 const TaskList: React.FC = () => {
@@ -172,6 +171,7 @@ const TaskList: React.FC = () => {
       } else {
         alert("Failed to save task. Please try again.");
       }
+      throw err;
     }
   };
 
@@ -336,7 +336,7 @@ const TaskList: React.FC = () => {
                   justifyContent="space-between"
                   alignItems="start"
                 >
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography variant="h6">{task.title}</Typography>
                     <Typography color="text.secondary" variant="body2">
                       {task.description}
@@ -358,7 +358,7 @@ const TaskList: React.FC = () => {
                         })}
                       </Typography>
                     )}
-                    <Box mt={2} display="flex" gap={1}>
+                    <Box mt={2} display="flex" gap={1} flexWrap="wrap">
                       <Chip
                         label={task.status.replace("_", " ")}
                         color={getStatusColor(task.status)}
@@ -377,6 +377,10 @@ const TaskList: React.FC = () => {
                           }`}
                           size="small"
                           variant="outlined"
+                          sx={{
+                            borderColor: task.category.color,
+                            color: task.category.color,
+                          }}
                         />
                       )}
                     </Box>
