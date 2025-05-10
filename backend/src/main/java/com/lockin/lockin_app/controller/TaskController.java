@@ -3,6 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
+import com.lockin.lockin_app.dto.TaskStatisticsDTO;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.service.TaskService;
 import com.lockin.lockin_app.service.UserService;
@@ -170,5 +171,14 @@ public class TaskController {
                         userId, taskStatus, categoryId, isUrgent, isImportant);
 
         return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<TaskStatisticsDTO> getStatistics(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        TaskStatisticsDTO stats = taskService.getStatistics(userId);
+        return ResponseEntity.ok(stats);
     }
 }

@@ -3,6 +3,7 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
+import com.lockin.lockin_app.dto.TaskStatisticsDTO;
 import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
@@ -15,7 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -215,5 +218,60 @@ public class TaskService {
                 taskRepository.findByFilters(userId, status, categoryId, isUrgent, isImportant);
 
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
+
+    public TaskStatisticsDTO getStatistics(Long userId) {
+        TaskStatisticsDTO stats = new TaskStatisticsDTO();
+
+        List<Task> allTasks = taskRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+        // Basic counts
+        stats.setTotalTasks((long) allTasks.size());
+        stats.setTodoCount(allTasks.stream().filter(t -> t.getStatus() == TaskStatus.TODO).count());
+        stats.setInProgressCount(
+                allTasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count());
+        stats.setCompletedCount(
+                allTasks.stream().filter(t -> t.getStatus() == TaskStatus.COMPLETED).count());
+
+        // Urgent/Important counts
+        stats.setUrgentCount(allTasks.stream().filter(Task::getIsUrgent).count());
+        stats.setImportantCount(allTasks.stream().filter(Task::getIsImportant).count());
+        stats.setUrgentAndImportantCount(
+                allTasks.stream().filter(t -> t.getIsUrgent() && t.getIsImportant()).count());
+
+        // Completion rate
+        if (stats.getTotalTasks() > 0) {
+            double rate = (stats.getCompletedCount().doubleValue() / stats.getTotalTasks()) * 100;
+            stats.setCompletionRate(Math.round(rate * 10.0) / 10.0); // Round to 1 decimal
+        } else {
+            stats.setCompletionRate(0.0);
+        }
+
+        // Tasks by category
+        Map<String, Long> byCategory =
+                allTasks.stream()
+                        .filter(t -> t.getCategory() != null)
+                        .collect(
+                                Collectors.groupingBy(
+                                        t -> t.getCategory().getName(), Collectors.counting()));
+        stats.setTasksByCategory(byCategory);
+
+        // This week's stats
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
+
+        stats.setTasksCreatedThisWeek(
+                allTasks.stream().filter(t -> t.getCreatedAt().isAfter(oneWeekAgo)).count());
+
+        // TO DO: add created field entity
+        //        stats.setTasksCompletedThisWeek(
+        //                allTasks.stream()
+        //                        .filter(
+        //                                t ->
+        //                                        t.getCompletedAt() != null
+        //                                                && t.getCompletedAt().isAfter(oneWeekAgo))
+        //                        .count());
+        stats.setTasksCompletedThisWeek(0L);
+
+        return stats;
     }
 }
