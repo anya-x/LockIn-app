@@ -13,6 +13,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,13 +35,17 @@ public class TaskController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<TaskResponseDTO>> getAllTasks(
+    public ResponseEntity<Page<TaskResponseDTO>> getAllTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("GET /api/tasks: User: {}", userDetails.getUsername());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
-        List<TaskResponseDTO> tasks = taskService.getUserTasks(userId);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<TaskResponseDTO> tasks = taskService.getTasksPaginated(userId, pageable);
 
         return ResponseEntity.ok(tasks);
     }

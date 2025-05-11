@@ -13,6 +13,8 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -293,5 +295,10 @@ public class TaskService {
         stats.setTasksCompletedThisWeek(0L);
 
         return stats;
+    }
+
+    public Page<TaskResponseDTO> getTasksPaginated(Long userId, Pageable pageable) {
+        Page<Task> tasksPaginated = taskRepository.findByUserId(userId, pageable);
+        return tasksPaginated.map(TaskResponseDTO::fromEntity);
     }
 }
