@@ -46,6 +46,9 @@ public class Task {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -110,6 +110,15 @@ public class TaskService {
             throw new RuntimeException("Unauthorised");
         }
 
+        TaskStatus oldStatus = task.getStatus();
+        TaskStatus newStatus = request.getStatus();
+
+        if (oldStatus != TaskStatus.COMPLETED && newStatus == TaskStatus.COMPLETED) {
+            task.setCompletedAt(LocalDateTime.now());
+        } else if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {
+            task.setCompletedAt(null);
+        }
+
         updateTaskFromRequest(task, request);
 
         Task updated = taskRepository.save(task);
