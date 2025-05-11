@@ -163,14 +163,25 @@ public class TaskService {
 
         EisenhowerMatrixDTO matrix = new EisenhowerMatrixDTO();
 
-        matrix.setDoFirst(taskRepository.findByQuadrant(userId, true, true));
+        matrix.setDoFirst(
+                taskRepository.findByQuadrant(userId, true, true).stream()
+                        .map(TaskResponseDTO::fromEntity)
+                        .collect(Collectors.toList()));
 
-        matrix.setSchedule(taskRepository.findByQuadrant(userId, false, true));
+        matrix.setSchedule(
+                taskRepository.findByQuadrant(userId, false, true).stream()
+                        .map(TaskResponseDTO::fromEntity)
+                        .collect(Collectors.toList()));
 
-        matrix.setDelegate(taskRepository.findByQuadrant(userId, true, false));
+        matrix.setDelegate(
+                taskRepository.findByQuadrant(userId, true, false).stream()
+                        .map(TaskResponseDTO::fromEntity)
+                        .collect(Collectors.toList()));
 
-        matrix.setEliminate(taskRepository.findByQuadrant(userId, false, false));
-
+        matrix.setEliminate(
+                taskRepository.findByQuadrant(userId, false, false).stream()
+                        .map(TaskResponseDTO::fromEntity)
+                        .collect(Collectors.toList()));
         return matrix;
     }
 
