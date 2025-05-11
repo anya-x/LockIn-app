@@ -26,6 +26,7 @@ import { useAuth } from "../context/AuthContext";
 import TaskList from "../components/TaskList";
 import CategoryList from "../components/CategoryList";
 import EisenhowerMatrix from "../components/EisenhowerMatrix";
+import TaskStatistics from "../components/TaskStatistics";
 
 const drawerWidth = 240;
 
@@ -34,7 +35,7 @@ const Dashboard: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentView, setCurrentView] = useState<
-    "tasks" | "categories" | "matrix"
+    "tasks" | "categories" | "matrix" | "statistics"
   >("tasks");
   const { logout, user } = useAuth();
 
@@ -43,7 +44,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleMenuItemClick = useCallback(
-    (view: "tasks" | "categories" | "matrix") => {
+    (view: "tasks" | "categories" | "matrix" | "statistics") => {
       setCurrentView(view);
       if (isMobile) {
         setMobileOpen(false);
@@ -94,6 +95,17 @@ const Dashboard: React.FC = () => {
             <ListItemText primary="Matrix" />
           </ListItemButton>
         </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("statistics")}
+            selected={currentView === "statistics"}
+          >
+            <ListItemIcon>
+              <GridOnIcon />
+            </ListItemIcon>
+            <ListItemText primary="Statistics" />
+          </ListItemButton>
+        </ListItem>
       </List>
       <Divider />
       <List>
@@ -117,6 +129,8 @@ const Dashboard: React.FC = () => {
         return <CategoryList />;
       case "matrix":
         return <EisenhowerMatrix />;
+      case "statistics":
+        return <TaskStatistics />;
       default:
         return <TaskList />;
     }

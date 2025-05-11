@@ -7,6 +7,7 @@ import TaskList from "./components/TaskList";
 import PrivateRoute from "./components/PrivateRoute";
 import { authService } from "./services/authService";
 import EisenhowerMatrix from "./components/EisenhowerMatrix";
+import TaskStatistics from "./components/TaskStatistics";
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -58,6 +59,14 @@ function App() {
         element={
           <PrivateRoute>
             <EisenhowerMatrix />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/statistics"
+        element={
+          <PrivateRoute>
+            <TaskStatistics />
           </PrivateRoute>
         }
       />
