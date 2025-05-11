@@ -284,15 +284,13 @@ public class TaskService {
         stats.setTasksCreatedThisWeek(
                 allTasks.stream().filter(t -> t.getCreatedAt().isAfter(oneWeekAgo)).count());
 
-        // TO DO: add created field entity
-        //        stats.setTasksCompletedThisWeek(
-        //                allTasks.stream()
-        //                        .filter(
-        //                                t ->
-        //                                        t.getCompletedAt() != null
-        //                                                && t.getCompletedAt().isAfter(oneWeekAgo))
-        //                        .count());
-        stats.setTasksCompletedThisWeek(0L);
+        stats.setTasksCompletedThisWeek(
+                allTasks.stream()
+                        .filter(
+                                t ->
+                                        t.getCompletedAt() != null
+                                                && t.getCompletedAt().isAfter(oneWeekAgo))
+                        .count());
 
         return stats;
     }
