@@ -1,10 +1,38 @@
 import api from "./api";
 import type { Task, TaskRequest, FilterState } from "../types/task";
 
+interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}
+
 export const taskService = {
-  async getTasks(): Promise<Task[]> {
-    const response = await api.get<Task[]>("/tasks");
+  async getTasksPaginated(
+    page: number = 0,
+    size: number = 20
+  ): Promise<PaginatedResponse<Task>> {
+    const response = await api.get<PaginatedResponse<Task>>(
+      `/tasks?page=${page}&size=${size}`
+    );
     return response.data;
+  },
+
+  async getTasks(): Promise<Task[]> {
+    const response = await api.get<Task[] | PaginatedResponse<Task>>("/tasks");
+    if (
+      response.data &&
+      typeof response.data === "object" &&
+      "content" in response.data
+    ) {
+      return response.data.content;
+    }
+
+    return response.data as Task[];
   },
 
   async getTask(id: number): Promise<Task> {
@@ -56,3 +84,5 @@ export const taskService = {
     return response.data;
   },
 };
+
+export type { PaginatedResponse };

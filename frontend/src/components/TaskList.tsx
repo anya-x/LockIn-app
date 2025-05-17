@@ -16,6 +16,7 @@ import {
   TextField,
   MenuItem,
   InputAdornment,
+  Pagination,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -31,6 +32,14 @@ import TaskFilters from "./TaskFilters";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "./TaskFormModal";
 
+interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +51,11 @@ const TaskList: React.FC = () => {
   const [sortBy, setSortBy] = useState<"date" | "priority" | "status">("date");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalElements, setTotalElements] = useState(0);
 
   const [filters, setFilters] = useState<FilterState>({
     status: "all",
@@ -55,16 +69,28 @@ const TaskList: React.FC = () => {
   useEffect(() => {
     fetchTasks();
     fetchCategories();
-  }, []);
-
+  }, [currentPage, pageSize]);
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const data = await taskService.getTasks();
-      setTasks(data);
+      const response = await taskService.getTasksPaginated(
+        currentPage,
+        pageSize
+      );
+
+      if (response.content) {
+        setTasks(response.content);
+        setTotalPages(response.totalPages);
+        setTotalElements(response.totalElements);
+        setCurrentPage(response.number);
+      } else {
+        setTasks(response as any);
+        setTotalPages(1);
+      }
       setError("");
     } catch (err: any) {
       setError("Failed to load tasks");
+      console.error("Error fetching tasks:", err);
     } finally {
       setLoading(false);
     }
@@ -83,12 +109,8 @@ const TaskList: React.FC = () => {
     debounce(async (term: string) => {
       if (!term.trim()) {
         setIsSearching(false);
-        try {
-          const data = await taskService.getTasks();
-          setTasks(data);
-        } catch (err: any) {
-          setError("Failed to load tasks");
-        }
+        setCurrentPage(0);
+        fetchTasks();
         return;
       }
 
@@ -96,6 +118,7 @@ const TaskList: React.FC = () => {
       try {
         const results = await taskService.searchTasks(term);
         setTasks(results);
+        setTotalPages(1);
         setError("");
       } catch (err: any) {
         setError("Search failed");
@@ -116,6 +139,7 @@ const TaskList: React.FC = () => {
 
   const handleFilterChange = async (newFilters: FilterState) => {
     setFilters(newFilters);
+    setCurrentPage(0);
 
     const hasActiveFilters =
       newFilters.status !== "all" ||
@@ -132,6 +156,7 @@ const TaskList: React.FC = () => {
     try {
       const filtered = await taskService.filterTasks(newFilters);
       setTasks(filtered);
+      setTotalPages(1);
       setError("");
     } catch (err: any) {
       console.error("Error filtering tasks:", err);
@@ -139,6 +164,13 @@ const TaskList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (
+    event: React.ChangeEvent<unknown>,
+    page: number
+  ) => {
+    setCurrentPage(page - 1);
   };
 
   const handleOpenModal = (task?: Task) => {
@@ -158,7 +190,7 @@ const TaskList: React.FC = () => {
         setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
       } else {
         const created = await taskService.createTask(taskData);
-        setTasks([...tasks, created]);
+        fetchTasks();
       }
       handleCloseModal();
     } catch (err: any) {
@@ -185,7 +217,7 @@ const TaskList: React.FC = () => {
 
     try {
       await taskService.deleteTask(taskToDelete);
-      setTasks(tasks.filter((t) => t.id !== taskToDelete));
+      fetchTasks();
       setDeleteDialogOpen(false);
       setTaskToDelete(null);
     } catch (err) {
@@ -316,6 +348,36 @@ const TaskList: React.FC = () => {
         onFilterChange={handleFilterChange}
       />
 
+      {!searchTerm &&
+        filters.status === "all" &&
+        filters.category === "all" && (
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={2}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Showing {tasks.length} of {totalElements} tasks
+            </Typography>
+            <TextField
+              select
+              size="small"
+              label="Per page"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
+              }}
+              sx={{ minWidth: 100 }}
+            >
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={20}>20</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+            </TextField>
+          </Box>
+        )}
+
       {sortedTasks.length === 0 ? (
         <Typography>
           {searchTerm ||
@@ -399,6 +461,22 @@ const TaskList: React.FC = () => {
           ))}
         </Box>
       )}
+
+      {totalPages > 1 &&
+        !searchTerm &&
+        filters.status === "all" &&
+        filters.category === "all" && (
+          <Box display="flex" justifyContent="center" mt={3}>
+            <Pagination
+              count={totalPages}
+              page={currentPage + 1}
+              onChange={handlePageChange}
+              color="primary"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
 
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Delete Task?</DialogTitle>
