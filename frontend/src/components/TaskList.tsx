@@ -17,20 +17,26 @@ import {
   MenuItem,
   InputAdornment,
   Pagination,
+  Grid,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
+  CheckCircle,
+  RadioButtonUnchecked,
+  Schedule,
+  TrendingUp,
 } from "@mui/icons-material";
 import { debounce } from "lodash";
 import { taskService } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
-import TaskStats from "./TaskStats";
 import TaskFilters from "./TaskFilters";
+import StatCard from "./StatCard";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "./TaskFormModal";
+import api from "../services/api";
 
 interface PaginatedResponse<T> {
   content: T[];
@@ -38,6 +44,13 @@ interface PaginatedResponse<T> {
   totalPages: number;
   number: number;
   size: number;
+}
+
+interface TaskStatistics {
+  totalTasks: number;
+  todoCount: number;
+  inProgressCount: number;
+  completedCount: number;
 }
 
 const TaskList: React.FC = () => {
@@ -57,6 +70,14 @@ const TaskList: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
   const [totalElements, setTotalElements] = useState(0);
 
+  const [stats, setStats] = useState<TaskStatistics>({
+    totalTasks: 0,
+    todoCount: 0,
+    inProgressCount: 0,
+    completedCount: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+
   const [filters, setFilters] = useState<FilterState>({
     status: "all",
     category: "all",
@@ -65,6 +86,7 @@ const TaskList: React.FC = () => {
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
+
   const hasActiveFilters = () => {
     return (
       filters.status !== "all" ||
@@ -81,7 +103,25 @@ const TaskList: React.FC = () => {
       fetchTasks();
     }
     fetchCategories();
+    fetchStatistics();
   }, [currentPage, pageSize]);
+
+  const fetchStatistics = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await api.get("/tasks/statistics");
+      setStats({
+        totalTasks: response.data.totalTasks,
+        todoCount: response.data.todoCount,
+        inProgressCount: response.data.inProgressCount,
+        completedCount: response.data.completedCount,
+      });
+    } catch (err: any) {
+      console.error("Failed to fetch statistics:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -238,6 +278,7 @@ const TaskList: React.FC = () => {
           fetchTasks();
         }
       }
+      fetchStatistics();
       handleCloseModal();
     } catch (err: any) {
       if (err.response?.status === 403) {
@@ -268,6 +309,7 @@ const TaskList: React.FC = () => {
       } else {
         fetchTasks();
       }
+      fetchStatistics();
       setDeleteDialogOpen(false);
       setTaskToDelete(null);
     } catch (err) {
@@ -318,7 +360,34 @@ const TaskList: React.FC = () => {
     }
   });
 
-  if (loading) {
+  const statCards = [
+    {
+      label: "Total Tasks",
+      value: stats.totalTasks,
+      color: "#1976d2",
+      icon: <Schedule sx={{ fontSize: 40, color: "#1976d2" }} />,
+    },
+    {
+      label: "To Do",
+      value: stats.todoCount,
+      color: "#757575",
+      icon: <RadioButtonUnchecked sx={{ fontSize: 40, color: "#757575" }} />,
+    },
+    {
+      label: "In Progress",
+      value: stats.inProgressCount,
+      color: "#ff9800",
+      icon: <TrendingUp sx={{ fontSize: 40, color: "#ff9800" }} />,
+    },
+    {
+      label: "Completed",
+      value: stats.completedCount,
+      color: "#4caf50",
+      icon: <CheckCircle sx={{ fontSize: 40, color: "#4caf50" }} />,
+    },
+  ];
+
+  if (loading && tasks.length === 0) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
@@ -326,7 +395,7 @@ const TaskList: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && tasks.length === 0) {
     return (
       <Box p={4}>
         <Typography color="error">{error}</Typography>
@@ -390,7 +459,21 @@ const TaskList: React.FC = () => {
         </Box>
       </Box>
 
-      <TaskStats tasks={tasks} />
+      <Box mb={3}>
+        <Grid container spacing={2}>
+          {statCards.map((stat, index) => (
+            <Grid key={index} size={{ xs: 6, md: 3 }}>
+              <StatCard
+                label={stat.label}
+                value={stat.value}
+                color={stat.color}
+                icon={stat.icon}
+                loading={statsLoading}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       <TaskFilters
         filters={filters}

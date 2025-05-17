@@ -13,6 +13,7 @@ import {
   Schedule,
   TrendingUp,
 } from "@mui/icons-material";
+import StatCard from "./StatCard";
 import api from "../services/api";
 
 interface Statistics {
@@ -62,28 +63,28 @@ const TaskStatistics: React.FC = () => {
 
   const statCards = [
     {
-      title: "Total Tasks",
+      label: "Total Tasks",
       value: stats.totalTasks,
-      icon: <Schedule color="primary" />,
-      color: "#2196f3",
+      color: "#1976d2",
+      icon: <Schedule sx={{ fontSize: 40, color: "#1976d2" }} />,
     },
     {
-      title: "To Do",
+      label: "To Do",
       value: stats.todoCount,
-      icon: <RadioButtonUnchecked color="action" />,
       color: "#757575",
+      icon: <RadioButtonUnchecked sx={{ fontSize: 40, color: "#757575" }} />,
     },
     {
-      title: "In Progress",
+      label: "In Progress",
       value: stats.inProgressCount,
-      icon: <TrendingUp color="warning" />,
       color: "#ff9800",
+      icon: <TrendingUp sx={{ fontSize: 40, color: "#ff9800" }} />,
     },
     {
-      title: "Completed",
+      label: "Completed",
       value: stats.completedCount,
-      icon: <CheckCircle color="success" />,
       color: "#4caf50",
+      icon: <CheckCircle sx={{ fontSize: 40, color: "#4caf50" }} />,
     },
   ];
 
@@ -93,21 +94,17 @@ const TaskStatistics: React.FC = () => {
         Statistics Dashboard
       </Typography>
 
+      {/* ✅ Using StatCard component for consistency */}
       <Grid container spacing={3} mb={4}>
         {statCards.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Paper sx={{ p: 3, textAlign: "center" }}>
-              <Box mb={1}>{stat.icon}</Box>
-              <Typography
-                variant="h4"
-                sx={{ color: stat.color, fontWeight: "bold" }}
-              >
-                {stat.value}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {stat.title}
-              </Typography>
-            </Paper>
+          <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label={stat.label}
+              value={stat.value}
+              color={stat.color}
+              icon={stat.icon}
+              loading={false}
+            />
           </Grid>
         ))}
       </Grid>
