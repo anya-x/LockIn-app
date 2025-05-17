@@ -65,11 +65,24 @@ const TaskList: React.FC = () => {
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const hasActiveFilters = () => {
+    return (
+      filters.status !== "all" ||
+      filters.category !== "all" ||
+      filters.urgent !== "all" ||
+      filters.important !== "all"
+    );
+  };
 
   useEffect(() => {
-    fetchTasks();
+    if (hasActiveFilters()) {
+      fetchFilteredTasks(currentPage);
+    } else {
+      fetchTasks();
+    }
     fetchCategories();
   }, [currentPage, pageSize]);
+
   const fetchTasks = async () => {
     try {
       setLoading(true);
@@ -78,19 +91,36 @@ const TaskList: React.FC = () => {
         pageSize
       );
 
-      if (response.content) {
-        setTasks(response.content);
-        setTotalPages(response.totalPages);
-        setTotalElements(response.totalElements);
-        setCurrentPage(response.number);
-      } else {
-        setTasks(response as any);
-        setTotalPages(1);
-      }
+      setTasks(response.content);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
+      setCurrentPage(response.number);
       setError("");
     } catch (err: any) {
       setError("Failed to load tasks");
       console.error("Error fetching tasks:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFilteredTasks = async (page: number = 0) => {
+    try {
+      setLoading(true);
+      const response = await taskService.filterTasksPaginated(
+        filters,
+        page,
+        pageSize
+      );
+
+      setTasks(response.content);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
+      setCurrentPage(response.number);
+      setError("");
+    } catch (err: any) {
+      setError("Failed to filter tasks");
+      console.error("Error filtering tasks:", err);
     } finally {
       setLoading(false);
     }
@@ -110,7 +140,11 @@ const TaskList: React.FC = () => {
       if (!term.trim()) {
         setIsSearching(false);
         setCurrentPage(0);
-        fetchTasks();
+        if (hasActiveFilters()) {
+          fetchFilteredTasks(0);
+        } else {
+          fetchTasks();
+        }
         return;
       }
 
@@ -119,6 +153,7 @@ const TaskList: React.FC = () => {
         const results = await taskService.searchTasks(term);
         setTasks(results);
         setTotalPages(1);
+        setTotalElements(results.length);
         setError("");
       } catch (err: any) {
         setError("Search failed");
@@ -126,7 +161,7 @@ const TaskList: React.FC = () => {
         setIsSearching(false);
       }
     }, 300),
-    []
+    [filters]
   );
 
   const handleSearch = (term: string) => {
@@ -141,22 +176,28 @@ const TaskList: React.FC = () => {
     setFilters(newFilters);
     setCurrentPage(0);
 
-    const hasActiveFilters =
+    const hasFilters =
       newFilters.status !== "all" ||
       newFilters.category !== "all" ||
       newFilters.urgent !== "all" ||
       newFilters.important !== "all";
 
-    if (!hasActiveFilters) {
+    if (!hasFilters) {
       fetchTasks();
       return;
     }
 
     setLoading(true);
     try {
-      const filtered = await taskService.filterTasks(newFilters);
-      setTasks(filtered);
-      setTotalPages(1);
+      const response = await taskService.filterTasksPaginated(
+        newFilters,
+        0,
+        pageSize
+      );
+      setTasks(response.content);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
+      setCurrentPage(response.number);
       setError("");
     } catch (err: any) {
       console.error("Error filtering tasks:", err);
@@ -171,6 +212,7 @@ const TaskList: React.FC = () => {
     page: number
   ) => {
     setCurrentPage(page - 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleOpenModal = (task?: Task) => {
@@ -189,8 +231,12 @@ const TaskList: React.FC = () => {
         const updated = await taskService.updateTask(editingTask.id, taskData);
         setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
       } else {
-        const created = await taskService.createTask(taskData);
-        fetchTasks();
+        await taskService.createTask(taskData);
+        if (hasActiveFilters()) {
+          fetchFilteredTasks(currentPage);
+        } else {
+          fetchTasks();
+        }
       }
       handleCloseModal();
     } catch (err: any) {
@@ -217,7 +263,11 @@ const TaskList: React.FC = () => {
 
     try {
       await taskService.deleteTask(taskToDelete);
-      fetchTasks();
+      if (hasActiveFilters()) {
+        fetchFilteredTasks(currentPage);
+      } else {
+        fetchTasks();
+      }
       setDeleteDialogOpen(false);
       setTaskToDelete(null);
     } catch (err) {
@@ -348,43 +398,38 @@ const TaskList: React.FC = () => {
         onFilterChange={handleFilterChange}
       />
 
-      {!searchTerm &&
-        filters.status === "all" &&
-        filters.category === "all" && (
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            mb={2}
+      {!searchTerm && (
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Showing {tasks.length} of {totalElements} tasks
+            {hasActiveFilters() && " (filtered)"}
+          </Typography>
+          <TextField
+            select
+            size="small"
+            label="Per page"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(0);
+            }}
+            sx={{ minWidth: 100 }}
           >
-            <Typography variant="body2" color="text.secondary">
-              Showing {tasks.length} of {totalElements} tasks
-            </Typography>
-            <TextField
-              select
-              size="small"
-              label="Per page"
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              sx={{ minWidth: 100 }}
-            >
-              <MenuItem value={10}>10</MenuItem>
-              <MenuItem value={20}>20</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
-            </TextField>
-          </Box>
-        )}
+            <MenuItem value={10}>10</MenuItem>
+            <MenuItem value={20}>20</MenuItem>
+            <MenuItem value={50}>50</MenuItem>
+          </TextField>
+        </Box>
+      )}
 
       {sortedTasks.length === 0 ? (
         <Typography>
-          {searchTerm ||
-          filters.status !== "all" ||
-          filters.category !== "all" ||
-          filters.urgent !== "all" ||
-          filters.important !== "all"
+          {searchTerm || hasActiveFilters()
             ? "No tasks match your search or filters"
             : "No tasks yet. Create your first task!"}
         </Typography>
@@ -462,21 +507,18 @@ const TaskList: React.FC = () => {
         </Box>
       )}
 
-      {totalPages > 1 &&
-        !searchTerm &&
-        filters.status === "all" &&
-        filters.category === "all" && (
-          <Box display="flex" justifyContent="center" mt={3}>
-            <Pagination
-              count={totalPages}
-              page={currentPage + 1}
-              onChange={handlePageChange}
-              color="primary"
-              showFirstButton
-              showLastButton
-            />
-          </Box>
-        )}
+      {totalPages > 1 && !searchTerm && (
+        <Box display="flex" justifyContent="center" mt={3}>
+          <Pagination
+            count={totalPages}
+            page={currentPage + 1}
+            onChange={handlePageChange}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
 
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Delete Task?</DialogTitle>

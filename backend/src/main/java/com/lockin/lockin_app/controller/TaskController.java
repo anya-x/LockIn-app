@@ -154,11 +154,13 @@ public class TaskController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<List<TaskResponseDTO>> filterTasks(
+    public ResponseEntity<Page<TaskResponseDTO>> filterTasks(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Boolean isUrgent,
             @RequestParam(required = false) Boolean isImportant,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("GET /api/tasks/filter : User: {}", userDetails.getUsername());
@@ -174,9 +176,11 @@ public class TaskController {
             taskStatus = TaskStatus.valueOf(status);
         }
 
-        List<TaskResponseDTO> tasks =
-                taskService.getTasksWithFilters(
-                        userId, taskStatus, categoryId, isUrgent, isImportant);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<TaskResponseDTO> tasks =
+                taskService.getTasksWithFiltersPaginated(
+                        userId, taskStatus, categoryId, isUrgent, isImportant, pageable);
 
         return ResponseEntity.ok(tasks);
     }

@@ -83,6 +83,38 @@ export const taskService = {
     const response = await api.get("/tasks/filter", { params });
     return response.data;
   },
+
+  filterTasksPaginated: async (
+    filters: FilterState,
+    page: number = 0,
+    size: number = 20
+  ): Promise<PaginatedResponse<Task>> => {
+    const params: any = {
+      page,
+      size,
+    };
+
+    if (filters.status !== "all") {
+      params.status = filters.status;
+    }
+
+    if (filters.category !== "all") {
+      params.categoryId = Number(filters.category);
+    }
+
+    if (filters.urgent !== "all") {
+      params.isUrgent = filters.urgent === "true";
+    }
+
+    if (filters.important !== "all") {
+      params.isImportant = filters.important === "true";
+    }
+
+    const response = await api.get<PaginatedResponse<Task>>("/tasks/filter", {
+      params,
+    });
+    return response.data;
+  },
 };
 
 export type { PaginatedResponse };

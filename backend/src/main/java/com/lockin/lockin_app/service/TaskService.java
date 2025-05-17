@@ -299,4 +299,19 @@ public class TaskService {
         Page<Task> tasksPaginated = taskRepository.findByUserId(userId, pageable);
         return tasksPaginated.map(TaskResponseDTO::fromEntity);
     }
+
+    public Page<TaskResponseDTO> getTasksWithFiltersPaginated(
+            Long userId,
+            TaskStatus status,
+            Long categoryId,
+            Boolean isUrgent,
+            Boolean isImportant,
+            Pageable pageable) {
+
+        Page<Task> taskPage =
+                taskRepository.findByFiltersPaginated(
+                        userId, status, categoryId, isUrgent, isImportant, pageable);
+
+        return taskPage.map(TaskResponseDTO::fromEntity);
+    }
 }
