@@ -335,6 +335,14 @@ const TaskList: React.FC = () => {
     }
   };
 
+  const getPageRange = () => {
+    const start = currentPage * pageSize + 1;
+    const end = Math.min((currentPage + 1) * pageSize, totalElements);
+    return { start, end };
+  };
+
+  const { start, end } = getPageRange();
+
   const sortedTasks = [...tasks].sort((a, b) => {
     switch (sortBy) {
       case "date":
@@ -489,7 +497,7 @@ const TaskList: React.FC = () => {
           mb={2}
         >
           <Typography variant="body2" color="text.secondary">
-            Showing {tasks.length} of {totalElements} tasks
+            Showing {start}-{end} of {totalElements} tasks
             {hasActiveFilters() && " (filtered)"}
           </Typography>
           <TextField
