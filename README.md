@@ -282,6 +282,9 @@ A science based task management tool that's going to change how you view product
 - More chart types
 - Voice commands
 - Multi-language support
+- category chips on matrix cards and task list
+- edit, add, delete tasks on matrix cards
+- potential refactoring: task card in task list and matrix, empty and error state
 
 ## Research References
 
@@ -291,7 +294,8 @@ All productivity features are backed by research:
 2. **Cirillo, F. (2006).** "The Pomodoro Technique" - focus sessions
 3. **Newport, C. (2016).** "Deep Work" - 4 hour optimal focus time
 4. **Sweller, J. (1988).** "Cognitive Load Theory" - task limits
-5. **Maslach, C. (1981).** "Burnout Inventory" - overwork detection
-6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
+5. **Maslach, C. (1981).** "Burnout Inventory
+
+" - overwork detection 6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
 
 **Last Updated:** 9 May 2025
