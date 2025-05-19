@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.entity.;
+package com.lockin.lockin_app.entity;
 
 import jakarta.persistence.*;
 
@@ -35,7 +35,7 @@ public class FocusSession {
     @Column(nullable = false)
     private LocalDateTime startedAt;
 
-    @Column
+    @Column 
     private LocalDateTime completedAt;
 
     @Enumerated(EnumType.STRING)
@@ -45,7 +45,6 @@ public class FocusSession {
     @Column(nullable = false)
     private Boolean completed = false;
 
-    @Column
+    @Column 
     private String notes;
-
 }
