@@ -12,33 +12,50 @@ const PomodoroTimer: React.FC = () => {
 
   const handleStart = () => {
     setIsRunning(true);
-    // TODO: Add interval
   };
 
   const handlePause = () => {
     setIsRunning(false);
   };
 
+  const handleTimerComplete = () => {
+    setIsRunning(false);
+    // TODO: play notification sound
+    // TODO: update backend
+  };
+
   useEffect(() => {
-    console.log("Effect running - isRunning:", isRunning);
+    let interval: NodeJS.Timeout | null = null;
 
     if (isRunning) {
-      console.log("Starting interval");
-      const interval = setInterval(() => {
-        console.log("Time:", minutes, seconds);
-
-        if (seconds > 0) {
-          setSeconds(seconds - 1);
-        } else if (minutes > 0) {
-          setMinutes(minutes - 1);
-          setSeconds(59);
-        } else {
-          console.log("Timer complete!");
-          setIsRunning(false);
-        }
+      console.log("timer started");
+      interval = setInterval(() => {
+        setSeconds((prevSeconds) => {
+          if (prevSeconds > 0) {
+            return prevSeconds - 1;
+          } else {
+            setMinutes((prevMinutes) => {
+              if (prevMinutes > 0) {
+                return prevMinutes - 1;
+              } else {
+                handleTimerComplete();
+                console.log("timer complete");
+                return 0;
+              }
+            });
+            return 59;
+          }
+        });
       }, 1000);
     }
-  }, [isRunning, minutes, seconds]);
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+        console.log("intertval cleared");
+      }
+    };
+  }, [isRunning]);
 
   return (
     <Paper sx={{ p: 4, textAlign: "center", maxWidth: 400, mx: "auto", mt: 4 }}>
