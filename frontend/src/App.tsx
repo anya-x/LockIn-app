@@ -8,6 +8,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import { authService } from "./services/authService";
 import EisenhowerMatrix from "./components/EisenhowerMatrix";
 import TaskStatistics from "./components/TaskStatistics";
+import PomodoroTimer from "./components/PomodoroTimer";
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -67,6 +68,14 @@ function App() {
         element={
           <PrivateRoute>
             <TaskStatistics />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/timer"
+        element={
+          <PrivateRoute>
+            <PomodoroTimer />
           </PrivateRoute>
         }
       />

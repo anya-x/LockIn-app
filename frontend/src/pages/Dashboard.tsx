@@ -27,6 +27,7 @@ import TaskList from "../components/TaskList";
 import CategoryList from "../components/CategoryList";
 import EisenhowerMatrix from "../components/EisenhowerMatrix";
 import TaskStatistics from "../components/TaskStatistics";
+import PomodoroTimer from "../components/PomodoroTimer";
 
 const drawerWidth = 240;
 
@@ -35,7 +36,7 @@ const Dashboard: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentView, setCurrentView] = useState<
-    "tasks" | "categories" | "matrix" | "statistics"
+    "tasks" | "categories" | "matrix" | "statistics" | "timer"
   >("tasks");
   const { logout, user } = useAuth();
 
@@ -44,7 +45,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleMenuItemClick = useCallback(
-    (view: "tasks" | "categories" | "matrix" | "statistics") => {
+    (view: "tasks" | "categories" | "matrix" | "statistics" | "timer") => {
       setCurrentView(view);
       if (isMobile) {
         setMobileOpen(false);
@@ -106,6 +107,17 @@ const Dashboard: React.FC = () => {
             <ListItemText primary="Statistics" />
           </ListItemButton>
         </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("timer")}
+            selected={currentView === "timer"}
+          >
+            <ListItemIcon>
+              <GridOnIcon />
+            </ListItemIcon>
+            <ListItemText primary="Timer" />
+          </ListItemButton>
+        </ListItem>
       </List>
       <Divider />
       <List>
@@ -131,6 +143,8 @@ const Dashboard: React.FC = () => {
         return <EisenhowerMatrix />;
       case "statistics":
         return <TaskStatistics />;
+      case "timer":
+        return <PomodoroTimer />;
       default:
         return <TaskList />;
     }
