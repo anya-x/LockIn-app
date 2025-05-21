@@ -29,8 +29,12 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             "SELECT s FROM FocusSession s WHERE s.user.id = :userId "
                     + "AND s.sessionType = :sessionType "
                     + "AND s.completed = true "
-                    + "AND DATE(s.startedAt) = CURRENT_DATE "
+                    + "AND s.startedAt >= :startOfDay "
+                    + "AND s.startedAt < :endOfDay "
                     + "ORDER BY s.startedAt DESC")
     List<FocusSession> findTodaysCompletedSessions(
-            @Param("userId") Long userId, @Param("sessionType") SessionType sessionType);
+            @Param("userId") Long userId,
+            @Param("sessionType") SessionType sessionType,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay);
 }

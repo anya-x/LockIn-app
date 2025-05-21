@@ -94,19 +94,29 @@ public class FocusSessionService {
         return FocusSessionResponseDTO.fromEntity(updated);
     }
 
+    //TODO : logging
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getTodaysSessions(Long userId) {
+        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
         List<FocusSession> sessions =
-                sessionRepository.findTodaysCompletedSessions(userId, SessionType.WORK);
+                sessionRepository.findTodaysCompletedSessions(
+                        userId, SessionType.WORK, startOfDay, endOfDay);
 
         return sessions.stream()
                 .map(FocusSessionResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Integer getTotalFocusMinutesToday(Long userId) {
+        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
         List<FocusSession> todaySessions =
-                sessionRepository.findTodaysCompletedSessions(userId, SessionType.WORK);
+                sessionRepository.findTodaysCompletedSessions(
+                        userId, SessionType.WORK, startOfDay, endOfDay);
 
         return todaySessions.stream().mapToInt(FocusSession::getActualMinutes).sum();
     }
