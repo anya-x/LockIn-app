@@ -272,7 +272,7 @@ A science based task management tool that's going to change how you view product
 **I want** the app accessible online  
 **So that** I can use it from anywhere
 
-**Backlog/**
+**To do (low priority)**
 
 - Dark mode
 - Mobile app (React Native)
@@ -285,6 +285,9 @@ A science based task management tool that's going to change how you view product
 - category chips on matrix cards and task list
 - edit, add, delete tasks on matrix cards
 - potential refactoring: task card in task list and matrix, empty and error state
+- loader skeleton
+- pomodoro: timer stops when changing tabs
+- sorting asc/desc
 
 ## Research References
 
