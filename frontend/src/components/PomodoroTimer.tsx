@@ -1,14 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, Typography, Paper } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
+  Stop as StopIcon,
 } from "@mui/icons-material";
 
 const PomodoroTimer: React.FC = () => {
-  const [minutes, setMinutes] = useState(25);
+  const WORK_TIME = 25;
+  const [minutes, setMinutes] = useState(WORK_TIME);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+
+  const totalSeconds = WORK_TIME * 60;
+  const elapsedSeconds = (WORK_TIME - minutes) * 60 + (60 - seconds);
+  const progress = (elapsedSeconds / totalSeconds) * 100;
+
+  const formatTime = (): string => {
+    const mins = String(minutes).padStart(2, "0");
+    const secs = String(seconds).padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
 
   const handleStart = () => {
     setIsRunning(true);
@@ -18,10 +36,17 @@ const PomodoroTimer: React.FC = () => {
     setIsRunning(false);
   };
 
+  const handleStop = () => {
+    setIsRunning(false);
+    setMinutes(WORK_TIME);
+    setSeconds(0);
+  };
+
   const handleTimerComplete = () => {
     setIsRunning(false);
     // TODO: play notification sound
     // TODO: update backend
+    console.log("Timer complete!");
   };
 
   useEffect(() => {
@@ -52,7 +77,7 @@ const PomodoroTimer: React.FC = () => {
     return () => {
       if (interval) {
         clearInterval(interval);
-        console.log("intertval cleared");
+        console.log("interval cleared");
       }
     };
   }, [isRunning]);
@@ -63,31 +88,66 @@ const PomodoroTimer: React.FC = () => {
         Pomodoro Timer
       </Typography>
 
-      <Typography variant="h2" component="div" my={4}>
-        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-      </Typography>
+      <Box position="relative" display="inline-flex" my={4}>
+        <CircularProgress
+          variant="determinate"
+          value={progress}
+          size={200}
+          thickness={3}
+          sx={{
+            color: isRunning ? "primary.main" : "grey.400",
+          }}
+        />
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          bottom={0}
+          right={0}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Typography variant="h2" component="div">
+            {formatTime()}
+          </Typography>
+        </Box>
+      </Box>
 
-      {!isRunning ? (
+      <Box display="flex" gap={2} justifyContent="center">
+        {!isRunning ? (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PlayArrowIcon />}
+            onClick={handleStart}
+            disabled={minutes === 0 && seconds === 0}
+            size="large"
+          >
+            Start
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            color="warning"
+            startIcon={<PauseIcon />}
+            onClick={handlePause}
+            size="large"
+          >
+            Pause
+          </Button>
+        )}
         <Button
-          variant="contained"
-          color="primary"
-          onClick={handleStart}
-          startIcon={<PlayArrowIcon />}
+          variant="outlined"
+          color="error"
+          onClick={handleStop}
+          startIcon={<StopIcon />}
           size="large"
+          disabled={!isRunning && minutes === WORK_TIME && seconds === 0}
         >
-          Start
+          Stop
         </Button>
-      ) : (
-        <Button
-          variant="contained"
-          color="warning"
-          onClick={handlePause}
-          startIcon={<PauseIcon />}
-          size="large"
-        >
-          Pause
-        </Button>
-      )}
+      </Box>
     </Paper>
   );
 };
