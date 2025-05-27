@@ -29,6 +29,7 @@ public class FocusSessionService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
 
+    // TODO: user session validation
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
         log.debug("Fetching sessions for user: {}", userId);
@@ -94,7 +95,7 @@ public class FocusSessionService {
         return FocusSessionResponseDTO.fromEntity(updated);
     }
 
-    //TODO : logging
+    // TODO : logging
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getTodaysSessions(Long userId) {
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
