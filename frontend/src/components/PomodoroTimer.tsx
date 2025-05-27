@@ -18,6 +18,8 @@ import {
   type StartSessionRequest,
 } from "../services/sessionService";
 
+const [permission, setPermission] = useState<NotificationPermission>("default");
+
 interface TimerState {
   minutes: number;
   seconds: number;
@@ -30,13 +32,13 @@ const PomodoroTimer: React.FC = () => {
   const getMinutesForType = (type: string): number => {
     switch (type) {
       case "WORK":
-        return 25;
+        return 1;
       case "SHORT_BREAK":
-        return 5;
+        return 1;
       case "LONG_BREAK":
-        return 15;
+        return 1;
       default:
-        return 25;
+        return 1;
     }
   };
   const [timer, setTimer] = useState<TimerState>({
@@ -160,6 +162,10 @@ const PomodoroTimer: React.FC = () => {
           }
         });
       }, 1000);
+
+      if ("Notification" in window) {
+        setPermission(Notification.permission);
+      }
     }
 
     return () => {
@@ -170,6 +176,21 @@ const PomodoroTimer: React.FC = () => {
     };
   }, [timer.isRunning]);
 
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window && Notification.permission === "default") {
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+    }
+  };
+
+  const showNotification = (title: string, body: string) => {
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        body,
+        icon: "/lockin-icon.png",
+      });
+    }
+  };
   return (
     <Paper sx={{ p: 4, textAlign: "center", maxWidth: 400, mx: "auto", mt: 4 }}>
       <Typography variant="h4" gutterBottom>
