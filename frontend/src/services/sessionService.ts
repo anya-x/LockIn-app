@@ -1,50 +1,72 @@
 import api from "./api";
 
-export interface FocusSession {
+export interface StartSessionRequest {
+  plannedMinutes: number;
+  sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
+  taskId?: number | null;
+}
+
+export interface FocusSessionResponse {
   id: number;
   plannedMinutes: number;
-  actualMinutes: number;
+  actualMinutes: number | null;
   startedAt: string;
   completedAt: string | null;
   sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
   completed: boolean;
   notes: string | null;
+  userId: number;
+  userFirstName: string;
+  userLastName: string;
+  taskId: number | null;
+  taskTitle: string | null;
 }
 
-export interface StartSessionRequest {
-  minutes: number;
-  sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
-  taskId?: number;
-}
-
-export interface SessionStats {
+export interface TodayStatsResponse {
   totalMinutes: number;
   sessionsCompleted: number;
 }
 
 export const sessionService = {
-  startSession: async (request: StartSessionRequest): Promise<FocusSession> => {
-    const response = await api.post("/sessions/start", request);
+  startSession: async (
+    request: StartSessionRequest
+  ): Promise<FocusSessionResponse> => {
+    const response = await api.post<FocusSessionResponse>(
+      "/sessions/start",
+      request
+    );
     return response.data;
   },
 
   completeSession: async (
     sessionId: number,
     actualMinutes: number
-  ): Promise<FocusSession> => {
-    const response = await api.post(`/sessions/${sessionId}/complete`, {
-      actualMinutes,
-    });
+  ): Promise<FocusSessionResponse> => {
+    const response = await api.post<FocusSessionResponse>(
+      `/sessions/${sessionId}/complete`,
+      { actualMinutes }
+    );
     return response.data;
   },
 
-  getTodayStats: async (): Promise<SessionStats> => {
-    const response = await api.get("/sessions/today");
+  getUserSessions: async (): Promise<FocusSessionResponse[]> => {
+    const response = await api.get<FocusSessionResponse[]>("/sessions");
     return response.data;
   },
 
-  getAllSessions: async (): Promise<FocusSession[]> => {
-    const response = await api.get("/sessions");
+  getTodayStats: async (): Promise<TodayStatsResponse> => {
+    const response = await api.get<TodayStatsResponse>("/sessions/today");
+    return response.data;
+  },
+
+  updateSessionNotes: async (
+    sessionId: number,
+    notes: string
+  ): Promise<FocusSessionResponse> => {
+    const response = await api.put<FocusSessionResponse>(
+      `/sessions/${sessionId}/notes`,
+      { notes }
+    );
     return response.data;
   },
 };
