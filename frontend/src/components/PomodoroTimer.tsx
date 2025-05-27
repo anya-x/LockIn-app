@@ -5,6 +5,8 @@ import {
   Typography,
   Paper,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
@@ -25,6 +27,18 @@ interface TimerState {
 }
 
 const PomodoroTimer: React.FC = () => {
+  const getMinutesForType = (type: string): number => {
+    switch (type) {
+      case "WORK":
+        return 25;
+      case "SHORT_BREAK":
+        return 5;
+      case "LONG_BREAK":
+        return 15;
+      default:
+        return 25;
+    }
+  };
   const [timer, setTimer] = useState<TimerState>({
     minutes: 25,
     seconds: 0,
@@ -34,8 +48,10 @@ const PomodoroTimer: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const totalSeconds = 25 * 60;
-  const elapsedSeconds = (25 - timer.minutes) * 60 + (60 - timer.seconds);
+  const totalSeconds = getMinutesForType(timer.sessionType) * 60;
+  const elapsedSeconds =
+    (getMinutesForType(timer.sessionType) - timer.minutes) * 60 +
+    (60 - timer.seconds);
   const progress = (elapsedSeconds / totalSeconds) * 100;
 
   const formatTime = (): string => {
@@ -44,12 +60,28 @@ const PomodoroTimer: React.FC = () => {
     return `${mins}:${secs}`;
   };
 
+  const handleSessionTypeChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newType: string | null
+  ) => {
+    if (newType && !timer.isRunning) {
+      const minutes = getMinutesForType(newType);
+      setTimer((prev) => ({
+        ...prev,
+        sessionType: newType as "WORK" | "SHORT_BREAK" | "LONG_BREAK",
+        minutes,
+        seconds: 0,
+      }));
+    }
+  };
+
   const handleTimerComplete = async () => {
     console.log("timer completed");
 
     if (timer.sessionId) {
       try {
-        await sessionService.completeSession(timer.sessionId, 25);
+        const initialMinutes = getMinutesForType(timer.sessionType);
+        await sessionService.completeSession(timer.sessionId, initialMinutes);
         console.log("session completed successfully");
       } catch (error: any) {
         console.error("failed to complete session:", error);
@@ -61,7 +93,7 @@ const PomodoroTimer: React.FC = () => {
     setLoading(true);
     try {
       const request: StartSessionRequest = {
-        plannedMinutes: 25,
+        plannedMinutes: getMinutesForType(timer.sessionType),
         sessionType: timer.sessionType,
         taskId: null,
       };
@@ -89,7 +121,7 @@ const PomodoroTimer: React.FC = () => {
   const handleStop = async () => {
     if (timer.sessionId) {
       try {
-        const initialMinutes = 25;
+        const initialMinutes = getMinutesForType(timer.sessionType);
         const elapsedMinutes =
           initialMinutes - timer.minutes - timer.seconds / 60;
         const actualMinutes = Math.floor(elapsedMinutes);
@@ -101,11 +133,12 @@ const PomodoroTimer: React.FC = () => {
       }
     }
 
+    const resetMinutes = getMinutesForType(timer.sessionType);
     setTimer({
-      minutes: 25,
+      minutes: resetMinutes,
       seconds: 0,
       isRunning: false,
-      sessionType: "WORK",
+      sessionType: timer.sessionType,
       sessionId: null,
     });
   };
@@ -142,7 +175,19 @@ const PomodoroTimer: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Pomodoro Timer
       </Typography>
-
+      <Box display="flex" justifyContent="center" mb={3}>
+        <ToggleButtonGroup
+          value={timer.sessionType}
+          exclusive
+          onChange={handleSessionTypeChange}
+          disabled={timer.isRunning}
+          color="primary"
+        >
+          <ToggleButton value="WORK">Work</ToggleButton>
+          <ToggleButton value="SHORT_BREAK">Short Break</ToggleButton>
+          <ToggleButton value="LONG_BREAK">Long Break</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
       <Box position="relative" display="inline-flex" my={4}>
         <CircularProgress
           variant="determinate"
@@ -150,7 +195,14 @@ const PomodoroTimer: React.FC = () => {
           size={200}
           thickness={3}
           sx={{
-            color: timer.isRunning ? "primary.main" : "grey.400",
+            color:
+              timer.sessionType === "WORK"
+                ? timer.isRunning
+                  ? "primary.main"
+                  : "grey.400"
+                : timer.isRunning
+                ? "success.main"
+                : "grey.400",
           }}
         />
         <Box
@@ -199,7 +251,9 @@ const PomodoroTimer: React.FC = () => {
           startIcon={<StopIcon />}
           size="large"
           disabled={
-            !timer.isRunning && timer.minutes === 25 && timer.seconds === 0
+            !timer.isRunning &&
+            timer.minutes === getMinutesForType(timer.sessionType) &&
+            timer.seconds === 0
           }
         >
           Stop
