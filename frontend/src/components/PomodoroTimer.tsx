@@ -11,64 +11,119 @@ import {
   Pause as PauseIcon,
   Stop as StopIcon,
 } from "@mui/icons-material";
+import {
+  sessionService,
+  type StartSessionRequest,
+} from "../services/sessionService";
+
+interface TimerState {
+  minutes: number;
+  seconds: number;
+  isRunning: boolean;
+  sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
+  sessionId: number | null;
+}
 
 const PomodoroTimer: React.FC = () => {
-  const WORK_TIME = 25;
-  const [minutes, setMinutes] = useState(WORK_TIME);
-  const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
+  const [timer, setTimer] = useState<TimerState>({
+    minutes: 25,
+    seconds: 0,
+    isRunning: false,
+    sessionType: "WORK",
+    sessionId: null,
+  });
+  const [loading, setLoading] = useState(false);
 
-  const totalSeconds = WORK_TIME * 60;
-  const elapsedSeconds = (WORK_TIME - minutes) * 60 + (60 - seconds);
+  const totalSeconds = 25 * 60;
+  const elapsedSeconds = (25 - timer.minutes) * 60 + (60 - timer.seconds);
   const progress = (elapsedSeconds / totalSeconds) * 100;
 
   const formatTime = (): string => {
-    const mins = String(minutes).padStart(2, "0");
-    const secs = String(seconds).padStart(2, "0");
+    const mins = String(timer.minutes).padStart(2, "0");
+    const secs = String(timer.seconds).padStart(2, "0");
     return `${mins}:${secs}`;
   };
 
-  const handleStart = () => {
-    setIsRunning(true);
+  const handleTimerComplete = async () => {
+    console.log("timer completed");
+
+    if (timer.sessionId) {
+      try {
+        await sessionService.completeSession(timer.sessionId, 25);
+        console.log("session completed successfully");
+      } catch (error: any) {
+        console.error("failed to complete session:", error);
+      }
+    }
+  };
+
+  const handleStart = async () => {
+    setLoading(true);
+    try {
+      const request: StartSessionRequest = {
+        plannedMinutes: 25,
+        sessionType: timer.sessionType,
+        taskId: null,
+      };
+
+      const session = await sessionService.startSession(request);
+
+      setTimer((prev) => ({
+        ...prev,
+        isRunning: true,
+        sessionId: session.id,
+      }));
+
+      console.log("session started:", session.id);
+    } catch (error: any) {
+      console.error("failed to start session:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePause = () => {
-    setIsRunning(false);
+    setTimer((prev) => ({ ...prev, isRunning: false }));
   };
 
-  const handleStop = () => {
-    setIsRunning(false);
-    setMinutes(WORK_TIME);
-    setSeconds(0);
-  };
+  const handleStop = async () => {
+    if (timer.sessionId) {
+      try {
+        const initialMinutes = 25;
+        const elapsedMinutes =
+          initialMinutes - timer.minutes - timer.seconds / 60;
+        const actualMinutes = Math.floor(elapsedMinutes);
 
-  const handleTimerComplete = () => {
-    setIsRunning(false);
-    // TODO: play notification sound
-    // TODO: update backend
-    console.log("Timer complete!");
+        await sessionService.completeSession(timer.sessionId, actualMinutes);
+        console.log("session saved");
+      } catch (error: any) {
+        console.error("failed to save session:", error);
+      }
+    }
+
+    setTimer({
+      minutes: 25,
+      seconds: 0,
+      isRunning: false,
+      sessionType: "WORK",
+      sessionId: null,
+    });
   };
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
-    if (isRunning) {
+    if (timer.isRunning) {
       console.log("timer started");
       interval = setInterval(() => {
-        setSeconds((prevSeconds) => {
-          if (prevSeconds > 0) {
-            return prevSeconds - 1;
+        setTimer((prev) => {
+          if (prev.seconds > 0) {
+            return { ...prev, seconds: prev.seconds - 1 };
+          } else if (prev.minutes > 0) {
+            return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
           } else {
-            setMinutes((prevMinutes) => {
-              if (prevMinutes > 0) {
-                return prevMinutes - 1;
-              } else {
-                handleTimerComplete();
-                console.log("timer complete");
-                return 0;
-              }
-            });
-            return 59;
+            handleTimerComplete();
+            return { ...prev, isRunning: false };
           }
         });
       }, 1000);
@@ -80,7 +135,7 @@ const PomodoroTimer: React.FC = () => {
         console.log("interval cleared");
       }
     };
-  }, [isRunning]);
+  }, [timer.isRunning]);
 
   return (
     <Paper sx={{ p: 4, textAlign: "center", maxWidth: 400, mx: "auto", mt: 4 }}>
@@ -95,7 +150,7 @@ const PomodoroTimer: React.FC = () => {
           size={200}
           thickness={3}
           sx={{
-            color: isRunning ? "primary.main" : "grey.400",
+            color: timer.isRunning ? "primary.main" : "grey.400",
           }}
         />
         <Box
@@ -115,13 +170,13 @@ const PomodoroTimer: React.FC = () => {
       </Box>
 
       <Box display="flex" gap={2} justifyContent="center">
-        {!isRunning ? (
+        {!timer.isRunning ? (
           <Button
             variant="contained"
             color="primary"
             startIcon={<PlayArrowIcon />}
             onClick={handleStart}
-            disabled={minutes === 0 && seconds === 0}
+            disabled={loading || (timer.minutes === 0 && timer.seconds === 0)}
             size="large"
           >
             Start
@@ -143,7 +198,9 @@ const PomodoroTimer: React.FC = () => {
           onClick={handleStop}
           startIcon={<StopIcon />}
           size="large"
-          disabled={!isRunning && minutes === WORK_TIME && seconds === 0}
+          disabled={
+            !timer.isRunning && timer.minutes === 25 && timer.seconds === 0
+          }
         >
           Stop
         </Button>
