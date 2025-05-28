@@ -18,8 +18,6 @@ import {
   type StartSessionRequest,
 } from "../services/sessionService";
 
-const [permission, setPermission] = useState<NotificationPermission>("default");
-
 interface TimerState {
   minutes: number;
   seconds: number;
@@ -41,6 +39,7 @@ const PomodoroTimer: React.FC = () => {
         return 1;
     }
   };
+
   const [timer, setTimer] = useState<TimerState>({
     minutes: 25,
     seconds: 0,
@@ -49,6 +48,14 @@ const PomodoroTimer: React.FC = () => {
     sessionId: null,
   });
   const [loading, setLoading] = useState(false);
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setPermission(Notification.permission);
+    }
+  }, []);
 
   const totalSeconds = getMinutesForType(timer.sessionType) * 60;
   const elapsedSeconds =
@@ -77,8 +84,35 @@ const PomodoroTimer: React.FC = () => {
     }
   };
 
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window && Notification.permission === "default") {
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+    }
+  };
+
+  const showNotification = (title: string, body: string) => {
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        body,
+        icon: "/lockin-icon.png",
+      });
+    }
+  };
+
   const handleTimerComplete = async () => {
     console.log("timer completed");
+
+    const title =
+      timer.sessionType === "WORK"
+        ? "Work session complete!"
+        : "Break time over!";
+    const body =
+      timer.sessionType === "WORK"
+        ? "Great focus! Time for a break."
+        : "Back to work!";
+
+    showNotification(title, body);
 
     if (timer.sessionId) {
       try {
@@ -92,6 +126,8 @@ const PomodoroTimer: React.FC = () => {
   };
 
   const handleStart = async () => {
+    await requestNotificationPermission();
+
     setLoading(true);
     try {
       const request: StartSessionRequest = {
@@ -162,10 +198,6 @@ const PomodoroTimer: React.FC = () => {
           }
         });
       }, 1000);
-
-      if ("Notification" in window) {
-        setPermission(Notification.permission);
-      }
     }
 
     return () => {
@@ -176,111 +208,125 @@ const PomodoroTimer: React.FC = () => {
     };
   }, [timer.isRunning]);
 
-  const requestNotificationPermission = async () => {
-    if ("Notification" in window && Notification.permission === "default") {
-      const perm = await Notification.requestPermission();
-      setPermission(perm);
-    }
-  };
-
-  const showNotification = (title: string, body: string) => {
-    if (Notification.permission === "granted") {
-      new Notification(title, {
-        body,
-        icon: "/lockin-icon.png",
-      });
-    }
-  };
   return (
-    <Paper sx={{ p: 4, textAlign: "center", maxWidth: 400, mx: "auto", mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Pomodoro Timer
-      </Typography>
-      <Box display="flex" justifyContent="center" mb={3}>
-        <ToggleButtonGroup
-          value={timer.sessionType}
-          exclusive
-          onChange={handleSessionTypeChange}
-          disabled={timer.isRunning}
-          color="primary"
-        >
-          <ToggleButton value="WORK">Work</ToggleButton>
-          <ToggleButton value="SHORT_BREAK">Short Break</ToggleButton>
-          <ToggleButton value="LONG_BREAK">Long Break</ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-      <Box position="relative" display="inline-flex" my={4}>
-        <CircularProgress
-          variant="determinate"
-          value={progress}
-          size={200}
-          thickness={3}
+    <Box>
+      {permission === "default" && (
+        <Paper
           sx={{
-            color:
-              timer.sessionType === "WORK"
-                ? timer.isRunning
-                  ? "primary.main"
-                  : "grey.400"
-                : timer.isRunning
-                ? "success.main"
-                : "grey.400",
+            p: 2,
+            mb: 2,
+            bgcolor: "info.light",
+            maxWidth: 400,
+            mx: "auto",
           }}
-        />
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          bottom={0}
-          right={0}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
         >
-          <Typography variant="h2" component="div">
-            {formatTime()}
+          <Typography variant="body2">
+            Enable notifications to get alerted when your timer completes!
           </Typography>
-        </Box>
-      </Box>
+          <Button
+            size="small"
+            onClick={requestNotificationPermission}
+            sx={{ mt: 1 }}
+          >
+            Enable Notifications
+          </Button>
+        </Paper>
+      )}
 
-      <Box display="flex" gap={2} justifyContent="center">
-        {!timer.isRunning ? (
-          <Button
-            variant="contained"
+      <Paper
+        sx={{ p: 4, textAlign: "center", maxWidth: 400, mx: "auto", mt: 4 }}
+      >
+        <Typography variant="h4" gutterBottom>
+          Pomodoro Timer
+        </Typography>
+
+        <Box display="flex" justifyContent="center" mb={3}>
+          <ToggleButtonGroup
+            value={timer.sessionType}
+            exclusive
+            onChange={handleSessionTypeChange}
+            disabled={timer.isRunning}
             color="primary"
-            startIcon={<PlayArrowIcon />}
-            onClick={handleStart}
-            disabled={loading || (timer.minutes === 0 && timer.seconds === 0)}
-            size="large"
           >
-            Start
-          </Button>
-        ) : (
+            <ToggleButton value="WORK">Work</ToggleButton>
+            <ToggleButton value="SHORT_BREAK">Short Break</ToggleButton>
+            <ToggleButton value="LONG_BREAK">Long Break</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        <Box position="relative" display="inline-flex" my={4}>
+          <CircularProgress
+            variant="determinate"
+            value={progress}
+            size={200}
+            thickness={3}
+            sx={{
+              color:
+                timer.sessionType === "WORK"
+                  ? timer.isRunning
+                    ? "primary.main"
+                    : "grey.400"
+                  : timer.isRunning
+                  ? "success.main"
+                  : "grey.400",
+            }}
+          />
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            bottom={0}
+            right={0}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Typography variant="h2" component="div">
+              {formatTime()}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box display="flex" gap={2} justifyContent="center">
+          {!timer.isRunning ? (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PlayArrowIcon />}
+              onClick={handleStart}
+              disabled={loading || (timer.minutes === 0 && timer.seconds === 0)}
+              size="large"
+            >
+              Start
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="warning"
+              startIcon={<PauseIcon />}
+              onClick={handlePause}
+              size="large"
+            >
+              Pause
+            </Button>
+          )}
           <Button
-            variant="contained"
-            color="warning"
-            startIcon={<PauseIcon />}
-            onClick={handlePause}
+            variant="outlined"
+            color="error"
+            onClick={handleStop}
+            startIcon={<StopIcon />}
             size="large"
+            disabled={
+              !timer.isRunning &&
+              timer.minutes === getMinutesForType(timer.sessionType) &&
+              timer.seconds === 0
+            }
           >
-            Pause
+            Stop
           </Button>
-        )}
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={handleStop}
-          startIcon={<StopIcon />}
-          size="large"
-          disabled={
-            !timer.isRunning &&
-            timer.minutes === getMinutesForType(timer.sessionType) &&
-            timer.seconds === 0
-          }
-        >
-          Stop
-        </Button>
-      </Box>
-    </Paper>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
