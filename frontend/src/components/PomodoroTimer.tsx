@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  Paper,
-  CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Button, Typography } from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
@@ -51,6 +43,27 @@ const PomodoroTimer: React.FC = () => {
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
 
+  const [dotCount, setDotCount] = useState(20);
+  const timerContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const calculateDots = () => {
+      if (timerContainerRef.current) {
+        const containerWidth = timerContainerRef.current.offsetWidth;
+        const dotWidth = 10;
+        const gapWidth = 6;
+        const dotsPerRow = Math.floor(containerWidth / (dotWidth + gapWidth));
+
+        const calculatedDots = Math.max(10, Math.min(40, dotsPerRow));
+        setDotCount(calculatedDots);
+      }
+    };
+
+    calculateDots();
+    window.addEventListener("resize", calculateDots);
+    return () => window.removeEventListener("resize", calculateDots);
+  }, []);
+
   useEffect(() => {
     if ("Notification" in window) {
       setPermission(Notification.permission);
@@ -67,6 +80,21 @@ const PomodoroTimer: React.FC = () => {
     const mins = String(timer.minutes).padStart(2, "0");
     const secs = String(timer.seconds).padStart(2, "0");
     return `${mins}:${secs}`;
+  };
+
+  const getTimerColor = () => {
+    if (!timer.isRunning) return "text.primary";
+
+    switch (timer.sessionType) {
+      case "WORK":
+        return "primary.main";
+      case "SHORT_BREAK":
+        return "success.main";
+      case "LONG_BREAK":
+        return "#7b1fa2";
+      default:
+        return "text.primary";
+    }
   };
 
   const handleSessionTypeChange = (
@@ -211,121 +239,222 @@ const PomodoroTimer: React.FC = () => {
   return (
     <Box>
       {permission === "default" && (
-        <Paper
+        <Box
           sx={{
             p: 2,
-            mb: 2,
+            mb: 3,
             bgcolor: "info.light",
             maxWidth: 400,
             mx: "auto",
+            borderRadius: 2,
           }}
         >
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ mb: 1 }}>
             Enable notifications to get alerted when your timer completes!
           </Typography>
           <Button
             size="small"
             onClick={requestNotificationPermission}
-            sx={{ mt: 1 }}
+            variant="outlined"
           >
             Enable Notifications
           </Button>
-        </Paper>
+        </Box>
       )}
 
-      <Paper
-        sx={{ p: 4, textAlign: "center", maxWidth: 400, mx: "auto", mt: 4 }}
+      <Box
+        ref={timerContainerRef}
+        sx={{ maxWidth: 400, mx: "auto", mt: 6, px: 3 }}
       >
-        <Typography variant="h4" gutterBottom>
-          Pomodoro Timer
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            textAlign: "center",
+            color: "text.secondary",
+            textTransform: "uppercase",
+            letterSpacing: 2,
+            fontSize: "0.75rem",
+            mb: 3,
+          }}
+        >
+          {timer.sessionType.replace("_", " ")}
         </Typography>
 
-        <Box display="flex" justifyContent="center" mb={3}>
-          <ToggleButtonGroup
-            value={timer.sessionType}
-            exclusive
-            onChange={handleSessionTypeChange}
-            disabled={timer.isRunning}
-            color="primary"
-          >
-            <ToggleButton value="WORK">Work</ToggleButton>
-            <ToggleButton value="SHORT_BREAK">Short Break</ToggleButton>
-            <ToggleButton value="LONG_BREAK">Long Break</ToggleButton>
-          </ToggleButtonGroup>
+        <Typography
+          variant="h1"
+          sx={{
+            fontSize: "7rem",
+            fontWeight: 300,
+            fontVariantNumeric: "tabular-nums",
+            textAlign: "center",
+            color: getTimerColor(),
+            mb: 4,
+            lineHeight: 1,
+            transition: "color 0.3s ease",
+          }}
+        >
+          {formatTime()}
+        </Typography>
+
+        <Box
+          display="flex"
+          justifyContent="center"
+          gap={0.75}
+          mb={5}
+          sx={{
+            flexWrap: "nowrap",
+            overflow: "hidden",
+            minHeight: 16,
+          }}
+        >
+          {Array.from({ length: dotCount }).map((_, i) => {
+            const totalDots = dotCount;
+            const totalMinutes = getMinutesForType(timer.sessionType);
+            e;
+            const totalSeconds = totalMinutes * 60;
+            const remainingSeconds = timer.minutes * 60 + timer.seconds;
+            const elapsedSeconds = totalSeconds - remainingSeconds;
+            const percentComplete = Math.max(
+              0,
+              Math.min(100, (elapsedSeconds / totalSeconds) * 100)
+            );
+
+            const dotsAffected = Math.floor(
+              (percentComplete / 100) * totalDots
+            );
+
+            let isFilled: boolean;
+
+            if (timer.sessionType === "WORK") {
+              isFilled = i < totalDots - dotsAffected;
+            } else {
+              isFilled = i < dotsAffected;
+            }
+
+            let dotColor: string;
+            if (isFilled) {
+              switch (timer.sessionType) {
+                case "WORK":
+                  dotColor = "rgba(78, 83, 87, 0.5)";
+                  break;
+                case "SHORT_BREAK":
+                  dotColor = "rgba(78, 83, 87, 0.5)";
+                  break;
+                case "LONG_BREAK":
+                  dotColor = "rgba(78, 83, 87, 0.5)";
+                  break;
+                default:
+                  dotColor = "#757575";
+              }
+            } else {
+              dotColor = "#e0e0e0";
+            }
+
+            return (
+              <Box
+                key={i}
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  backgroundColor: dotColor,
+                  transition: "background-color 0.3s ease",
+                }}
+              />
+            );
+          })}
         </Box>
 
-        <Box position="relative" display="inline-flex" my={4}>
-          <CircularProgress
-            variant="determinate"
-            value={progress}
-            size={200}
-            thickness={3}
-            sx={{
-              color:
-                timer.sessionType === "WORK"
-                  ? timer.isRunning
-                    ? "primary.main"
-                    : "grey.400"
-                  : timer.isRunning
-                  ? "success.main"
-                  : "grey.400",
-            }}
-          />
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            bottom={0}
-            right={0}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Typography variant="h2" component="div">
-              {formatTime()}
-            </Typography>
-          </Box>
+        <Box display="flex" gap={1} mb={4}>
+          {[
+            { type: "WORK", label: "Work" },
+            { type: "SHORT_BREAK", label: "Short" },
+            { type: "LONG_BREAK", label: "Long" },
+          ].map(({ type, label }) => (
+            <Button
+              key={type}
+              onClick={(e) => handleSessionTypeChange(e, type)}
+              disabled={timer.isRunning}
+              fullWidth
+              variant={timer.sessionType === type ? "contained" : "outlined"}
+              sx={{
+                borderRadius: 3,
+                py: 1.5,
+                textTransform: "none",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                transition: "all 0.2s ease",
+              }}
+            >
+              {label}
+            </Button>
+          ))}
         </Box>
-
-        <Box display="flex" gap={2} justifyContent="center">
+        <Box display="flex" gap={2}>
           {!timer.isRunning ? (
             <Button
               variant="contained"
-              color="primary"
-              startIcon={<PlayArrowIcon />}
               onClick={handleStart}
               disabled={loading || (timer.minutes === 0 && timer.seconds === 0)}
+              fullWidth
               size="large"
+              startIcon={<PlayArrowIcon />}
+              sx={{
+                borderRadius: 3,
+                py: 2,
+                fontSize: "1.125rem",
+                textTransform: "none",
+                fontWeight: 500,
+              }}
             >
               Start
             </Button>
           ) : (
-            <Button
-              variant="contained"
-              color="warning"
-              startIcon={<PauseIcon />}
-              onClick={handlePause}
-              size="large"
-            >
-              Pause
-            </Button>
+            <>
+              <Button
+                variant="contained"
+                onClick={handlePause}
+                color="warning"
+                fullWidth
+                size="large"
+                startIcon={<PauseIcon />}
+                sx={{
+                  borderRadius: 3,
+                  py: 2,
+                  fontSize: "1.125rem",
+                  textTransform: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Pause
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleStop}
+                fullWidth
+                size="large"
+                startIcon={<StopIcon />}
+                disabled={
+                  !timer.isRunning &&
+                  timer.minutes === getMinutesForType(timer.sessionType) &&
+                  timer.seconds === 0
+                }
+                sx={{
+                  borderRadius: 3,
+                  py: 2,
+                  fontSize: "1.125rem",
+                  textTransform: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Stop
+              </Button>
+            </>
           )}
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={handleStop}
-            startIcon={<StopIcon />}
-            size="large"
-            disabled={
-              !timer.isRunning &&
-              timer.minutes === getMinutesForType(timer.sessionType) &&
-              timer.seconds === 0
-            }
-          >
-            Stop
-          </Button>
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 };
