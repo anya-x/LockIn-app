@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, Paper } from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
@@ -9,6 +9,11 @@ import {
   sessionService,
   type StartSessionRequest,
 } from "../services/sessionService";
+
+interface SessionStats {
+  totalMinutes: number;
+  sessionsCompleted: number;
+}
 
 interface TimerState {
   minutes: number;
@@ -33,7 +38,7 @@ const PomodoroTimer: React.FC = () => {
   };
 
   const [timer, setTimer] = useState<TimerState>({
-    minutes: 25,
+    minutes: 1,
     seconds: 0,
     isRunning: false,
     sessionType: "WORK",
@@ -42,6 +47,7 @@ const PomodoroTimer: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
+  const [todayStats, setTodayStats] = useState<SessionStats | null>(null);
 
   const [dotCount, setDotCount] = useState(20);
   const timerContainerRef = useRef<HTMLDivElement>(null);
@@ -74,6 +80,19 @@ const PomodoroTimer: React.FC = () => {
       setPermission(Notification.permission);
     }
   }, []);
+
+  useEffect(() => {
+    fetchTodayStats();
+  }, []);
+
+  const fetchTodayStats = async () => {
+    try {
+      const stats = await sessionService.getTodayStats();
+      setTodayStats(stats);
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    }
+  };
 
   const totalSeconds = getMinutesForType(timer.sessionType) * 60;
   const elapsedSeconds =
@@ -143,6 +162,8 @@ const PomodoroTimer: React.FC = () => {
 
   const handleTimerComplete = async () => {
     console.log("timer completed");
+
+    // Play sound
     playSound();
 
     const title =
@@ -161,6 +182,8 @@ const PomodoroTimer: React.FC = () => {
         const initialMinutes = getMinutesForType(timer.sessionType);
         await sessionService.completeSession(timer.sessionId, initialMinutes);
         console.log("session completed successfully");
+
+        await fetchTodayStats();
       } catch (error: any) {
         console.error("failed to complete session:", error);
       }
@@ -252,6 +275,28 @@ const PomodoroTimer: React.FC = () => {
 
   return (
     <Box>
+      {todayStats && (
+        <Paper
+          sx={{
+            p: 2,
+            mb: 2,
+            maxWidth: 400,
+            mx: "auto",
+            bgcolor: "#84c887",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Today's Focus Time
+          </Typography>
+          <Typography variant="h4">
+            {todayStats.totalMinutes} minutes
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {todayStats.sessionsCompleted} sessions completed
+          </Typography>
+        </Paper>
+      )}
+
       {permission === "default" && (
         <Box
           sx={{
