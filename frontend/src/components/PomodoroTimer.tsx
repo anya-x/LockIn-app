@@ -304,7 +304,6 @@ const PomodoroTimer: React.FC = () => {
           mb={5}
           sx={{
             flexWrap: "nowrap",
-            overflow: "hidden",
             minHeight: 16,
           }}
         >
