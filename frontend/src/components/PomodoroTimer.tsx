@@ -310,7 +310,6 @@ const PomodoroTimer: React.FC = () => {
           {Array.from({ length: dotCount }).map((_, i) => {
             const totalDots = dotCount;
             const totalMinutes = getMinutesForType(timer.sessionType);
-            e;
             const totalSeconds = totalMinutes * 60;
             const remainingSeconds = timer.minutes * 60 + timer.seconds;
             const elapsedSeconds = totalSeconds - remainingSeconds;
@@ -335,13 +334,13 @@ const PomodoroTimer: React.FC = () => {
             if (isFilled) {
               switch (timer.sessionType) {
                 case "WORK":
-                  dotColor = "rgba(78, 83, 87, 0.5)";
+                  dotColor = "rgba(25, 118, 210, 0.5)";
                   break;
                 case "SHORT_BREAK":
-                  dotColor = "rgba(78, 83, 87, 0.5)";
+                  dotColor = "rgba(46, 125, 50, 0.5)";
                   break;
                 case "LONG_BREAK":
-                  dotColor = "rgba(78, 83, 87, 0.5)";
+                  dotColor = "rgba(123, 31, 162, 0.5)";
                   break;
                 default:
                   dotColor = "#757575";
