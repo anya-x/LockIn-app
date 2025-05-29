@@ -45,6 +45,11 @@ const PomodoroTimer: React.FC = () => {
 
   const [dotCount, setDotCount] = useState(20);
   const timerContainerRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/notification.wav");
+  }, []);
 
   useEffect(() => {
     const calculateDots = () => {
@@ -128,8 +133,17 @@ const PomodoroTimer: React.FC = () => {
     }
   };
 
+  const playSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch((error) => {
+        console.error("Failed to play sound:", error);
+      });
+    }
+  };
+
   const handleTimerComplete = async () => {
     console.log("timer completed");
+    playSound();
 
     const title =
       timer.sessionType === "WORK"
