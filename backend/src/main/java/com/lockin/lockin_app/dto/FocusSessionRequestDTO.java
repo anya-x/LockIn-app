@@ -20,6 +20,9 @@ public class FocusSessionRequestDTO {
     private Long taskId;
 
     private Integer actualMinutes;
-    
+
     private String notes;
+
+    private String profileName;
+    private Integer breakMinutes;
 }

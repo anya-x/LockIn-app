@@ -31,6 +31,9 @@ public class FocusSessionResponseDTO {
     private Long taskId;
     private String taskTitle;
 
+    private String profileName;
+    private Integer breakMinutes;
+
     public static FocusSessionResponseDTO fromEntity(FocusSession session) {
         FocusSessionResponseDTOBuilder builder =
                 FocusSessionResponseDTO.builder()
@@ -41,7 +44,9 @@ public class FocusSessionResponseDTO {
                         .completedAt(session.getCompletedAt())
                         .sessionType(session.getSessionType())
                         .completed(session.getCompleted())
-                        .notes(session.getNotes());
+                        .notes(session.getNotes())
+                        .profileName(session.getProfileName())
+                        .breakMinutes(session.getBreakMinutes());
 
         if (session.getUser() != null) {
             builder.userId(session.getUser().getId())

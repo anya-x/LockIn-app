@@ -35,8 +35,7 @@ public class FocusSession {
     @Column(nullable = false)
     private LocalDateTime startedAt;
 
-    @Column 
-    private LocalDateTime completedAt;
+    @Column private LocalDateTime completedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -45,6 +44,10 @@ public class FocusSession {
     @Column(nullable = false)
     private Boolean completed = false;
 
-    @Column 
-    private String notes;
+    @Column private String notes;
+
+    @Column(length = 50)
+    private String profileName;
+
+    @Column private Integer breakMinutes;
 }

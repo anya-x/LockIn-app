@@ -57,6 +57,8 @@ public class FocusSessionService {
         session.setStartedAt(LocalDateTime.now());
         session.setSessionType(request.getSessionType());
         session.setCompleted(false);
+        session.setProfileName(request.getProfileName());
+        session.setBreakMinutes(request.getBreakMinutes());
 
         if (request.getTaskId() != null) {
             Task task =
@@ -65,6 +67,14 @@ public class FocusSessionService {
                             .orElseThrow(() -> new RuntimeException("Task not found"));
 
             session.setTask(task);
+        }
+
+        if (request.getProfileName() != null) {
+            log.info(
+                    "Starting session with profile: {} ({}min work / {}min break)",
+                    request.getProfileName(),
+                    request.getPlannedMinutes(),
+                    request.getBreakMinutes());
         }
 
         FocusSession saved = sessionRepository.save(session);
