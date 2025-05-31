@@ -162,8 +162,6 @@ const PomodoroTimer: React.FC = () => {
 
   const handleTimerComplete = async () => {
     console.log("timer completed");
-
-    // Play sound
     playSound();
 
     const title =
