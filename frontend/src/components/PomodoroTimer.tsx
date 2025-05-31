@@ -9,6 +9,12 @@ import {
   sessionService,
   type StartSessionRequest,
 } from "../services/sessionService";
+import { ProfileSelector } from "./ProfileSelector";
+import {
+  FOCUS_PROFILES,
+  type FocusProfile,
+  getDefaultProfile,
+} from "../config/focusProfiles";
 
 interface SessionStats {
   totalMinutes: number;
@@ -320,7 +326,11 @@ const PomodoroTimer: React.FC = () => {
           </Button>
         </Box>
       )}
-
+      {/* <ProfileSelector 
+  selectedProfile={selectedProfile}
+  onProfileChange={setSelectedProfile}
+  disabled={timer.isRunning}
+/> */}
       <Box
         ref={timerContainerRef}
         sx={{ maxWidth: 400, mx: "auto", mt: 6, px: 3 }}
