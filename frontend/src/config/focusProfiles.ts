@@ -102,7 +102,8 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     icon: "⚡",
     verified: true,
   },
-  // not science based but popular
+
+  // not based on research but productivity tracking data
   {
     id: "medium-deep",
     name: "Deep Work",
@@ -147,23 +148,6 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     icon: "⚖️",
     verified: false,
   },
-  // {
-  //   id: "custom",
-  //   name: "",
-  //   cycleName: "",
-  //   work: 0,
-  //   break: 0,
-  //   longBreak: 0,
-  //   description:,
-  //   useCases: [
-  //   ],
-  //   research:
-  //     ,
-  //   tips: ,
-  //   color:,
-  //   icon: ,
-  //   verified: true,
-  // },
 ];
 
 export const getProfileById = (id: string): FocusProfile | undefined => {
@@ -172,6 +156,14 @@ export const getProfileById = (id: string): FocusProfile | undefined => {
 
 export const getDefaultProfile = (): FocusProfile => {
   return FOCUS_PROFILES[0];
+};
+
+export const getVerifiedProfiles = (): FocusProfile[] => {
+  return FOCUS_PROFILES.filter((p) => p.verified);
+};
+
+export const getExperimentalProfiles = (): FocusProfile[] => {
+  return FOCUS_PROFILES.filter((p) => !p.verified);
 };
 
 export const formatCycleName = (profile: FocusProfile): string => {
