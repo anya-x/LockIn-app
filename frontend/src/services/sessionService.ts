@@ -4,6 +4,8 @@ export interface StartSessionRequest {
   plannedMinutes: number;
   sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
   taskId?: number | null;
+  profileName?: string;
+  breakMinutes?: number;
 }
 
 export interface FocusSessionResponse {
@@ -20,6 +22,8 @@ export interface FocusSessionResponse {
   userLastName: string;
   taskId: number | null;
   taskTitle: string | null;
+  profileName?: string;
+  breakMinutes?: number;
 }
 
 export interface TodayStatsResponse {
