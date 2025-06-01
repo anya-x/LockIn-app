@@ -94,7 +94,6 @@ const TaskStatistics: React.FC = () => {
         Statistics Dashboard
       </Typography>
 
-      {/* ✅ Using StatCard component for consistency */}
       <Grid container spacing={3} mb={4}>
         {statCards.map((stat, index) => (
           <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>

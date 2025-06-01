@@ -9,6 +9,12 @@ import {
   sessionService,
   type StartSessionRequest,
 } from "../services/sessionService";
+import { ProfileSelector } from "./ProfileSelector";
+import {
+  FOCUS_PROFILES,
+  type FocusProfile,
+  getDefaultProfile,
+} from "../config/focusProfiles";
 
 interface SessionStats {
   totalMinutes: number;
@@ -24,34 +30,42 @@ interface TimerState {
 }
 
 const PomodoroTimer: React.FC = () => {
-  const getMinutesForType = (type: string): number => {
-    switch (type) {
-      case "WORK":
-        return 1;
-      case "SHORT_BREAK":
-        return 1;
-      case "LONG_BREAK":
-        return 1;
-      default:
-        return 1;
-    }
-  };
+  const [selectedProfile, setSelectedProfile] = useState<FocusProfile>(
+    getDefaultProfile()
+  );
 
   const [timer, setTimer] = useState<TimerState>({
-    minutes: 1,
+    minutes: getDefaultProfile().work,
     seconds: 0,
     isRunning: false,
     sessionType: "WORK",
     sessionId: null,
   });
+
   const [loading, setLoading] = useState(false);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
   const [todayStats, setTodayStats] = useState<SessionStats | null>(null);
-
   const [dotCount, setDotCount] = useState(20);
+
   const timerContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const getMinutesForProfile = (
+    profile: FocusProfile,
+    type: string
+  ): number => {
+    switch (type) {
+      case "WORK":
+        return profile.work;
+      case "SHORT_BREAK":
+        return profile.break;
+      case "LONG_BREAK":
+        return profile.longBreak;
+      default:
+        return profile.work;
+    }
+  };
 
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
@@ -82,6 +96,21 @@ const PomodoroTimer: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const savedProfileId = localStorage.getItem("lastFocusProfile");
+    if (savedProfileId) {
+      const profile = FOCUS_PROFILES.find((p) => p.id === savedProfileId);
+      if (profile) {
+        setSelectedProfile(profile);
+        setTimer((prev) => ({
+          ...prev,
+          minutes: profile.work,
+          seconds: 0,
+        }));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     fetchTodayStats();
   }, []);
 
@@ -94,9 +123,11 @@ const PomodoroTimer: React.FC = () => {
     }
   };
 
-  const totalSeconds = getMinutesForType(timer.sessionType) * 60;
+  const totalSeconds =
+    getMinutesForProfile(selectedProfile, timer.sessionType) * 60;
   const elapsedSeconds =
-    (getMinutesForType(timer.sessionType) - timer.minutes) * 60 +
+    (getMinutesForProfile(selectedProfile, timer.sessionType) - timer.minutes) *
+      60 +
     (60 - timer.seconds);
   const progress = (elapsedSeconds / totalSeconds) * 100;
 
@@ -111,7 +142,7 @@ const PomodoroTimer: React.FC = () => {
 
     switch (timer.sessionType) {
       case "WORK":
-        return "primary.main";
+        return selectedProfile.color;
       case "SHORT_BREAK":
         return "success.main";
       case "LONG_BREAK":
@@ -126,10 +157,23 @@ const PomodoroTimer: React.FC = () => {
     newType: string | null
   ) => {
     if (newType && !timer.isRunning) {
-      const minutes = getMinutesForType(newType);
+      const minutes = getMinutesForProfile(selectedProfile, newType);
       setTimer((prev) => ({
         ...prev,
         sessionType: newType as "WORK" | "SHORT_BREAK" | "LONG_BREAK",
+        minutes,
+        seconds: 0,
+      }));
+    }
+  };
+
+  const handleProfileChange = (profile: FocusProfile) => {
+    setSelectedProfile(profile);
+
+    if (!timer.isRunning) {
+      const minutes = getMinutesForProfile(profile, timer.sessionType);
+      setTimer((prev) => ({
+        ...prev,
         minutes,
         seconds: 0,
       }));
@@ -177,7 +221,10 @@ const PomodoroTimer: React.FC = () => {
 
     if (timer.sessionId) {
       try {
-        const initialMinutes = getMinutesForType(timer.sessionType);
+        const initialMinutes = getMinutesForProfile(
+          selectedProfile,
+          timer.sessionType
+        );
         await sessionService.completeSession(timer.sessionId, initialMinutes);
         console.log("session completed successfully");
 
@@ -194,9 +241,14 @@ const PomodoroTimer: React.FC = () => {
     setLoading(true);
     try {
       const request: StartSessionRequest = {
-        plannedMinutes: getMinutesForType(timer.sessionType),
+        plannedMinutes: getMinutesForProfile(
+          selectedProfile,
+          timer.sessionType
+        ),
         sessionType: timer.sessionType,
         taskId: null,
+        profileName: selectedProfile.id,
+        breakMinutes: selectedProfile.break,
       };
 
       const session = await sessionService.startSession(request);
@@ -222,7 +274,10 @@ const PomodoroTimer: React.FC = () => {
   const handleStop = async () => {
     if (timer.sessionId) {
       try {
-        const initialMinutes = getMinutesForType(timer.sessionType);
+        const initialMinutes = getMinutesForProfile(
+          selectedProfile,
+          timer.sessionType
+        );
         const elapsedMinutes =
           initialMinutes - timer.minutes - timer.seconds / 60;
         const actualMinutes = Math.floor(elapsedMinutes);
@@ -234,7 +289,10 @@ const PomodoroTimer: React.FC = () => {
       }
     }
 
-    const resetMinutes = getMinutesForType(timer.sessionType);
+    const resetMinutes = getMinutesForProfile(
+      selectedProfile,
+      timer.sessionType
+    );
     setTimer({
       minutes: resetMinutes,
       seconds: 0,
@@ -319,6 +377,14 @@ const PomodoroTimer: React.FC = () => {
         </Box>
       )}
 
+      <Box sx={{ maxWidth: 400, mx: "auto", mb: 4 }}>
+        <ProfileSelector
+          selectedProfile={selectedProfile}
+          onProfileChange={handleProfileChange}
+          disabled={timer.isRunning}
+        />
+      </Box>
+
       <Box
         ref={timerContainerRef}
         sx={{ maxWidth: 400, mx: "auto", mt: 6, px: 3 }}
@@ -366,7 +432,10 @@ const PomodoroTimer: React.FC = () => {
         >
           {Array.from({ length: dotCount }).map((_, i) => {
             const totalDots = dotCount;
-            const totalMinutes = getMinutesForType(timer.sessionType);
+            const totalMinutes = getMinutesForProfile(
+              selectedProfile,
+              timer.sessionType
+            );
             const totalSeconds = totalMinutes * 60;
             const remainingSeconds = timer.minutes * 60 + timer.seconds;
             const elapsedSeconds = totalSeconds - remainingSeconds;
@@ -391,7 +460,7 @@ const PomodoroTimer: React.FC = () => {
             if (isFilled) {
               switch (timer.sessionType) {
                 case "WORK":
-                  dotColor = "rgba(25, 118, 210, 0.5)";
+                  dotColor = selectedProfile.color;
                   break;
                 case "SHORT_BREAK":
                   dotColor = "rgba(46, 125, 50, 0.5)";
@@ -493,7 +562,8 @@ const PomodoroTimer: React.FC = () => {
                 startIcon={<StopIcon />}
                 disabled={
                   !timer.isRunning &&
-                  timer.minutes === getMinutesForType(timer.sessionType) &&
+                  timer.minutes ===
+                    getMinutesForProfile(selectedProfile, timer.sessionType) &&
                   timer.seconds === 0
                 }
                 sx={{

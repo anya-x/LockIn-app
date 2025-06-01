@@ -55,4 +55,3 @@ export const getDefaultProfile = (): FocusProfile => {
 export const formatCycleName = (profile: FocusProfile): string => {
   return `${profile.cycleName} (${profile.work}min work, ${profile.break}min break)`;
 };
-s;
