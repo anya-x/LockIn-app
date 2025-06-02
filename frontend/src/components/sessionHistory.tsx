@@ -14,6 +14,7 @@ import {
   sessionService,
   type FocusSessionResponse,
 } from "../services/sessionService";
+import { FOCUS_PROFILES } from "../config/focusProfiles";
 
 const SessionHistory: React.FC = () => {
   const [sessions, setSessions] = useState<FocusSessionResponse[]>([]);
@@ -62,6 +63,11 @@ const SessionHistory: React.FC = () => {
       .join(" ");
   };
 
+  const getProfileInfo = (profileName?: string) => {
+    if (!profileName) return null;
+    return FOCUS_PROFILES.find((p) => p.id === profileName);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -87,49 +93,64 @@ const SessionHistory: React.FC = () => {
       </Typography>
 
       <List>
-        {sessions.map((session, index) => (
-          <React.Fragment key={session.id}>
-            {index > 0 && <Divider />}
-            <ListItem
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Box flex={1}>
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Chip
-                        label={formatSessionType(session.sessionType)}
-                        color={getSessionTypeColor(session.sessionType) as any}
-                        size="small"
-                      />
-                      <Typography variant="body1">
-                        {session.actualMinutes} / {session.plannedMinutes}{" "}
-                        minutes
-                      </Typography>
-                      {session.profileName && (
-                        <Typography variant="caption" color="text.secondary">
-                          Profile: {session.profileName}
-                        </Typography>
-                      )}
-                      {session.completed && (
+        {sessions.map((session, index) => {
+          const profile = getProfileInfo(session.profileName);
+
+          return (
+            <React.Fragment key={session.id}>
+              {index > 0 && <Divider />}
+              <ListItem
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box flex={1}>
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1}>
                         <Chip
-                          label="✓ Completed"
-                          color="success"
+                          label={formatSessionType(session.sessionType)}
+                          color={
+                            getSessionTypeColor(session.sessionType) as any
+                          }
                           size="small"
                         />
-                      )}
-                    </Box>
-                  }
-                  secondary={formatDate(session.startedAt)}
-                />
-              </Box>
-            </ListItem>
-          </React.Fragment>
-        ))}
+
+                        {profile && (
+                          <Chip
+                            label={profile.name}
+                            size="small"
+                            sx={{
+                              bgcolor: profile.color,
+                              color: "white",
+                              fontWeight: 500,
+                            }}
+                          />
+                        )}
+
+                        <Typography variant="body1">
+                          {session.actualMinutes} / {session.plannedMinutes}{" "}
+                          minutes
+                        </Typography>
+
+                        {session.completed && (
+                          <Chip
+                            label="✓ Completed"
+                            color="success"
+                            size="small"
+                          />
+                        )}
+                      </Box>
+                    }
+                    secondary={formatDate(session.startedAt)}
+                  />
+                </Box>
+              </ListItem>
+            </React.Fragment>
+          );
+        })}
       </List>
     </Paper>
   );
