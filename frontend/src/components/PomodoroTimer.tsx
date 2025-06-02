@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Button, Typography, Paper } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  Paper,
+  Autocomplete,
+  TextField,
+} from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
@@ -9,6 +16,7 @@ import {
   sessionService,
   type StartSessionRequest,
 } from "../services/sessionService";
+
 import { ProfileSelector } from "./ProfileSelector";
 import {
   FOCUS_PROFILES,
@@ -16,6 +24,9 @@ import {
   getDefaultProfile,
 } from "../config/focusProfiles";
 import SessionHistory from "./sessionHistory";
+
+import { taskService } from "../services/taskService";
+import { type Task } from "../types/task";
 
 interface SessionStats {
   totalMinutes: number;
@@ -48,6 +59,10 @@ const PomodoroTimer: React.FC = () => {
     useState<NotificationPermission>("default");
   const [todayStats, setTodayStats] = useState<SessionStats | null>(null);
   const [dotCount, setDotCount] = useState(20);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   const timerContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -113,7 +128,21 @@ const PomodoroTimer: React.FC = () => {
 
   useEffect(() => {
     fetchTodayStats();
+    fetchTasks();
   }, []);
+
+  const fetchTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const data = await taskService.getTasks();
+      const incompleteTasks = data.filter((t) => t.status !== "COMPLETED");
+      setTasks(incompleteTasks);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
 
   const fetchTodayStats = async () => {
     try {
@@ -181,6 +210,11 @@ const PomodoroTimer: React.FC = () => {
     }
   };
 
+  const handleTaskChange = (event: any, newValue: Task | null) => {
+    setSelectedTask(newValue);
+    console.log("Selected task:", newValue);
+  };
+
   const requestNotificationPermission = async () => {
     if ("Notification" in window && Notification.permission === "default") {
       const perm = await Notification.requestPermission();
@@ -230,6 +264,7 @@ const PomodoroTimer: React.FC = () => {
         console.log("session completed successfully");
 
         await fetchTodayStats();
+        setSelectedTask(null);
       } catch (error: any) {
         console.error("failed to complete session:", error);
       }
@@ -247,7 +282,7 @@ const PomodoroTimer: React.FC = () => {
           timer.sessionType
         ),
         sessionType: timer.sessionType,
-        taskId: null,
+        taskId: selectedTask?.id || null,
         profileName: selectedProfile.id,
         breakMinutes: selectedProfile.break,
       };
@@ -283,31 +318,30 @@ const PomodoroTimer: React.FC = () => {
           initialMinutes - timer.minutes - timer.seconds / 60;
         const actualMinutes = Math.floor(elapsedMinutes);
 
-        await sessionService.completeSession(timer.sessionId, actualMinutes);
-        console.log("session saved");
+        await sessionService.updateSession(timer.sessionId, actualMinutes);
+
+        console.log("session stopped");
       } catch (error: any) {
-        console.error("failed to save session:", error);
+        console.error("failed to update session:", error);
       }
     }
 
-    const resetMinutes = getMinutesForProfile(
-      selectedProfile,
-      timer.sessionType
-    );
     setTimer({
-      minutes: resetMinutes,
+      minutes: getMinutesForProfile(selectedProfile, timer.sessionType),
       seconds: 0,
       isRunning: false,
       sessionType: timer.sessionType,
       sessionId: null,
     });
+
+    setSelectedTask(null);
+    await fetchTodayStats();
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: NodeJS.Timeout | undefined;
 
     if (timer.isRunning) {
-      console.log("timer started");
       interval = setInterval(() => {
         setTimer((prev) => {
           if (prev.seconds > 0) {
@@ -383,6 +417,23 @@ const PomodoroTimer: React.FC = () => {
           selectedProfile={selectedProfile}
           onProfileChange={handleProfileChange}
           disabled={timer.isRunning}
+        />
+      </Box>
+
+      <Box sx={{ maxWidth: 400, mx: "auto", mb: 3 }}>
+        <Autocomplete
+          value={selectedTask}
+          onChange={handleTaskChange}
+          options={tasks}
+          disabled={timer.isRunning || loadingTasks}
+          getOptionLabel={(option) => option.title}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Link to Task (Optional)"
+              placeholder="Search tasks..."
+            />
+          )}
         />
       </Box>
 
