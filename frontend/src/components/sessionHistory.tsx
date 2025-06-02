@@ -109,7 +109,12 @@ const SessionHistory: React.FC = () => {
                 <Box flex={1}>
                   <ListItemText
                     primary={
-                      <Box display="flex" alignItems="center" gap={1}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                        flexWrap="wrap"
+                      >
                         <Chip
                           label={formatSessionType(session.sessionType)}
                           color={
@@ -120,12 +125,20 @@ const SessionHistory: React.FC = () => {
 
                         {profile && (
                           <Chip
+                            icon={
+                              <span style={{ fontSize: "1rem" }}>
+                                {profile.icon}
+                              </span>
+                            }
                             label={profile.name}
                             size="small"
                             sx={{
                               bgcolor: profile.color,
                               color: "white",
                               fontWeight: 500,
+                              "& .MuiChip-icon": {
+                                marginLeft: "4px",
+                              },
                             }}
                           />
                         )}
@@ -140,6 +153,7 @@ const SessionHistory: React.FC = () => {
                             label="✓ Completed"
                             color="success"
                             size="small"
+                            variant="outlined"
                           />
                         )}
                       </Box>

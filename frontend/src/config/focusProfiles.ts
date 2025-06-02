@@ -32,7 +32,7 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     research:
       "The Pomodoro Technique, proven effective since the 1980s. Research consistently shows that scheduled breaks improve focus and reduce mental fatigue.",
     tips: "Complete 4 cycles, then take a longer 15-minute break. This rhythm has stood the test of time for a reason, it works!",
-    color: "#E74C3C",
+    color: "#c03a2bbb",
     icon: "🍅",
     verified: true,
   },
@@ -54,7 +54,7 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     research:
       "A popular variation that doubles the Pomodoro timing. Many people find 50-75 minute sessions hit the sweet spot for complex work.",
     tips: "Use this when 25 minutes feels too short to hit your stride. The 10-minute break gives you real time to step away and reset.",
-    color: "#3498DB",
+    color: "#3498dbb6",
     icon: "📘",
     verified: true,
   },
@@ -76,7 +76,7 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     research:
       "Based on ultradian rhythms: your brain's natural 90-minute cycles of peak alertness. Neuroscience research confirms these cycles operate throughout your waking hours.",
     tips: "Only use when well-rested and distraction-free. The 20-minute break is essential: walk, stretch, step outside. Your brain needs this recovery time. Limit to 2 cycles per day.",
-    color: "#9B59B6",
+    color: "#9c59b6ae",
     icon: "🎨",
     verified: true,
   },
@@ -84,9 +84,9 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     id: "micro",
     name: "Quick Wins",
     cycleName: "15-3",
-    work: 15,
-    break: 3,
-    longBreak: 10,
+    work: 1,
+    break: 1,
+    longBreak: 1,
     description:
       "Short bursts for building focus habits or getting unstuck on tough days",
     useCases: [
@@ -98,7 +98,7 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     research:
       "Inspired by ADHD research showing very frequent breaks help maintain attention. Rapid wins keep motivation high and prevent overwhelm.",
     tips: "Perfect for getting started when focus feels impossible. Chain 6-8 cycles for about 2 hours of productive work. Great for rebuilding momentum after interruptions.",
-    color: "#F39C12",
+    color: "#f39d12c9",
     icon: "⚡",
     verified: true,
   },
@@ -122,7 +122,7 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     research:
       "From a 2014 productivity tracking study. While not peer-reviewed science, many people report this timing works well for sustained focus.",
     tips: "Popular for remote work where you have fewer interruptions. Use the 17-minute break to move around. The extra break time helps maintain energy across multiple sessions.",
-    color: "#2980B9",
+    color: "#297fb9c7",
     icon: "🧠",
     verified: false,
   },
@@ -144,7 +144,7 @@ export const FOCUS_PROFILES: FocusProfile[] = [
     research:
       "From a 2025 productivity tracking study of office and hybrid workers. The longer breaks reflect natural workplace rhythms like coffee chats and hallway conversations.",
     tips: "The generous 33-minute break allows time for lunch prep, quick walks or casual team interactions.",
-    color: "#16A085",
+    color: "#16a084bd",
     icon: "⚖️",
     verified: false,
   },
