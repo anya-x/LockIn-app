@@ -15,6 +15,7 @@ import {
   type FocusProfile,
   getDefaultProfile,
 } from "../config/focusProfiles";
+import SessionHistory from "./sessionHistory";
 
 interface SessionStats {
   totalMinutes: number;
@@ -579,6 +580,9 @@ const PomodoroTimer: React.FC = () => {
             </>
           )}
         </Box>
+      </Box>
+      <Box mt={4}>
+        <SessionHistory />
       </Box>
     </Box>
   );
