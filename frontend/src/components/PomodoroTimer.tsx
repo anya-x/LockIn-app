@@ -26,6 +26,8 @@ import {
   getDefaultProfile,
 } from "../config/focusProfiles";
 import SessionHistory from "./sessionHistory";
+import type { Task } from "../types/task";
+import { taskService } from "../services/taskService";
 
 interface SessionStats {
   totalMinutes: number;
@@ -45,12 +47,19 @@ const PomodoroTimer: React.FC = () => {
     getDefaultProfile()
   );
 
-  const [timer, setTimer] = useState<TimerState>({
-    minutes: getDefaultProfile().work,
-    seconds: 0,
-    isRunning: false,
-    sessionType: "WORK",
-    sessionId: null,
+  const [timer, setTimer] = useState<TimerState>(() => {
+    const saved = localStorage.getItem("timerState");
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return {
+      minutes: 25,
+      seconds: 0,
+      isRunning: false,
+      sessionType: "WORK",
+      sessionId: null,
+      initialMinutes: 25,
+    };
   });
 
   const [loading, setLoading] = useState(false);
@@ -81,7 +90,9 @@ const PomodoroTimer: React.FC = () => {
         return profile.work;
     }
   };
-
+  useEffect(() => {
+    localStorage.setItem("timerState", JSON.stringify(timer));
+  }, [timer]);
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
   }, []);
