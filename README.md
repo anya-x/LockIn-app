@@ -181,7 +181,7 @@ A science based task management tool that's going to change how you view product
 
 ## Epic 3: Focus Management
 
-#### [ ] US-3.1: Pomodoro Timer
+#### [x] US-3.1: Pomodoro Timer
 
 **As a** user  
 **I want to** use a Pomodoro timer (multiple choices: 25/5, 50/10...)  
@@ -288,6 +288,10 @@ A science based task management tool that's going to change how you view product
 - loader skeleton
 - pomodoro: timer stops when changing tabs
 - sorting asc/desc
+- session history doesn't automatically refresh after session complete
+- possibility to archive tasks
+- focus session timer on tab
+- ux/ui: redo timer page- too vertical rn
 
 ## Research References
 
@@ -301,4 +305,4 @@ All productivity features are backed by research:
 
 " - overwork detection 6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
 
-**Last Updated:** 9 May 2025
+**Last Updated:** 3 June 2025
