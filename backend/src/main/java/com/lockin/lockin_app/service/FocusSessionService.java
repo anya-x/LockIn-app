@@ -29,7 +29,6 @@ public class FocusSessionService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
 
-    // TODO: user session validation
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
         log.debug("Fetching sessions for user: {}", userId);
@@ -105,7 +104,29 @@ public class FocusSessionService {
         return FocusSessionResponseDTO.fromEntity(updated);
     }
 
-    // TODO : logging
+    @Transactional
+    public FocusSessionResponseDTO updateSession(
+            Long sessionId, Long userId, Integer actualMinutes) {
+        log.info("Updating session: {} for user: {}", sessionId, userId);
+
+        FocusSession session =
+                sessionRepository
+                        .findById(sessionId)
+                        .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Session does not belong to user");
+        }
+
+        session.setActualMinutes(actualMinutes);
+
+        FocusSession updated = sessionRepository.save(session);
+
+        log.info("Updated session: {} with {} minutes", updated.getId(), actualMinutes);
+
+        return FocusSessionResponseDTO.fromEntity(updated);
+    }
+
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getTodaysSessions(Long userId) {
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();

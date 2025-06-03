@@ -11,6 +11,8 @@ import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
   Stop as StopIcon,
+  Search as SearchIcon,
+  Assignment as AssignmentIcon,
 } from "@mui/icons-material";
 import {
   sessionService,
@@ -24,9 +26,6 @@ import {
   getDefaultProfile,
 } from "../config/focusProfiles";
 import SessionHistory from "./sessionHistory";
-
-import { taskService } from "../services/taskService";
-import { type Task } from "../types/task";
 
 interface SessionStats {
   totalMinutes: number;
@@ -212,7 +211,6 @@ const PomodoroTimer: React.FC = () => {
 
   const handleTaskChange = (event: any, newValue: Task | null) => {
     setSelectedTask(newValue);
-    console.log("Selected task:", newValue);
   };
 
   const requestNotificationPermission = async () => {
@@ -426,15 +424,81 @@ const PomodoroTimer: React.FC = () => {
           onChange={handleTaskChange}
           options={tasks}
           disabled={timer.isRunning || loadingTasks}
+          loading={loadingTasks}
           getOptionLabel={(option) => option.title}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
           renderInput={(params) => (
             <TextField
               {...params}
               label="Link to Task (Optional)"
               placeholder="Search tasks..."
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
             />
           )}
+          renderOption={(props, option) => (
+            <Box component="li" {...props} key={option.id}>
+              <Box display="flex" alignItems="center" gap={1} width="100%">
+                <AssignmentIcon
+                  fontSize="small"
+                  sx={{ color: "primary.main" }}
+                />
+                <Box flex={1}>
+                  <Typography variant="body2" fontWeight={500}>
+                    {option.title}
+                  </Typography>
+                  {option.category && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontSize: "0.7rem" }}
+                    >
+                      {option.category.name}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          )}
+          noOptionsText={
+            loadingTasks
+              ? "Loading tasks..."
+              : tasks.length === 0
+              ? "No tasks yet. Create one first!"
+              : "No matching tasks"
+          }
+          clearOnEscape
+          autoHighlight
+          openOnFocus
         />
+
+        {tasks.length === 0 && !loadingTasks && !timer.isRunning && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: 1, display: "block" }}
+          >
+            💡 Tip: Link sessions to tasks to track which work consumed your
+            focus time
+          </Typography>
+        )}
+
+        {tasks.length > 0 && !timer.isRunning && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: 1, display: "block" }}
+          >
+            💡 {tasks.length} active tasks • Type to search
+          </Typography>
+        )}
       </Box>
 
       <Box

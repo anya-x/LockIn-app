@@ -69,6 +69,22 @@ public class FocusSessionController {
         return ResponseEntity.ok(session);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<FocusSessionResponseDTO> updateSession(
+            @PathVariable Long id,
+            @RequestBody Map<String, Integer> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("PUT /api/sessions/{}: User: {}", id, userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Integer actualMinutes = request.get("actualMinutes");
+
+        FocusSessionResponseDTO session = sessionService.updateSession(id, userId, actualMinutes);
+
+        return ResponseEntity.ok(session);
+    }
+
     @GetMapping("/today")
     public ResponseEntity<Map<String, Object>> getTodayStats(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -79,10 +95,8 @@ public class FocusSessionController {
         Integer totalMinutes = sessionService.getTotalFocusMinutesToday(userId);
         List<FocusSessionResponseDTO> sessions = sessionService.getTodaysSessions(userId);
 
-        return ResponseEntity.ok(Map.of(
-                "totalMinutes", totalMinutes,
-                "sessionsCompleted", sessions.size()
-        ));
+        return ResponseEntity.ok(
+                Map.of("totalMinutes", totalMinutes, "sessionsCompleted", sessions.size()));
     }
 
     @PutMapping("/{id}/notes")

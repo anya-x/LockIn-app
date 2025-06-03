@@ -53,6 +53,17 @@ export const sessionService = {
     return response.data;
   },
 
+  updateSession: async (
+    sessionId: number,
+    actualMinutes: number
+  ): Promise<FocusSessionResponse> => {
+    const response = await api.put<FocusSessionResponse>(
+      `/sessions/${sessionId}`,
+      { actualMinutes }
+    );
+    return response.data;
+  },
+
   getUserSessions: async (): Promise<FocusSessionResponse[]> => {
     const response = await api.get<FocusSessionResponse[]>("/sessions");
     return response.data;
