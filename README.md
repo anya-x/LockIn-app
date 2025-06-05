@@ -272,6 +272,11 @@ A science based task management tool that's going to change how you view product
 **I want** the app accessible online  
 **So that** I can use it from anywhere
 
+**BUGS TO FIX ASAP**
+
+- sessions marked complete when stopping
+- new session started when paused
+
 **To do (low priority)**
 
 - Dark mode
