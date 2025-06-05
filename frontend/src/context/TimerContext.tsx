@@ -76,6 +76,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        // If timer was running, calculate elapsed time
         if (parsed.isRunning && parsed.sessionStartTime) {
           const elapsed = Math.floor(
             (Date.now() - parsed.sessionStartTime) / 1000
@@ -87,6 +88,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           const seconds =
             (parsed.minutes * 60 + parsed.seconds - totalElapsed) % 60;
 
+          // If time ran out while away, mark as not running
           if (minutes < 0 || (minutes === 0 && seconds <= 0)) {
             return {
               ...parsed,
@@ -114,10 +116,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationShownRef = useRef(false);
 
+  // Initialize audio
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
   }, []);
 
+  // Save timer state whenever it changes
   useEffect(() => {
     localStorage.setItem("timerState", JSON.stringify(timer));
   }, [timer]);
@@ -158,6 +162,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleTimerComplete = useCallback(async () => {
     console.log("⏰ Timer completed!");
 
+    // Prevent double notifications
     if (notificationShownRef.current) return;
     notificationShownRef.current = true;
 
@@ -187,6 +192,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
+    // Auto-transition: after work, go to break; after break, go to work
     if (timer.sessionType === "WORK") {
       const nextType: "SHORT_BREAK" | "LONG_BREAK" =
         Math.floor(Math.random() * 4) === 3 ? "LONG_BREAK" : "SHORT_BREAK";
@@ -218,11 +224,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
 
+    // Reset notification flag after a delay
     setTimeout(() => {
       notificationShownRef.current = false;
     }, 2000);
   }, [timer, selectedProfile]);
 
+  // Timer countdown - runs globally!
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -256,6 +264,23 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
       if (interval) clearInterval(interval);
     };
   }, [timer.isRunning, handleTimerComplete]);
+
+  useEffect(() => {
+    if (timer.isRunning) {
+      const mins = String(timer.minutes).padStart(2, "0");
+      const secs = String(timer.seconds).padStart(2, "0");
+      const sessionLabel =
+        timer.sessionType === "WORK"
+          ? "Focus"
+          : timer.sessionType === "SHORT_BREAK"
+          ? "Shory Break"
+          : "Long Break";
+
+      document.title = `${mins}:${secs} ${sessionLabel}`;
+    } else {
+      document.title = "Lockin";
+    }
+  }, [timer.isRunning, timer.minutes, timer.seconds, timer.sessionType]);
 
   const startTimer = async (taskId: number | null) => {
     try {
