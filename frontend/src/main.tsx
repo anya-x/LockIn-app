@@ -3,13 +3,16 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { AuthProvider } from "./context/AuthContext.tsx";
+import { TimerProvider } from "./context/TimerContext.tsx";
 import { BrowserRouter } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <TimerProvider>
+          <App />
+        </TimerProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

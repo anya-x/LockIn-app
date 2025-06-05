@@ -14,6 +14,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  Chip,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -21,9 +22,11 @@ import {
   Category as CategoryIcon,
   GridOn as GridOnIcon,
   ExitToApp as LogoutIcon,
+  Timer as TimerIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTimer } from "../context/TimerContext";
 import TaskList from "../components/TaskList";
 import CategoryList from "../components/CategoryList";
 import EisenhowerMatrix from "../components/EisenhowerMatrix";
@@ -39,6 +42,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { logout, user } = useAuth();
+  const { timer, formatTime } = useTimer();
 
   const getCurrentView = ():
     | "tasks"
@@ -52,7 +56,7 @@ const Dashboard: React.FC = () => {
     if (path === "/matrix") return "matrix";
     if (path === "/statistics") return "statistics";
     if (path === "/timer") return "timer";
-    return "tasks";
+    return "tasks"; 
   };
 
   const currentView = getCurrentView();
@@ -130,9 +134,17 @@ const Dashboard: React.FC = () => {
             selected={currentView === "timer"}
           >
             <ListItemIcon>
-              <GridOnIcon />
+              <TimerIcon />
             </ListItemIcon>
             <ListItemText primary="Timer" />
+            {timer.isRunning && (
+              <Chip
+                label={formatTime()}
+                size="small"
+                color="primary"
+                sx={{ fontSize: "0.7rem", height: 20 }}
+              />
+            )}
           </ListItemButton>
         </ListItem>
       </List>
@@ -185,9 +197,30 @@ const Dashboard: React.FC = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Welcome, {user?.firstName || user?.email || "User"}
           </Typography>
+
+          {timer.isRunning && currentView !== "timer" && (
+            <Chip
+              icon={<TimerIcon />}
+              label={formatTime()}
+              onClick={() => navigate("/timer")}
+              color="secondary"
+              sx={{
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                "& .MuiChip-icon": {
+                  animation: "pulse 2s ease-in-out infinite",
+                },
+                "@keyframes pulse": {
+                  "0%, 100%": { opacity: 1 },
+                  "50%": { opacity: 0.5 },
+                },
+              }}
+            />
+          )}
         </Toolbar>
       </AppBar>
 
