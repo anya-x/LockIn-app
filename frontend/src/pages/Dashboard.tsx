@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { logout, user } = useAuth();
-  const { timer, formatTime } = useTimer();
+  const { timer, formatTime, selectedProfile } = useTimer();
 
   const getCurrentView = ():
     | "tasks"
@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
     if (path === "/matrix") return "matrix";
     if (path === "/statistics") return "statistics";
     if (path === "/timer") return "timer";
-    return "tasks"; 
+    return "tasks";
   };
 
   const currentView = getCurrentView();
@@ -74,6 +74,19 @@ const Dashboard: React.FC = () => {
     },
     [isMobile, navigate]
   );
+
+  const getChipColor = () => {
+    switch (timer.sessionType) {
+      case "WORK":
+        return selectedProfile.color;
+      case "SHORT_BREAK":
+        return "#2e7d32";
+      case "LONG_BREAK":
+        return "#7b1fa2";
+      default:
+        return "primary";
+    }
+  };
 
   const drawer = (
     <div>
@@ -141,8 +154,13 @@ const Dashboard: React.FC = () => {
               <Chip
                 label={formatTime()}
                 size="small"
-                color="primary"
-                sx={{ fontSize: "0.7rem", height: 20 }}
+                sx={{
+                  fontSize: "0.7rem",
+                  height: 20,
+                  bgcolor: getChipColor(),
+                  color: "white",
+                  fontWeight: 600,
+                }}
               />
             )}
           </ListItemButton>
@@ -206,12 +224,17 @@ const Dashboard: React.FC = () => {
               icon={<TimerIcon />}
               label={formatTime()}
               onClick={() => navigate("/timer")}
-              color="secondary"
               sx={{
                 cursor: "pointer",
                 fontWeight: 600,
                 fontSize: "0.9rem",
+                bgcolor: getChipColor(),
+                color: "white",
+                "&:hover": {
+                  opacity: 0.9,
+                },
                 "& .MuiChip-icon": {
+                  color: "white",
                   animation: "pulse 2s ease-in-out infinite",
                 },
                 "@keyframes pulse": {
