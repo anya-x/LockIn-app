@@ -314,4 +314,17 @@ public class TaskService {
 
         return taskPage.map(TaskResponseDTO::fromEntity);
     }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponseDTO> getIncompleteTasks(Long userId) {
+        log.debug("Fetching all incomplete tasks for user: {}", userId);
+
+        List<Task> tasks =
+                taskRepository.findByUserIdAndStatusNotOrderByCreatedAtDesc(
+                        userId, TaskStatus.COMPLETED);
+
+        log.info("Found {} incomplete tasks for user {}", tasks.size(), userId);
+
+        return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
 }

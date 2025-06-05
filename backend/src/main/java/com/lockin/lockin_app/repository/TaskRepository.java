@@ -68,4 +68,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("isUrgent") Boolean isUrgent,
             @Param("isImportant") Boolean isImportant,
             Pageable pageable);
+
+    List<Task> findByUserIdAndStatusNotOrderByCreatedAtDesc(Long userId, TaskStatus taskStatus);
 }

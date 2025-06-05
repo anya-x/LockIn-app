@@ -40,6 +40,7 @@ interface TimerState {
   isRunning: boolean;
   sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
   sessionId: number | null;
+  initialMinutes: number;
 }
 
 const PomodoroTimer: React.FC = () => {
@@ -50,8 +51,21 @@ const PomodoroTimer: React.FC = () => {
   const [timer, setTimer] = useState<TimerState>(() => {
     const saved = localStorage.getItem("timerState");
     if (saved) {
-      return JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed;
+      } catch {
+        return {
+          minutes: 25,
+          seconds: 0,
+          isRunning: false,
+          sessionType: "WORK",
+          sessionId: null,
+          initialMinutes: 25,
+        };
+      }
     }
+
     return {
       minutes: 25,
       seconds: 0,
@@ -90,9 +104,13 @@ const PomodoroTimer: React.FC = () => {
         return profile.work;
     }
   };
+
   useEffect(() => {
     localStorage.setItem("timerState", JSON.stringify(timer));
   }, [timer]);
+
+  // TODO: if timer is running and user refreshes, nit will resume but the backend session is lost
+
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
   }, []);
@@ -144,9 +162,10 @@ const PomodoroTimer: React.FC = () => {
   const fetchTasks = async () => {
     setLoadingTasks(true);
     try {
-      const data = await taskService.getTasks();
-      const incompleteTasks = data.filter((t) => t.status !== "COMPLETED");
-      setTasks(incompleteTasks);
+      const data = await taskService.getIncompleteTasks();
+      console.log("✅ Loaded incomplete tasks:", data.length);
+
+      setTasks(data);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
     } finally {
@@ -335,12 +354,17 @@ const PomodoroTimer: React.FC = () => {
       }
     }
 
+    const resetMinutes = getMinutesForProfile(
+      selectedProfile,
+      timer.sessionType
+    );
     setTimer({
-      minutes: getMinutesForProfile(selectedProfile, timer.sessionType),
+      minutes: resetMinutes,
       seconds: 0,
       isRunning: false,
       sessionType: timer.sessionType,
       sessionId: null,
+      initialMinutes: resetMinutes,
     });
 
     setSelectedTask(null);

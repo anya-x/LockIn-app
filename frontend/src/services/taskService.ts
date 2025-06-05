@@ -115,6 +115,10 @@ export const taskService = {
     });
     return response.data;
   },
+  getIncompleteTasks: async (): Promise<Task[]> => {
+    const response = await api.get<Task[]>("/tasks/incomplete");
+    return response.data;
+  },
 };
 
 export type { PaginatedResponse };

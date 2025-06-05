@@ -193,4 +193,16 @@ public class TaskController {
         TaskStatisticsDTO stats = taskService.getStatistics(userId);
         return ResponseEntity.ok(stats);
     }
+
+    @GetMapping("/incomplete")
+    public ResponseEntity<List<TaskResponseDTO>> getIncompleteTasks(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/tasks/incomplete : User: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        List<TaskResponseDTO> tasks = taskService.getIncompleteTasks(userId);
+
+        return ResponseEntity.ok(tasks);
+    }
 }
