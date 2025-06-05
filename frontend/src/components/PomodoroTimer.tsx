@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Typography,
-  Paper,
   Autocomplete,
   TextField,
 } from "@mui/material";
@@ -41,39 +40,56 @@ interface TimerState {
   sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
   sessionId: number | null;
   initialMinutes: number;
+  sessionStartTime: number | null;
 }
+// TODO: if timer is running and user refreshes, nit will resume but the backend session is lost
 
 const PomodoroTimer: React.FC = () => {
-  const [selectedProfile, setSelectedProfile] = useState<FocusProfile>(
-    getDefaultProfile()
-  );
+  const [selectedProfile, setSelectedProfile] = useState<FocusProfile>(() => {
+    const savedProfile = localStorage.getItem("lastFocusProfile");
+    return (
+      FOCUS_PROFILES.find((p) => p.id === savedProfile) || getDefaultProfile()
+    );
+  });
 
   const [timer, setTimer] = useState<TimerState>(() => {
     const saved = localStorage.getItem("timerState");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        if (parsed.isRunning && parsed.sessionStartTime) {
+          const elapsed = Math.floor(
+            (Date.now() - parsed.sessionStartTime) / 1000
+          );
+          const totalElapsed = Math.floor(elapsed);
+          const minutes = Math.floor(
+            (parsed.minutes * 60 + parsed.seconds - totalElapsed) / 60
+          );
+          const seconds =
+            (parsed.minutes * 60 + parsed.seconds - totalElapsed) % 60;
+
+          if (minutes < 0 || (minutes === 0 && seconds <= 0)) {
+            return {
+              ...parsed,
+              minutes: 0,
+              seconds: 0,
+              isRunning: false,
+              sessionStartTime: null,
+            };
+          }
+
+          return {
+            ...parsed,
+            minutes: Math.max(0, minutes),
+            seconds: Math.max(0, seconds),
+          };
+        }
         return parsed;
       } catch {
-        return {
-          minutes: 25,
-          seconds: 0,
-          isRunning: false,
-          sessionType: "WORK",
-          sessionId: null,
-          initialMinutes: 25,
-        };
+        return getDefaultTimerState();
       }
     }
-
-    return {
-      minutes: 25,
-      seconds: 0,
-      isRunning: false,
-      sessionType: "WORK",
-      sessionId: null,
-      initialMinutes: 25,
-    };
+    return getDefaultTimerState();
   });
 
   const [loading, setLoading] = useState(false);
@@ -88,6 +104,18 @@ const PomodoroTimer: React.FC = () => {
 
   const timerContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  function getDefaultTimerState(): TimerState {
+    return {
+      minutes: 25,
+      seconds: 0,
+      isRunning: false,
+      sessionType: "WORK",
+      sessionId: null,
+      initialMinutes: 25,
+      sessionStartTime: null,
+    };
+  }
 
   const getMinutesForProfile = (
     profile: FocusProfile,
@@ -108,8 +136,6 @@ const PomodoroTimer: React.FC = () => {
   useEffect(() => {
     localStorage.setItem("timerState", JSON.stringify(timer));
   }, [timer]);
-
-  // TODO: if timer is running and user refreshes, nit will resume but the backend session is lost
 
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
@@ -143,7 +169,7 @@ const PomodoroTimer: React.FC = () => {
     const savedProfileId = localStorage.getItem("lastFocusProfile");
     if (savedProfileId) {
       const profile = FOCUS_PROFILES.find((p) => p.id === savedProfileId);
-      if (profile) {
+      if (profile && !timer.isRunning) {
         setSelectedProfile(profile);
         setTimer((prev) => ({
           ...prev,
@@ -164,7 +190,6 @@ const PomodoroTimer: React.FC = () => {
     try {
       const data = await taskService.getIncompleteTasks();
       console.log("✅ Loaded incomplete tasks:", data.length);
-
       setTasks(data);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
@@ -228,6 +253,7 @@ const PomodoroTimer: React.FC = () => {
 
   const handleProfileChange = (profile: FocusProfile) => {
     setSelectedProfile(profile);
+    localStorage.setItem("lastFocusProfile", profile.id);
 
     if (!timer.isRunning) {
       const minutes = getMinutesForProfile(profile, timer.sessionType);
@@ -277,32 +303,89 @@ const PomodoroTimer: React.FC = () => {
         : "Break time over!";
     const body =
       timer.sessionType === "WORK"
-        ? "Great focus! Time for a break."
-        : "Back to work!";
+        ? "Great work! Take a break."
+        : "Time to get back to work!";
 
     showNotification(title, body);
 
     if (timer.sessionId) {
       try {
-        const initialMinutes = getMinutesForProfile(
+        const plannedMinutes = getMinutesForProfile(
           selectedProfile,
           timer.sessionType
         );
-        await sessionService.completeSession(timer.sessionId, initialMinutes);
-        console.log("session completed successfully");
-
+        await sessionService.completeSession(timer.sessionId, plannedMinutes);
         await fetchTodayStats();
-        setSelectedTask(null);
-      } catch (error: any) {
-        console.error("failed to complete session:", error);
+      } catch (error) {
+        console.error("Failed to complete session:", error);
       }
+    }
+
+    if (timer.sessionType === "WORK") {
+      const nextType: "SHORT_BREAK" | "LONG_BREAK" =
+        Math.floor(Math.random() * 4) === 3 ? "LONG_BREAK" : "SHORT_BREAK";
+      const nextMinutes = getMinutesForProfile(selectedProfile, nextType);
+
+      setTimer({
+        minutes: nextMinutes,
+        seconds: 0,
+        isRunning: false,
+        sessionType: nextType,
+        sessionId: null,
+        initialMinutes: nextMinutes,
+        sessionStartTime: null,
+      });
+    } else {
+      const nextMinutes = getMinutesForProfile(selectedProfile, "WORK");
+      setTimer({
+        minutes: nextMinutes,
+        seconds: 0,
+        isRunning: false,
+        sessionType: "WORK",
+        sessionId: null,
+        initialMinutes: nextMinutes,
+        sessionStartTime: null,
+      });
     }
   };
 
-  const handleStart = async () => {
-    await requestNotificationPermission();
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
 
+    if (timer.isRunning) {
+      interval = setInterval(() => {
+        setTimer((prev) => {
+          if (prev.seconds === 0) {
+            if (prev.minutes === 0) {
+              handleTimerComplete();
+              return {
+                ...prev,
+                isRunning: false,
+                sessionStartTime: null,
+              };
+            }
+            return {
+              ...prev,
+              minutes: prev.minutes - 1,
+              seconds: 59,
+            };
+          }
+          return {
+            ...prev,
+            seconds: prev.seconds - 1,
+          };
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timer.isRunning]);
+
+  const handleStart = async () => {
     setLoading(true);
+
     try {
       const request: StartSessionRequest = {
         plannedMinutes: getMinutesForProfile(
@@ -312,155 +395,79 @@ const PomodoroTimer: React.FC = () => {
         sessionType: timer.sessionType,
         taskId: selectedTask?.id || null,
         profileName: selectedProfile.id,
-        breakMinutes: selectedProfile.break,
       };
 
-      const session = await sessionService.startSession(request);
+      const response = await sessionService.startSession(request);
 
       setTimer((prev) => ({
         ...prev,
         isRunning: true,
-        sessionId: session.id,
+        sessionId: response.id,
+        initialMinutes: prev.minutes,
+        sessionStartTime: Date.now(),
       }));
 
-      console.log("session started:", session.id);
-    } catch (error: any) {
-      console.error("failed to start session:", error);
+      await fetchTodayStats();
+    } catch (error) {
+      console.error("Failed to start session:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePause = () => {
-    setTimer((prev) => ({ ...prev, isRunning: false }));
+    setTimer((prev) => ({
+      ...prev,
+      isRunning: !prev.isRunning,
+      sessionStartTime: !prev.isRunning ? Date.now() : null,
+    }));
   };
 
   const handleStop = async () => {
     if (timer.sessionId) {
       try {
-        const initialMinutes = getMinutesForProfile(
-          selectedProfile,
-          timer.sessionType
+        const actualMinutes = Math.ceil(
+          (timer.initialMinutes * 60 - (timer.minutes * 60 + timer.seconds)) /
+            60
         );
-        const elapsedMinutes =
-          initialMinutes - timer.minutes - timer.seconds / 60;
-        const actualMinutes = Math.floor(elapsedMinutes);
 
-        await sessionService.updateSession(timer.sessionId, actualMinutes);
-
-        console.log("session stopped");
-      } catch (error: any) {
-        console.error("failed to update session:", error);
+        await sessionService.completeSession(timer.sessionId, actualMinutes);
+        await fetchTodayStats();
+      } catch (error) {
+        console.error("Failed to stop session:", error);
       }
     }
 
-    const resetMinutes = getMinutesForProfile(
-      selectedProfile,
-      timer.sessionType
-    );
+    const minutes = getMinutesForProfile(selectedProfile, timer.sessionType);
     setTimer({
-      minutes: resetMinutes,
+      minutes,
       seconds: 0,
       isRunning: false,
       sessionType: timer.sessionType,
       sessionId: null,
-      initialMinutes: resetMinutes,
+      initialMinutes: minutes,
+      sessionStartTime: null,
     });
 
-    setSelectedTask(null);
-    await fetchTodayStats();
+    localStorage.removeItem("timerState");
   };
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-
-    if (timer.isRunning) {
-      interval = setInterval(() => {
-        setTimer((prev) => {
-          if (prev.seconds > 0) {
-            return { ...prev, seconds: prev.seconds - 1 };
-          } else if (prev.minutes > 0) {
-            return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-          } else {
-            handleTimerComplete();
-            return { ...prev, isRunning: false };
-          }
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-        console.log("interval cleared");
-      }
-    };
-  }, [timer.isRunning]);
 
   return (
     <Box>
-      {todayStats && (
-        <Paper
-          sx={{
-            p: 2,
-            mb: 2,
-            maxWidth: 400,
-            mx: "auto",
-            bgcolor: "#84c887",
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            Today's Focus Time
-          </Typography>
-          <Typography variant="h4">
-            {todayStats.totalMinutes} minutes
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {todayStats.sessionsCompleted} sessions completed
-          </Typography>
-        </Paper>
-      )}
-
-      {permission === "default" && (
-        <Box
-          sx={{
-            p: 2,
-            mb: 3,
-            bgcolor: "info.light",
-            maxWidth: 400,
-            mx: "auto",
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Enable notifications to get alerted when your timer completes!
-          </Typography>
-          <Button
-            size="small"
-            onClick={requestNotificationPermission}
-            variant="outlined"
-          >
-            Enable Notifications
-          </Button>
-        </Box>
-      )}
-
-      <Box sx={{ maxWidth: 400, mx: "auto", mb: 4 }}>
+      <Box sx={{ maxWidth: 600, mx: "auto", mb: 4 }}>
         <ProfileSelector
           selectedProfile={selectedProfile}
           onProfileChange={handleProfileChange}
           disabled={timer.isRunning}
         />
-      </Box>
 
-      <Box sx={{ maxWidth: 400, mx: "auto", mb: 3 }}>
         <Autocomplete
+          options={tasks}
           value={selectedTask}
           onChange={handleTaskChange}
-          options={tasks}
-          disabled={timer.isRunning || loadingTasks}
-          loading={loadingTasks}
           getOptionLabel={(option) => option.title}
+          disabled={timer.isRunning}
+          loading={loadingTasks}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           renderInput={(params) => (
             <TextField
