@@ -3,18 +3,14 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import TaskList from "./components/TaskList";
 import PrivateRoute from "./components/PrivateRoute";
 import { authService } from "./services/authService";
-import EisenhowerMatrix from "./components/EisenhowerMatrix";
-import TaskStatistics from "./components/TaskStatistics";
-import PomodoroTimer from "./components/PomodoroTimer";
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/tasks" replace />;
   }
 
   return <>{children}</>;
@@ -40,7 +36,19 @@ function App() {
         }
       />
       <Route
-        path="/dashboard"
+        path="/"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      >
+        <Route index element={<Navigate to="/tasks" replace />} />
+        <Route path="dashboard" element={<Navigate to="/tasks" replace />} />
+      </Route>
+
+      <Route
+        path="/tasks"
         element={
           <PrivateRoute>
             <Dashboard />
@@ -48,10 +56,10 @@ function App() {
         }
       />
       <Route
-        path="/tasks"
+        path="/categories"
         element={
           <PrivateRoute>
-            <TaskList />
+            <Dashboard />
           </PrivateRoute>
         }
       />
@@ -59,7 +67,7 @@ function App() {
         path="/matrix"
         element={
           <PrivateRoute>
-            <EisenhowerMatrix />
+            <Dashboard />
           </PrivateRoute>
         }
       />
@@ -67,7 +75,7 @@ function App() {
         path="/statistics"
         element={
           <PrivateRoute>
-            <TaskStatistics />
+            <Dashboard />
           </PrivateRoute>
         }
       />
@@ -75,11 +83,11 @@ function App() {
         path="/timer"
         element={
           <PrivateRoute>
-            <PomodoroTimer />
+            <Dashboard />
           </PrivateRoute>
         }
       />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

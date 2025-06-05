@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   Box,
   Drawer,
@@ -22,6 +22,7 @@ import {
   GridOn as GridOnIcon,
   ExitToApp as LogoutIcon,
 } from "@mui/icons-material";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import TaskList from "../components/TaskList";
 import CategoryList from "../components/CategoryList";
@@ -34,11 +35,27 @@ const drawerWidth = 240;
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<
-    "tasks" | "categories" | "matrix" | "statistics" | "timer"
-  >("tasks");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const { logout, user } = useAuth();
+
+  const getCurrentView = ():
+    | "tasks"
+    | "categories"
+    | "matrix"
+    | "statistics"
+    | "timer" => {
+    const path = location.pathname;
+    if (path === "/tasks") return "tasks";
+    if (path === "/categories") return "categories";
+    if (path === "/matrix") return "matrix";
+    if (path === "/statistics") return "statistics";
+    if (path === "/timer") return "timer";
+    return "tasks";
+  };
+
+  const currentView = getCurrentView();
 
   const handleDrawerToggle = useCallback(() => {
     setMobileOpen((prev) => !prev);
@@ -46,12 +63,12 @@ const Dashboard: React.FC = () => {
 
   const handleMenuItemClick = useCallback(
     (view: "tasks" | "categories" | "matrix" | "statistics" | "timer") => {
-      setCurrentView(view);
+      navigate(`/${view}`);
       if (isMobile) {
         setMobileOpen(false);
       }
     },
-    [isMobile]
+    [isMobile, navigate]
   );
 
   const drawer = (
