@@ -106,8 +106,13 @@ const PomodoroTimer: React.FC = () => {
   const handleStart = async () => {
     setLoading(true);
     try {
-      await startTimer(selectedTask?.id || null);
-      showAlert("Session started!", "success");
+      if (!timer.sessionId) {
+        await startTimer(selectedTask?.id || null);
+        showAlert("Session started!", "success");
+      } else {
+        pauseTimer();
+        showAlert("Session resumed!", "info");
+      }
     } catch (error) {
       showAlert("Failed to start session", "error");
     } finally {

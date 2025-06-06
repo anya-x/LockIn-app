@@ -76,7 +76,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // If timer was running, calculate elapsed time
         if (parsed.isRunning && parsed.sessionStartTime) {
           const elapsed = Math.floor(
             (Date.now() - parsed.sessionStartTime) / 1000
@@ -88,7 +87,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           const seconds =
             (parsed.minutes * 60 + parsed.seconds - totalElapsed) % 60;
 
-          // If time ran out while away, mark as not running
           if (minutes < 0 || (minutes === 0 && seconds <= 0)) {
             return {
               ...parsed,
@@ -116,12 +114,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationShownRef = useRef(false);
 
-  // Initialize audio
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
   }, []);
 
-  // Save timer state whenever it changes
   useEffect(() => {
     localStorage.setItem("timerState", JSON.stringify(timer));
   }, [timer]);
@@ -162,7 +158,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleTimerComplete = useCallback(async () => {
     console.log("⏰ Timer completed!");
 
-    // Prevent double notifications
     if (notificationShownRef.current) return;
     notificationShownRef.current = true;
 
@@ -192,7 +187,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // Auto-transition: after work, go to break; after break, go to work
     if (timer.sessionType === "WORK") {
       const nextType: "SHORT_BREAK" | "LONG_BREAK" =
         Math.floor(Math.random() * 4) === 3 ? "LONG_BREAK" : "SHORT_BREAK";
@@ -224,13 +218,11 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
 
-    // Reset notification flag after a delay
     setTimeout(() => {
       notificationShownRef.current = false;
     }, 2000);
   }, [timer, selectedProfile]);
 
-  // Timer countdown - runs globally!
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -273,10 +265,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         timer.sessionType === "WORK"
           ? "Focus"
           : timer.sessionType === "SHORT_BREAK"
-          ? "Shory Break"
+          ? "Break"
           : "Long Break";
 
-      document.title = `${mins}:${secs} ${sessionLabel}`;
+      document.title = `${mins}:${secs} ${sessionLabel} - Lockin`;
     } else {
       document.title = "Lockin";
     }
@@ -284,11 +276,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const startTimer = async (taskId: number | null) => {
     try {
+      const plannedMinutes = getMinutesForProfile(
+        selectedProfile,
+        timer.sessionType
+      );
+
       const response = await sessionService.startSession({
-        plannedMinutes: getMinutesForProfile(
-          selectedProfile,
-          timer.sessionType
-        ),
+        plannedMinutes: plannedMinutes,
         sessionType: timer.sessionType,
         taskId: taskId,
         profileName: selectedProfile.id,
@@ -298,7 +292,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         ...prev,
         isRunning: true,
         sessionId: response.id,
-        initialMinutes: prev.minutes,
+        initialMinutes: plannedMinutes,
         sessionStartTime: Date.now(),
         selectedTaskId: taskId,
       }));
@@ -311,11 +305,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const pauseTimer = () => {
-    setTimer((prev) => ({
-      ...prev,
-      isRunning: !prev.isRunning,
-      sessionStartTime: !prev.isRunning ? Date.now() : null,
-    }));
+    setTimer((prev) => {
+      const newIsRunning = !prev.isRunning;
+
+      return {
+        ...prev,
+        isRunning: newIsRunning,
+        sessionStartTime: newIsRunning ? Date.now() : null,
+      };
+    });
   };
 
   const stopTimer = async () => {
@@ -326,10 +324,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             60
         );
 
-        await sessionService.completeSession(timer.sessionId, actualMinutes);
-        console.log("✅ Session stopped and saved");
+        await sessionService.updateSession(timer.sessionId, actualMinutes);
+        console.log("🛑 Session stopped and updated (not completed)");
       } catch (error) {
-        console.error("Failed to stop session:", error);
+        console.error("Failed to update stopped session:", error);
       }
     }
 
