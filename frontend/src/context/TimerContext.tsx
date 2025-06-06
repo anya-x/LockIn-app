@@ -319,7 +319,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const stopTimer = async () => {
     if (timer.sessionId) {
       try {
-        const actualMinutes = Math.ceil(
+        const actualMinutes = Math.floor(
           (timer.initialMinutes * 60 - (timer.minutes * 60 + timer.seconds)) /
             60
         );
