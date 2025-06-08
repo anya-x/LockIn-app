@@ -41,6 +41,7 @@ const PomodoroTimer: React.FC = () => {
   const [dotCount, setDotCount] = useState(20);
   const [loading, setLoading] = useState(false);
   const [sessionNotes, setSessionNotes] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
@@ -71,6 +72,7 @@ const PomodoroTimer: React.FC = () => {
     fetchTasks();
   }, []);
 
+  // Restore selected task from timer state
   useEffect(() => {
     if (timer.selectedTaskId && tasks.length > 0) {
       const task = tasks.find((t) => t.id === timer.selectedTaskId);
@@ -105,14 +107,20 @@ const PomodoroTimer: React.FC = () => {
     );
   };
 
+  const triggerRefresh = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
   const handleStart = async () => {
     setLoading(true);
     try {
+      // Only create a new backend session if we don't already have one
       if (!timer.sessionId) {
         await startTimer(selectedTask?.id || null, sessionNotes);
         showAlert("Session started!", "success");
       } else {
-        pauseTimer();
+        // Resume existing session (just unpause, no new backend call)
+        pauseTimer(); // This will toggle isRunning back to true
         showAlert("Session resumed!", "info");
       }
     } catch (error) {
@@ -125,8 +133,9 @@ const PomodoroTimer: React.FC = () => {
   const handleStop = async () => {
     try {
       await stopTimer(sessionNotes);
-      setSessionNotes("");
+      setSessionNotes(""); // Clear notes after stopping
       showAlert("Session stopped and saved", "info");
+      triggerRefresh(); // Refresh session history
     } catch (error) {
       showAlert("Failed to stop session", "error");
     }
@@ -233,6 +242,7 @@ const PomodoroTimer: React.FC = () => {
           openOnFocus
         />
 
+        {/* Session Notes Field */}
         <Box sx={{ mt: 2 }}>
           <TextField
             fullWidth
@@ -242,14 +252,12 @@ const PomodoroTimer: React.FC = () => {
             placeholder="What are you working on? Any blockers or insights?"
             value={sessionNotes}
             onChange={(e) => setSessionNotes(e.target.value)}
-            disabled={!timer.isRunning}
             helperText={
-              timer.isRunning
-                ? "Notes auto-save when session ends. Click 'Save Now' to save immediately."
-                : "Start a session to add notes"
+              timer.isRunning && timer.sessionId
+                ? "Notes will be saved when session ends"
+                : "Add notes to track context and progress"
             }
           />
-
           {timer.isRunning && timer.sessionId && (
             <Button
               size="small"
@@ -259,6 +267,7 @@ const PomodoroTimer: React.FC = () => {
                 try {
                   await saveSessionNotes(sessionNotes);
                   showAlert("Notes saved!", "success");
+                  triggerRefresh(); // Refresh session history
                 } catch (error) {
                   showAlert("Failed to save notes", "error");
                 }
@@ -481,7 +490,7 @@ const PomodoroTimer: React.FC = () => {
       </Box>
 
       <Box mt={4}>
-        <SessionHistory />
+        <SessionHistory refresh={refreshTrigger} />
       </Box>
     </Box>
   );

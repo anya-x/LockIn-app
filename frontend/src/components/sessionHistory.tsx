@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Paper,
@@ -10,31 +10,22 @@ import {
   CircularProgress,
   Divider,
 } from "@mui/material";
-import {
-  sessionService,
-  type FocusSessionResponse,
-} from "../services/sessionService";
+import { useSessionHistory } from "../hooks/useSessionHistory";
 import { FOCUS_PROFILES } from "../config/focusProfiles";
 
-const SessionHistory: React.FC = () => {
-  const [sessions, setSessions] = useState<FocusSessionResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+interface SessionHistoryProps {
+  refresh?: number;
+}
+
+const SessionHistory: React.FC<SessionHistoryProps> = ({ refresh = 0 }) => {
+  const { sessions, loading, refreshSessions } = useSessionHistory();
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
-
-  const fetchSessions = async () => {
-    setLoading(true);
-    try {
-      const data = await sessionService.getUserSessions();
-      setSessions(data);
-    } catch (error: any) {
-      console.error("Failed to fetch sessions:", error);
-    } finally {
-      setLoading(false);
+    if (refresh > 0) {
+      console.log("🔄 Parent triggered session history refresh");
+      refreshSessions();
     }
-  };
+  }, [refresh, refreshSessions]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
