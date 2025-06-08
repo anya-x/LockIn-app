@@ -242,15 +242,19 @@ const PomodoroTimer: React.FC = () => {
             placeholder="What are you working on? Any blockers or insights?"
             value={sessionNotes}
             onChange={(e) => setSessionNotes(e.target.value)}
+            disabled={!timer.isRunning}
             helperText={
-              timer.isRunning && timer.sessionId
-                ? "Notes will be saved when session ends"
-                : "Add notes to track context and progress"
+              timer.isRunning
+                ? "Notes auto-save when session ends. Click 'Save Now' to save immediately."
+                : "Start a session to add notes"
             }
           />
-          {timer.isRunning && timer.sessionId && sessionNotes.trim() !== "" && (
+
+          {timer.isRunning && timer.sessionId && (
             <Button
               size="small"
+              variant="outlined"
+              disabled={sessionNotes.trim() === ""}
               onClick={async () => {
                 try {
                   await saveSessionNotes(sessionNotes);
