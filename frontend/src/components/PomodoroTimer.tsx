@@ -32,6 +32,7 @@ const PomodoroTimer: React.FC = () => {
     setProfile,
     formatTime,
     getTimerColor,
+    saveSessionNotes,
   } = useTimer();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -39,6 +40,7 @@ const PomodoroTimer: React.FC = () => {
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [dotCount, setDotCount] = useState(20);
   const [loading, setLoading] = useState(false);
+  const [sessionNotes, setSessionNotes] = useState("");
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
@@ -107,7 +109,7 @@ const PomodoroTimer: React.FC = () => {
     setLoading(true);
     try {
       if (!timer.sessionId) {
-        await startTimer(selectedTask?.id || null);
+        await startTimer(selectedTask?.id || null, sessionNotes);
         showAlert("Session started!", "success");
       } else {
         pauseTimer();
@@ -122,7 +124,8 @@ const PomodoroTimer: React.FC = () => {
 
   const handleStop = async () => {
     try {
-      await stopTimer();
+      await stopTimer(sessionNotes);
+      setSessionNotes("");
       showAlert("Session stopped and saved", "info");
     } catch (error) {
       showAlert("Failed to stop session", "error");
@@ -229,6 +232,39 @@ const PomodoroTimer: React.FC = () => {
           autoHighlight
           openOnFocus
         />
+
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            label="Session Notes (Optional)"
+            placeholder="What are you working on? Any blockers or insights?"
+            value={sessionNotes}
+            onChange={(e) => setSessionNotes(e.target.value)}
+            helperText={
+              timer.isRunning && timer.sessionId
+                ? "Notes will be saved when session ends"
+                : "Add notes to track context and progress"
+            }
+          />
+          {timer.isRunning && timer.sessionId && sessionNotes.trim() !== "" && (
+            <Button
+              size="small"
+              onClick={async () => {
+                try {
+                  await saveSessionNotes(sessionNotes);
+                  showAlert("Notes saved!", "success");
+                } catch (error) {
+                  showAlert("Failed to save notes", "error");
+                }
+              }}
+              sx={{ mt: 1 }}
+            >
+              Save Notes Now
+            </Button>
+          )}
+        </Box>
 
         {tasks.length === 0 && !loadingTasks && !timer.isRunning && (
           <Typography

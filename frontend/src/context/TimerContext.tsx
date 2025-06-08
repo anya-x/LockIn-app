@@ -28,13 +28,14 @@ interface TimerState {
 interface TimerContextType {
   timer: TimerState;
   selectedProfile: FocusProfile;
-  startTimer: (taskId: number | null) => Promise<void>;
+  startTimer: (taskId: number | null, notes?: string) => Promise<void>;
   pauseTimer: () => void;
-  stopTimer: () => Promise<void>;
+  stopTimer: (notes?: string) => Promise<void>;
   setSessionType: (type: "WORK" | "SHORT_BREAK" | "LONG_BREAK") => void;
   setProfile: (profile: FocusProfile) => void;
   formatTime: () => string;
   getTimerColor: () => string;
+  saveSessionNotes: (notes: string) => Promise<void>;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -274,7 +275,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [timer.isRunning, timer.minutes, timer.seconds, timer.sessionType]);
 
-  const startTimer = async (taskId: number | null) => {
+  const startTimer = async (taskId: number | null, notes?: string) => {
     try {
       const plannedMinutes = getMinutesForProfile(
         selectedProfile,
@@ -297,6 +298,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         selectedTaskId: taskId,
       }));
 
+      if (notes && notes.trim() !== "") {
+        try {
+          await sessionService.updateSessionNotes(response.id, notes);
+        } catch (error) {
+          console.error("Failed to save session notes:", error);
+        }
+      }
+
       console.log("✅ Timer started, session ID:", response.id);
     } catch (error) {
       console.error("Failed to start session:", error);
@@ -316,7 +325,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  const stopTimer = async () => {
+  const stopTimer = async (notes?: string) => {
     if (timer.sessionId) {
       try {
         const actualMinutes = Math.floor(
@@ -325,6 +334,11 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         );
 
         await sessionService.updateSession(timer.sessionId, actualMinutes);
+
+        if (notes && notes.trim() !== "") {
+          await sessionService.updateSessionNotes(timer.sessionId, notes);
+        }
+
         console.log("🛑 Session stopped and updated (not completed)");
       } catch (error) {
         console.error("Failed to update stopped session:", error);
@@ -345,6 +359,20 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     localStorage.removeItem("timerState");
+  };
+
+  const saveSessionNotes = async (notes: string) => {
+    if (timer.sessionId) {
+      try {
+        await sessionService.updateSessionNotes(timer.sessionId, notes);
+        console.log("Session notes saved");
+      } catch (error) {
+        console.error("Failed to save session notes:", error);
+        throw error;
+      }
+    } else {
+      console.warn("Cannot save notes: no active session");
+    }
   };
 
   const setSessionType = (type: "WORK" | "SHORT_BREAK" | "LONG_BREAK") => {
@@ -407,6 +435,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     setProfile,
     formatTime,
     getTimerColor,
+    saveSessionNotes,
   };
 
   return (

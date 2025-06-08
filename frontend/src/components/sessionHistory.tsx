@@ -102,11 +102,12 @@ const SessionHistory: React.FC = () => {
               <ListItem
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  py: 2,
                 }}
               >
-                <Box flex={1}>
+                <Box width="100%">
                   <ListItemText
                     primary={
                       <Box
@@ -161,6 +162,29 @@ const SessionHistory: React.FC = () => {
                     secondary={formatDate(session.startedAt)}
                   />
                 </Box>
+
+                {session.notes && (
+                  <Box
+                    sx={{
+                      mt: 1,
+                      p: 1.5,
+                      bgcolor: "action.hover",
+                      borderRadius: 1,
+                      width: "100%",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontWeight: 600, display: "block", mb: 0.5 }}
+                    >
+                      📝 Notes:
+                    </Typography>
+                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                      {session.notes}
+                    </Typography>
+                  </Box>
+                )}
               </ListItem>
             </React.Fragment>
           );
