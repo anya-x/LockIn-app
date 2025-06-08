@@ -36,6 +36,7 @@ interface TimerContextType {
   formatTime: () => string;
   getTimerColor: () => string;
   saveSessionNotes: (notes: string) => Promise<void>;
+  onSessionComplete?: () => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -48,9 +49,10 @@ export const useTimer = () => {
   return context;
 };
 
-export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const TimerProvider: React.FC<{
+  children: React.ReactNode;
+  onSessionComplete?: () => void;
+}> = ({ children, onSessionComplete }) => {
   const [selectedProfile, setSelectedProfile] = useState<FocusProfile>(() => {
     const savedProfile = localStorage.getItem("lastFocusProfile");
     return (
@@ -183,6 +185,11 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         await sessionService.completeSession(timer.sessionId, plannedMinutes);
         console.log("✅ Session saved to backend");
+
+        if (onSessionComplete) {
+          console.log("triggering session history refresh on complete");
+          onSessionComplete();
+        }
       } catch (error) {
         console.error("Failed to complete session:", error);
       }
@@ -436,6 +443,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     formatTime,
     getTimerColor,
     saveSessionNotes,
+    onSessionComplete,
   };
 
   return (

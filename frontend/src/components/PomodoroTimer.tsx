@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Button,
@@ -19,9 +19,30 @@ import { ProfileSelector } from "./ProfileSelector";
 import SessionHistory from "./sessionHistory";
 import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
-import { useTimer } from "../context/TimerContext";
+import { useTimer, TimerProvider } from "../context/TimerContext";
 
 const PomodoroTimer: React.FC = () => {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const triggerRefresh = useCallback(() => {
+    console.log(" Session history refresh triggered");
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
+
+  return (
+    <TimerProvider onSessionComplete={triggerRefresh}>
+      <PomodoroTimerContent
+        refreshTrigger={refreshTrigger}
+        triggerRefresh={triggerRefresh}
+      />
+    </TimerProvider>
+  );
+};
+
+const PomodoroTimerContent: React.FC<{
+  refreshTrigger: number;
+  triggerRefresh: () => void;
+}> = ({ refreshTrigger, triggerRefresh }) => {
   const {
     timer,
     selectedProfile,
@@ -41,7 +62,6 @@ const PomodoroTimer: React.FC = () => {
   const [dotCount, setDotCount] = useState(20);
   const [loading, setLoading] = useState(false);
   const [sessionNotes, setSessionNotes] = useState("");
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
@@ -105,10 +125,6 @@ const PomodoroTimer: React.FC = () => {
       () => setAlert({ show: false, message: "", severity: "info" }),
       3000
     );
-  };
-
-  const triggerRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleStart = async () => {
