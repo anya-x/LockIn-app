@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   Box,
   Drawer,
@@ -35,6 +35,139 @@ import PomodoroTimer from "../components/PomodoroTimer";
 
 const drawerWidth = 240;
 
+const TimerChip: React.FC<{
+  isRunning: boolean;
+  sessionType: string;
+  profileColor: string;
+  sessionStartedAt: number | null;
+  plannedMinutes: number;
+  onNavigate: () => void;
+  currentView: string;
+}> = React.memo(
+  ({
+    isRunning,
+    sessionType,
+    profileColor,
+    sessionStartedAt,
+    plannedMinutes,
+    onNavigate,
+    currentView,
+  }) => {
+    const [countdown, setCountdown] = React.useState("00:00");
+
+    React.useEffect(() => {
+      if (!isRunning || !sessionStartedAt) {
+        return;
+      }
+
+      const updateCountdown = () => {
+        const elapsedMs = Date.now() - sessionStartedAt;
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+        const totalSeconds = plannedMinutes * 60;
+        const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+
+        const formatted = `${String(minutes).padStart(2, "0")}:${String(
+          seconds
+        ).padStart(2, "0")}`;
+        setCountdown(formatted);
+      };
+
+      updateCountdown();
+
+      const interval = setInterval(updateCountdown, 1000);
+
+      return () => clearInterval(interval);
+    }, [isRunning, sessionStartedAt, plannedMinutes]);
+
+    if (!isRunning || currentView === "timer") return null;
+
+    const getChipColor = () => {
+      switch (sessionType) {
+        case "WORK":
+          return profileColor;
+        case "SHORT_BREAK":
+          return "#2e7d32";
+        case "LONG_BREAK":
+          return "#7b1fa2";
+        default:
+          return "primary";
+      }
+    };
+
+    return (
+      <Chip
+        icon={<TimerIcon />}
+        label={countdown}
+        onClick={onNavigate}
+        sx={{
+          cursor: "pointer",
+          fontWeight: 600,
+          fontSize: "0.9rem",
+          bgcolor: getChipColor(),
+          color: "white",
+          "&:hover": {
+            opacity: 0.9,
+          },
+          "& .MuiChip-icon": {
+            color: "white",
+            animation: "pulse 2s ease-in-out infinite",
+          },
+          "@keyframes pulse": {
+            "0%, 100%": { opacity: 1 },
+            "50%": { opacity: 0.5 },
+          },
+        }}
+      />
+    );
+  }
+);
+
+TimerChip.displayName = "TimerChip";
+
+const SidebarTimerIndicator: React.FC<{
+  isRunning: boolean;
+  sessionType: string;
+  profileColor: string;
+}> = React.memo(({ isRunning, sessionType, profileColor }) => {
+  if (!isRunning) return null;
+
+  const getChipColor = () => {
+    switch (sessionType) {
+      case "WORK":
+        return profileColor;
+      case "SHORT_BREAK":
+        return "#2e7d32";
+      case "LONG_BREAK":
+        return "#7b1fa2";
+      default:
+        return "primary";
+    }
+  };
+
+  return (
+    <Chip
+      label="•"
+      size="small"
+      sx={{
+        fontSize: "0.7rem",
+        height: 20,
+        bgcolor: getChipColor(),
+        color: "white",
+        fontWeight: 600,
+        minWidth: 24,
+        "& .MuiChip-label": {
+          px: 0.5,
+        },
+      }}
+    />
+  );
+});
+
+SidebarTimerIndicator.displayName = "SidebarTimerIndicator";
+
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -42,7 +175,8 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { logout, user } = useAuth();
-  const { timer, formatTime, selectedProfile } = useTimer();
+
+  const { timer, selectedProfile } = useTimer();
 
   const getCurrentView = ():
     | "tasks"
@@ -75,18 +209,9 @@ const Dashboard: React.FC = () => {
     [isMobile, navigate]
   );
 
-  const getChipColor = () => {
-    switch (timer.sessionType) {
-      case "WORK":
-        return selectedProfile.color;
-      case "SHORT_BREAK":
-        return "#2e7d32";
-      case "LONG_BREAK":
-        return "#7b1fa2";
-      default:
-        return "primary";
-    }
-  };
+  const handleTimerNavigate = useCallback(() => {
+    navigate("/timer");
+  }, [navigate]);
 
   const drawer = (
     <div>
@@ -150,19 +275,11 @@ const Dashboard: React.FC = () => {
               <TimerIcon />
             </ListItemIcon>
             <ListItemText primary="Timer" />
-            {timer.isRunning && (
-              <Chip
-                label={formatTime()}
-                size="small"
-                sx={{
-                  fontSize: "0.7rem",
-                  height: 20,
-                  bgcolor: getChipColor(),
-                  color: "white",
-                  fontWeight: 600,
-                }}
-              />
-            )}
+            <SidebarTimerIndicator
+              isRunning={timer.isRunning}
+              sessionType={timer.sessionType}
+              profileColor={selectedProfile.color}
+            />
           </ListItemButton>
         </ListItem>
       </List>
@@ -219,31 +336,15 @@ const Dashboard: React.FC = () => {
             Welcome, {user?.firstName || user?.email || "User"}
           </Typography>
 
-          {timer.isRunning && currentView !== "timer" && (
-            <Chip
-              icon={<TimerIcon />}
-              label={formatTime()}
-              onClick={() => navigate("/timer")}
-              sx={{
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: "0.9rem",
-                bgcolor: getChipColor(),
-                color: "white",
-                "&:hover": {
-                  opacity: 0.9,
-                },
-                "& .MuiChip-icon": {
-                  color: "white",
-                  animation: "pulse 2s ease-in-out infinite",
-                },
-                "@keyframes pulse": {
-                  "0%, 100%": { opacity: 1 },
-                  "50%": { opacity: 0.5 },
-                },
-              }}
-            />
-          )}
+          <TimerChip
+            isRunning={timer.isRunning}
+            sessionType={timer.sessionType}
+            profileColor={selectedProfile.color}
+            sessionStartedAt={timer.sessionStartedAt}
+            plannedMinutes={timer.plannedMinutes}
+            onNavigate={handleTimerNavigate}
+            currentView={currentView}
+          />
         </Toolbar>
       </AppBar>
 

@@ -19,30 +19,9 @@ import { ProfileSelector } from "./ProfileSelector";
 import SessionHistory from "./sessionHistory";
 import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
-import { useTimer, TimerProvider } from "../context/TimerContext";
+import { useTimer } from "../context/TimerContext";
 
 const PomodoroTimer: React.FC = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const triggerRefresh = useCallback(() => {
-    console.log(" Session history refresh triggered");
-    setRefreshTrigger((prev) => prev + 1);
-  }, []);
-
-  return (
-    <TimerProvider onSessionComplete={triggerRefresh}>
-      <PomodoroTimerContent
-        refreshTrigger={refreshTrigger}
-        triggerRefresh={triggerRefresh}
-      />
-    </TimerProvider>
-  );
-};
-
-const PomodoroTimerContent: React.FC<{
-  refreshTrigger: number;
-  triggerRefresh: () => void;
-}> = ({ refreshTrigger, triggerRefresh }) => {
   const {
     timer,
     selectedProfile,
@@ -51,10 +30,75 @@ const PomodoroTimerContent: React.FC<{
     stopTimer,
     setSessionType,
     setProfile,
-    formatTime,
     getTimerColor,
     saveSessionNotes,
+    triggerCompletion,
   } = useTimer();
+
+  const [displayState, setDisplayState] = React.useState({
+    minutes: 0,
+    seconds: 0,
+  });
+
+  React.useEffect(() => {
+    if (!timer.isRunning || !timer.sessionStartedAt) {
+      setDisplayState({
+        minutes: timer.plannedMinutes,
+        seconds: 0,
+      });
+      return;
+    }
+    const updateDisplay = () => {
+      const elapsedMs = Date.now() - timer.sessionStartedAt;
+      const elapsedSeconds = Math.floor(elapsedMs / 1000);
+      const totalSeconds = timer.plannedMinutes * 60;
+      const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+
+      const minutes = Math.floor(remainingSeconds / 60);
+      const seconds = remainingSeconds % 60;
+
+      setDisplayState({ minutes, seconds });
+
+      if (remainingSeconds === 0 && !completionTriggeredRef.current) {
+        completionTriggeredRef.current = true;
+        console.log("⏰ COMPLETION!");
+        triggerCompletion();
+      }
+    };
+
+    updateDisplay();
+
+    const interval = setInterval(updateDisplay, 1000);
+
+    return () => clearInterval(interval);
+  }, [
+    timer.isRunning,
+    timer.sessionStartedAt,
+    timer.plannedMinutes,
+    triggerCompletion,
+  ]);
+
+  const [totalElapsedSeconds, setTotalElapsedSeconds] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!timer.isRunning || !timer.sessionStartedAt) {
+      setTotalElapsedSeconds(0);
+      return;
+    }
+
+    const updateElapsed = () => {
+      const elapsedMs = Date.now() - timer.sessionStartedAt;
+      setTotalElapsedSeconds(Math.floor(elapsedMs / 1000));
+    };
+
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer.isRunning, timer.sessionStartedAt]);
+
+  const displayMinutes = displayState.minutes;
+  const displaySeconds = displayState.seconds;
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -62,6 +106,7 @@ const PomodoroTimerContent: React.FC<{
   const [dotCount, setDotCount] = useState(20);
   const [loading, setLoading] = useState(false);
   const [sessionNotes, setSessionNotes] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
@@ -69,6 +114,40 @@ const PomodoroTimerContent: React.FC<{
   }>({ show: false, message: "", severity: "info" });
 
   const timerContainerRef = useRef<HTMLDivElement>(null);
+  const completionTriggeredRef = useRef(false);
+
+  const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
+  const lastSessionTypeRef = useRef(timer.sessionType);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
+
+  useEffect(() => {
+    if (timer.completionCounter > 0) {
+      console.log("🔄 Session completed, refreshing history");
+      triggerRefresh();
+    }
+  }, [timer.completionCounter, triggerRefresh]);
+
+  useEffect(() => {
+    if (!timer.isRunning) {
+      const plannedChanged =
+        timer.plannedMinutes !== lastPlannedMinutesRef.current;
+      const typeChanged = timer.sessionType !== lastSessionTypeRef.current;
+
+      if (plannedChanged || typeChanged) {
+        setDisplayState({
+          minutes: timer.plannedMinutes,
+          seconds: 0,
+        });
+        completionTriggeredRef.current = false;
+
+        lastPlannedMinutesRef.current = timer.plannedMinutes;
+        lastSessionTypeRef.current = timer.sessionType;
+      }
+    }
+  }, [timer.plannedMinutes, timer.sessionType, timer.isRunning]);
 
   useEffect(() => {
     const calculateDots = () => {
@@ -92,7 +171,6 @@ const PomodoroTimerContent: React.FC<{
     fetchTasks();
   }, []);
 
-  // Restore selected task from timer state
   useEffect(() => {
     if (timer.selectedTaskId && tasks.length > 0) {
       const task = tasks.find((t) => t.id === timer.selectedTaskId);
@@ -130,13 +208,11 @@ const PomodoroTimerContent: React.FC<{
   const handleStart = async () => {
     setLoading(true);
     try {
-      // Only create a new backend session if we don't already have one
       if (!timer.sessionId) {
         await startTimer(selectedTask?.id || null, sessionNotes);
         showAlert("Session started!", "success");
       } else {
-        // Resume existing session (just unpause, no new backend call)
-        pauseTimer(); // This will toggle isRunning back to true
+        pauseTimer();
         showAlert("Session resumed!", "info");
       }
     } catch (error) {
@@ -149,9 +225,9 @@ const PomodoroTimerContent: React.FC<{
   const handleStop = async () => {
     try {
       await stopTimer(sessionNotes);
-      setSessionNotes(""); // Clear notes after stopping
+      setSessionNotes("");
       showAlert("Session stopped and saved", "info");
-      triggerRefresh(); // Refresh session history
+      triggerRefresh();
     } catch (error) {
       showAlert("Failed to stop session", "error");
     }
@@ -170,17 +246,10 @@ const PomodoroTimerContent: React.FC<{
     setSelectedTask(newValue);
   };
 
-  const getMinutesForProfile = (type: string): number => {
-    switch (type) {
-      case "WORK":
-        return selectedProfile.work;
-      case "SHORT_BREAK":
-        return selectedProfile.break;
-      case "LONG_BREAK":
-        return selectedProfile.longBreak;
-      default:
-        return selectedProfile.work;
-    }
+  const formatTime = (): string => {
+    const mins = String(displayMinutes).padStart(2, "0");
+    const secs = String(displaySeconds).padStart(2, "0");
+    return `${mins}:${secs}`;
   };
 
   return (
@@ -258,7 +327,6 @@ const PomodoroTimerContent: React.FC<{
           openOnFocus
         />
 
-        {/* Session Notes Field */}
         <Box sx={{ mt: 2 }}>
           <TextField
             fullWidth
@@ -283,7 +351,7 @@ const PomodoroTimerContent: React.FC<{
                 try {
                   await saveSessionNotes(sessionNotes);
                   showAlert("Notes saved!", "success");
-                  triggerRefresh(); // Refresh session history
+                  triggerRefresh();
                 } catch (error) {
                   showAlert("Failed to save notes", "error");
                 }
@@ -364,13 +432,10 @@ const PomodoroTimerContent: React.FC<{
         >
           {Array.from({ length: dotCount }).map((_, i) => {
             const totalDots = dotCount;
-            const totalMinutes = getMinutesForProfile(timer.sessionType);
-            const totalSeconds = totalMinutes * 60;
-            const remainingSeconds = timer.minutes * 60 + timer.seconds;
-            const elapsedSeconds = totalSeconds - remainingSeconds;
+            const totalSeconds = timer.plannedMinutes * 60;
             const percentComplete = Math.max(
               0,
-              Math.min(100, (elapsedSeconds / totalSeconds) * 100)
+              Math.min(100, (totalElapsedSeconds / totalSeconds) * 100)
             );
 
             const dotsAffected = Math.floor(
@@ -451,7 +516,9 @@ const PomodoroTimerContent: React.FC<{
             <Button
               variant="contained"
               onClick={handleStart}
-              disabled={loading || (timer.minutes === 0 && timer.seconds === 0)}
+              disabled={
+                loading || (displayMinutes === 0 && displaySeconds === 0)
+              }
               fullWidth
               size="large"
               startIcon={<PlayArrowIcon />}

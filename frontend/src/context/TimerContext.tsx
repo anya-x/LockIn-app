@@ -13,16 +13,16 @@ import {
   getDefaultProfile,
 } from "../config/focusProfiles";
 
+
 interface TimerState {
-  minutes: number;
-  seconds: number;
   isRunning: boolean;
   sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
   sessionId: number | null;
-  initialMinutes: number;
-  sessionStartTime: number | null;
   selectedTaskId: number | null;
   selectedProfile: string;
+  completionCounter: number;
+  sessionStartedAt: number | null;
+  plannedMinutes: number;
 }
 
 interface TimerContextType {
@@ -33,10 +33,10 @@ interface TimerContextType {
   stopTimer: (notes?: string) => Promise<void>;
   setSessionType: (type: "WORK" | "SHORT_BREAK" | "LONG_BREAK") => void;
   setProfile: (profile: FocusProfile) => void;
-  formatTime: () => string;
   getTimerColor: () => string;
   saveSessionNotes: (notes: string) => Promise<void>;
   onSessionComplete?: () => void;
+  triggerCompletion: () => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -62,15 +62,14 @@ export const TimerProvider: React.FC<{
 
   const getDefaultTimerState = useCallback((): TimerState => {
     return {
-      minutes: selectedProfile.work,
-      seconds: 0,
       isRunning: false,
       sessionType: "WORK",
       sessionId: null,
-      initialMinutes: selectedProfile.work,
-      sessionStartTime: null,
       selectedTaskId: null,
       selectedProfile: selectedProfile.id,
+      completionCounter: 0,
+      sessionStartedAt: null,
+      plannedMinutes: selectedProfile.work,
     };
   }, [selectedProfile]);
 
@@ -79,34 +78,16 @@ export const TimerProvider: React.FC<{
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.isRunning && parsed.sessionStartTime) {
-          const elapsed = Math.floor(
-            (Date.now() - parsed.sessionStartTime) / 1000
-          );
-          const totalElapsed = Math.floor(elapsed);
-          const minutes = Math.floor(
-            (parsed.minutes * 60 + parsed.seconds - totalElapsed) / 60
-          );
-          const seconds =
-            (parsed.minutes * 60 + parsed.seconds - totalElapsed) % 60;
-
-          if (minutes < 0 || (minutes === 0 && seconds <= 0)) {
-            return {
-              ...parsed,
-              minutes: 0,
-              seconds: 0,
-              isRunning: false,
-              sessionStartTime: null,
-            };
-          }
-
-          return {
-            ...parsed,
-            minutes: Math.max(0, minutes),
-            seconds: Math.max(0, seconds),
-          };
-        }
-        return parsed;
+        return {
+          isRunning: parsed.isRunning || false,
+          sessionType: parsed.sessionType || "WORK",
+          sessionId: parsed.sessionId || null,
+          selectedTaskId: parsed.selectedTaskId || null,
+          selectedProfile: parsed.selectedProfile || selectedProfile.id,
+          completionCounter: parsed.completionCounter || 0,
+          sessionStartedAt: parsed.sessionStartedAt || null,
+          plannedMinutes: parsed.plannedMinutes || selectedProfile.work,
+        };
       } catch {
         return getDefaultTimerState();
       }
@@ -116,10 +97,57 @@ export const TimerProvider: React.FC<{
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationShownRef = useRef(false);
+  const titleUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
   }, []);
+
+  useEffect(() => {
+    if (timer.isRunning && timer.sessionStartedAt) {
+      const updateTitle = () => {
+        const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+        const totalSeconds = timer.plannedMinutes * 60;
+        const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+
+        const mins = String(minutes).padStart(2, "0");
+        const secs = String(seconds).padStart(2, "0");
+        const sessionLabel =
+          timer.sessionType === "WORK"
+            ? "Focus"
+            : timer.sessionType === "SHORT_BREAK"
+            ? "Break"
+            : "Long Break";
+
+        document.title = `${mins}:${secs} ${sessionLabel} - Lockin`;
+      };
+
+      updateTitle();
+
+      titleUpdateIntervalRef.current = setInterval(updateTitle, 1000);
+
+      return () => {
+        if (titleUpdateIntervalRef.current) {
+          clearInterval(titleUpdateIntervalRef.current);
+        }
+      };
+    } else {
+      document.title = "Lockin";
+      if (titleUpdateIntervalRef.current) {
+        clearInterval(titleUpdateIntervalRef.current);
+        titleUpdateIntervalRef.current = null;
+      }
+    }
+  }, [
+    timer.isRunning,
+    timer.sessionStartedAt,
+    timer.plannedMinutes,
+    timer.sessionType,
+  ]);
 
   useEffect(() => {
     localStorage.setItem("timerState", JSON.stringify(timer));
@@ -158,9 +186,8 @@ export const TimerProvider: React.FC<{
     }
   };
 
-  const handleTimerComplete = useCallback(async () => {
-    console.log("⏰ Timer completed!");
 
+  const triggerCompletion = useCallback(async () => {
     if (notificationShownRef.current) return;
     notificationShownRef.current = true;
 
@@ -179,15 +206,12 @@ export const TimerProvider: React.FC<{
 
     if (timer.sessionId) {
       try {
-        const plannedMinutes = getMinutesForProfile(
-          selectedProfile,
-          timer.sessionType
+        await sessionService.completeSession(
+          timer.sessionId,
+          timer.plannedMinutes
         );
-        await sessionService.completeSession(timer.sessionId, plannedMinutes);
-        console.log("✅ Session saved to backend");
 
         if (onSessionComplete) {
-          console.log("triggering session history refresh on complete");
           onSessionComplete();
         }
       } catch (error) {
@@ -201,86 +225,33 @@ export const TimerProvider: React.FC<{
       const nextMinutes = getMinutesForProfile(selectedProfile, nextType);
 
       setTimer({
-        minutes: nextMinutes,
-        seconds: 0,
         isRunning: false,
         sessionType: nextType,
         sessionId: null,
-        initialMinutes: nextMinutes,
-        sessionStartTime: null,
         selectedTaskId: timer.selectedTaskId,
         selectedProfile: selectedProfile.id,
+        completionCounter: timer.completionCounter + 1,
+        sessionStartedAt: null,
+        plannedMinutes: nextMinutes,
       });
     } else {
       const nextMinutes = getMinutesForProfile(selectedProfile, "WORK");
       setTimer({
-        minutes: nextMinutes,
-        seconds: 0,
         isRunning: false,
         sessionType: "WORK",
         sessionId: null,
-        initialMinutes: nextMinutes,
-        sessionStartTime: null,
         selectedTaskId: timer.selectedTaskId,
         selectedProfile: selectedProfile.id,
+        completionCounter: timer.completionCounter + 1,
+        sessionStartedAt: null,
+        plannedMinutes: nextMinutes,
       });
     }
 
     setTimeout(() => {
       notificationShownRef.current = false;
     }, 2000);
-  }, [timer, selectedProfile]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (timer.isRunning) {
-      interval = setInterval(() => {
-        setTimer((prev) => {
-          if (prev.seconds === 0) {
-            if (prev.minutes === 0) {
-              handleTimerComplete();
-              return {
-                ...prev,
-                isRunning: false,
-                sessionStartTime: null,
-              };
-            }
-            return {
-              ...prev,
-              minutes: prev.minutes - 1,
-              seconds: 59,
-            };
-          }
-          return {
-            ...prev,
-            seconds: prev.seconds - 1,
-          };
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [timer.isRunning, handleTimerComplete]);
-
-  useEffect(() => {
-    if (timer.isRunning) {
-      const mins = String(timer.minutes).padStart(2, "0");
-      const secs = String(timer.seconds).padStart(2, "0");
-      const sessionLabel =
-        timer.sessionType === "WORK"
-          ? "Focus"
-          : timer.sessionType === "SHORT_BREAK"
-          ? "Break"
-          : "Long Break";
-
-      document.title = `${mins}:${secs} ${sessionLabel} - Lockin`;
-    } else {
-      document.title = "Lockin";
-    }
-  }, [timer.isRunning, timer.minutes, timer.seconds, timer.sessionType]);
+  }, [timer, selectedProfile, onSessionComplete]);
 
   const startTimer = async (taskId: number | null, notes?: string) => {
     try {
@@ -300,9 +271,9 @@ export const TimerProvider: React.FC<{
         ...prev,
         isRunning: true,
         sessionId: response.id,
-        initialMinutes: plannedMinutes,
-        sessionStartTime: Date.now(),
         selectedTaskId: taskId,
+        sessionStartedAt: Date.now(),
+        plannedMinutes: plannedMinutes,
       }));
 
       if (notes && notes.trim() !== "") {
@@ -312,8 +283,6 @@ export const TimerProvider: React.FC<{
           console.error("Failed to save session notes:", error);
         }
       }
-
-      console.log("✅ Timer started, session ID:", response.id);
     } catch (error) {
       console.error("Failed to start session:", error);
       throw error;
@@ -321,32 +290,23 @@ export const TimerProvider: React.FC<{
   };
 
   const pauseTimer = () => {
-    setTimer((prev) => {
-      const newIsRunning = !prev.isRunning;
-
-      return {
-        ...prev,
-        isRunning: newIsRunning,
-        sessionStartTime: newIsRunning ? Date.now() : null,
-      };
-    });
+    setTimer((prev) => ({
+      ...prev,
+      isRunning: !prev.isRunning,
+    }));
   };
 
   const stopTimer = async (notes?: string) => {
     if (timer.sessionId) {
       try {
-        const actualMinutes = Math.floor(
-          (timer.initialMinutes * 60 - (timer.minutes * 60 + timer.seconds)) /
-            60
-        );
+        const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
+        const actualMinutes = Math.floor(elapsedMs / 60000);
 
         await sessionService.updateSession(timer.sessionId, actualMinutes);
 
         if (notes && notes.trim() !== "") {
           await sessionService.updateSessionNotes(timer.sessionId, notes);
         }
-
-        console.log("🛑 Session stopped and updated (not completed)");
       } catch (error) {
         console.error("Failed to update stopped session:", error);
       }
@@ -354,15 +314,14 @@ export const TimerProvider: React.FC<{
 
     const minutes = getMinutesForProfile(selectedProfile, timer.sessionType);
     setTimer({
-      minutes,
-      seconds: 0,
       isRunning: false,
       sessionType: timer.sessionType,
       sessionId: null,
-      initialMinutes: minutes,
-      sessionStartTime: null,
       selectedTaskId: null,
       selectedProfile: selectedProfile.id,
+      completionCounter: timer.completionCounter,
+      sessionStartedAt: null,
+      plannedMinutes: minutes,
     });
 
     localStorage.removeItem("timerState");
@@ -372,13 +331,10 @@ export const TimerProvider: React.FC<{
     if (timer.sessionId) {
       try {
         await sessionService.updateSessionNotes(timer.sessionId, notes);
-        console.log("Session notes saved");
       } catch (error) {
         console.error("Failed to save session notes:", error);
         throw error;
       }
-    } else {
-      console.warn("Cannot save notes: no active session");
     }
   };
 
@@ -388,9 +344,8 @@ export const TimerProvider: React.FC<{
       setTimer((prev) => ({
         ...prev,
         sessionType: type,
-        minutes,
-        seconds: 0,
-        initialMinutes: minutes,
+        plannedMinutes: minutes,
+        sessionStartedAt: null,
       }));
     }
   };
@@ -403,18 +358,10 @@ export const TimerProvider: React.FC<{
       const minutes = getMinutesForProfile(profile, timer.sessionType);
       setTimer((prev) => ({
         ...prev,
-        minutes,
-        seconds: 0,
         selectedProfile: profile.id,
-        initialMinutes: minutes,
+        plannedMinutes: minutes,
       }));
     }
-  };
-
-  const formatTime = (): string => {
-    const mins = String(timer.minutes).padStart(2, "0");
-    const secs = String(timer.seconds).padStart(2, "0");
-    return `${mins}:${secs}`;
   };
 
   const getTimerColor = () => {
@@ -440,10 +387,10 @@ export const TimerProvider: React.FC<{
     stopTimer,
     setSessionType,
     setProfile,
-    formatTime,
     getTimerColor,
     saveSessionNotes,
     onSessionComplete,
+    triggerCompletion,
   };
 
   return (
