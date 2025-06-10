@@ -192,9 +192,9 @@ export const TimerProvider: React.FC<{
         sessionType: "WORK",
         sessionId: null,
         selectedTaskId: timer.selectedTaskId,
+        sessionStartedAt: Date.now(),
         selectedProfile: selectedProfile.id,
         completionCounter: timer.completionCounter + 1,
-        sessionStartedAt: null,
         plannedMinutes: nextMinutes,
       });
     }
@@ -333,18 +333,14 @@ export const TimerProvider: React.FC<{
 
   const stopTimer = async (notes?: string) => {
     if (timer.sessionId) {
-      try {
-        const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
-        const actualMinutes = Math.floor(elapsedMs / 60000);
+      console.log("timer.sessionStartedAt:", timer.sessionStartedAt);
 
-        await sessionService.updateSession(timer.sessionId, actualMinutes);
+      const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
+      const actualMinutes = Math.floor(elapsedMs / 60000);
 
-        if (notes && notes.trim() !== "") {
-          await sessionService.updateSessionNotes(timer.sessionId, notes);
-        }
-      } catch (error) {
-        console.error("Failed to update stopped session:", error);
-      }
+      console.log("actualMinutes calculated:", actualMinutes);
+
+      await sessionService.updateSession(timer.sessionId, actualMinutes);
     }
 
     const minutes = getMinutesForProfile(selectedProfile, timer.sessionType);

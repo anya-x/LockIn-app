@@ -10,6 +10,8 @@ import {
   Chip,
   Divider,
   Button,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import {
   Timer as TimerIcon,
@@ -69,30 +71,83 @@ const FocusStatistics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Statistics | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [dateRange, setDateRange] = useState<
+    "Today" | "7days" | "30days" | "90days" | "all"
+  >("30days");
   const { timer } = useTimer();
 
-  // Fetch on mount
   useEffect(() => {
     fetchStatistics();
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => {
     if (timer.completionCounter > 0) {
-      console.log("Session completed, refreshing statistics");
       fetchStatistics();
     }
   }, [timer.completionCounter]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchStatistics();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStatistics();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchStatistics = async () => {
     setLoading(true);
     try {
-      const [sessions, taskStats, allTasks] = await Promise.all([
+      const [allSessions, taskStats, allTasks] = await Promise.all([
         sessionService.getUserSessions(),
         taskService.getStatistics(),
         taskService.getTasks(),
       ]);
 
-      const calculated = calculateStatistics(sessions, taskStats, allTasks);
+      console.log("📊 Fetch Statistics Debug:", {
+        sessions: allSessions?.length,
+        taskStats: taskStats,
+        tasks: allTasks,
+        tasksIsArray: Array.isArray(allTasks),
+        tasksType: typeof allTasks,
+      });
+
+      const tasks = Array.isArray(allTasks) ? allTasks : [];
+
+      if (tasks.length === 0) {
+        console.warn("⚠️ No tasks returned from API!");
+      }
+
+      let recentSessions = allSessions;
+
+      if (dateRange !== "all") {
+        const daysMap = { Today: 1, "7days": 7, "30days": 30, "90days": 90 };
+        const daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - daysMap[dateRange]);
+
+        recentSessions = allSessions.filter((session) => {
+          if (!session.startedAt) return true;
+          const sessionDate = new Date(session.startedAt);
+          return sessionDate >= daysAgo;
+        });
+      }
+
+      console.log(
+        `📊 Showing ${recentSessions.length} sessions (${dateRange})`
+      );
+
+      const calculated = calculateStatistics(recentSessions, taskStats, tasks);
       setStats(calculated);
       setLastUpdated(new Date());
     } catch (error) {
@@ -181,13 +236,31 @@ const FocusStatistics: React.FC = () => {
         (sum, s) => sum + (s.actualMinutes || 0),
         0
       );
-      return totalMinutes >= 5;
+      return totalMinutes >= 1; // CHANGE TTHIS
     }).length;
 
     const focusQualityRate =
       tasksWithFocusSessions > 0
         ? Math.round((tasksWithMeaningfulWork / tasksWithFocusSessions) * 100)
         : 0;
+
+    console.log("Debug:", {
+      filteredSessions: sessions.length,
+      sessionsWithTaskId: sessions.filter((s) => s.taskId !== null).length,
+      totalTasks: tasks.length,
+      tasksWithFocusSessions,
+      tasksWithMeaningfulWork,
+      focusQualityRate,
+      sampleTaskIds: sessions
+        .filter((s) => s.taskId)
+        .slice(0, 5)
+        .map((s) => ({
+          sessionId: s.id,
+          taskId: s.taskId,
+          taskTitle: s.taskTitle,
+          actualMinutes: s.actualMinutes,
+        })),
+    });
 
     return {
       // Focus metrics
@@ -286,6 +359,27 @@ const FocusStatistics: React.FC = () => {
         </Button>
       </Box>
 
+      {/* Date Range Filter */}
+      <Box display="flex" justifyContent="center" mb={3}>
+        <ToggleButtonGroup
+          value={dateRange}
+          exclusive
+          onChange={(e, newValue) => {
+            if (newValue !== null) {
+              setDateRange(newValue);
+            }
+          }}
+          size="small"
+        >
+          <ToggleButton value="Today">Today</ToggleButton>
+          <ToggleButton value="7days">Last 7 Days</ToggleButton>
+          <ToggleButton value="30days">Last 30 Days</ToggleButton>
+          <ToggleButton value="90days">Last 90 Days</ToggleButton>
+          <ToggleButton value="all">All Time</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      {/* Main Stats Grid */}
       <Grid container spacing={3}>
         {/* Total Focus Time */}
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -560,7 +654,7 @@ const FocusStatistics: React.FC = () => {
 
               <Typography variant="body2" color="text.secondary">
                 {stats.focusQualityRate}% of started tasks received focused work
-                (5+ min)
+                (1+ min) {/* change back!!!*/}
               </Typography>
 
               {stats.tasksWithFocusSessions > 0 &&

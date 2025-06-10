@@ -33,6 +33,7 @@ import CategoryList from "../components/CategoryList";
 import EisenhowerMatrix from "../components/EisenhowerMatrix";
 import FocusStatistics from "../components/FocusStatistics";
 import PomodoroTimer from "../components/PomodoroTimer";
+import TaskLinkingDiagnostic from "../components/TaskLinkingDiagnosic";
 
 const drawerWidth = 240;
 
@@ -353,7 +354,6 @@ const Dashboard: React.FC = () => {
           />
         </Toolbar>
       </AppBar>
-
       <Box
         component="nav"
         sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
@@ -388,7 +388,7 @@ const Dashboard: React.FC = () => {
           {drawer}
         </Drawer>
       </Box>
-
+      {/*        <TaskLinkingDiagnostic /> */}
       <Box
         component="main"
         sx={{
