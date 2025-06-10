@@ -274,8 +274,9 @@ A science based task management tool that's going to change how you view product
 
 **BUGS TO FIX ASAP**
 
-- sessions marked complete when stopping
-- new session started when paused
+- sessions marked complete when stopping [x]
+- new session started when paused [x]
+- filtering by time in stats issue + quality measurement odd behaviour
 
 **To do (low priority)**
 
