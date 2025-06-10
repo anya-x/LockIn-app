@@ -235,7 +235,6 @@ export const TimerProvider: React.FC<{
           remainingSeconds === 0 &&
           !notificationShownRef.current
         ) {
-          console.log("Timer completed");
           handleTimerComplete();
         }
       };
@@ -333,12 +332,8 @@ export const TimerProvider: React.FC<{
 
   const stopTimer = async (notes?: string) => {
     if (timer.sessionId) {
-      console.log("timer.sessionStartedAt:", timer.sessionStartedAt);
-
       const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
       const actualMinutes = Math.floor(elapsedMs / 60000);
-
-      console.log("actualMinutes calculated:", actualMinutes);
 
       await sessionService.updateSession(timer.sessionId, actualMinutes);
     }

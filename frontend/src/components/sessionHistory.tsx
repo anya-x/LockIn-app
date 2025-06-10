@@ -22,7 +22,6 @@ const SessionHistory: React.FC<SessionHistoryProps> = ({ refresh = 0 }) => {
 
   useEffect(() => {
     if (refresh > 0) {
-      console.log("🔄 Parent triggered session history refresh");
       refreshSessions();
     }
   }, [refresh, refreshSessions]);

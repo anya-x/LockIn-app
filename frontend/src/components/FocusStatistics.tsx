@@ -115,14 +115,6 @@ const FocusStatistics: React.FC = () => {
         taskService.getTasks(),
       ]);
 
-      console.log("📊 Fetch Statistics Debug:", {
-        sessions: allSessions?.length,
-        taskStats: taskStats,
-        tasks: allTasks,
-        tasksIsArray: Array.isArray(allTasks),
-        tasksType: typeof allTasks,
-      });
-
       const tasks = Array.isArray(allTasks) ? allTasks : [];
 
       if (tasks.length === 0) {
@@ -142,10 +134,6 @@ const FocusStatistics: React.FC = () => {
           return sessionDate >= daysAgo;
         });
       }
-
-      console.log(
-        `📊 Showing ${recentSessions.length} sessions (${dateRange})`
-      );
 
       const calculated = calculateStatistics(recentSessions, taskStats, tasks);
       setStats(calculated);
@@ -243,24 +231,6 @@ const FocusStatistics: React.FC = () => {
       tasksWithFocusSessions > 0
         ? Math.round((tasksWithMeaningfulWork / tasksWithFocusSessions) * 100)
         : 0;
-
-    console.log("Debug:", {
-      filteredSessions: sessions.length,
-      sessionsWithTaskId: sessions.filter((s) => s.taskId !== null).length,
-      totalTasks: tasks.length,
-      tasksWithFocusSessions,
-      tasksWithMeaningfulWork,
-      focusQualityRate,
-      sampleTaskIds: sessions
-        .filter((s) => s.taskId)
-        .slice(0, 5)
-        .map((s) => ({
-          sessionId: s.id,
-          taskId: s.taskId,
-          taskTitle: s.taskTitle,
-          actualMinutes: s.actualMinutes,
-        })),
-    });
 
     return {
       // Focus metrics

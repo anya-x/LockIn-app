@@ -15,9 +15,7 @@ export const useSessionHistory = () => {
     try {
       const data = await sessionService.getUserSessions();
       setSessions(data);
-      console.log("Session history refreshed:", data.length, "sessions");
     } catch (err: any) {
-      console.error("Failed to fetch sessions:", err);
       setError(err.message || "Failed to load sessions");
     } finally {
       setLoading(false);

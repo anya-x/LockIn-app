@@ -70,7 +70,6 @@ const PomodoroTimer: React.FC = () => {
           !completionTriggeredRef.current
         ) {
           completionTriggeredRef.current = true;
-          console.log("⏰ COMPLETION!");
           triggerCompletion();
         }
       } else {
@@ -149,7 +148,6 @@ const PomodoroTimer: React.FC = () => {
 
   useEffect(() => {
     if (timer.completionCounter > 0) {
-      console.log("🔄 Session completed, refreshing history");
       triggerRefresh();
     }
   }, [timer.completionCounter, triggerRefresh]);
@@ -208,7 +206,6 @@ const PomodoroTimer: React.FC = () => {
     setLoadingTasks(true);
     try {
       const data = await taskService.getIncompleteTasks();
-      console.log("✅ Loaded incomplete tasks:", data.length);
       setTasks(data);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
