@@ -41,61 +41,85 @@ const PomodoroTimer: React.FC = () => {
   });
 
   React.useEffect(() => {
-    if (!timer.isRunning || !timer.sessionStartedAt) {
+    if (!timer.sessionId) {
       setDisplayState({
         minutes: timer.plannedMinutes,
         seconds: 0,
       });
       return;
     }
+
     const updateDisplay = () => {
-      const elapsedMs = Date.now() - timer.sessionStartedAt;
-      const elapsedSeconds = Math.floor(elapsedMs / 1000);
-      const totalSeconds = timer.plannedMinutes * 60;
-      const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+      if (timer.sessionStartedAt) {
+        const currentElapsedMs = timer.isRunning
+          ? Date.now() - timer.sessionStartedAt
+          : 0;
+        const totalElapsedMs = (timer.pausedElapsedMs || 0) + currentElapsedMs;
+        const elapsedSeconds = Math.floor(totalElapsedMs / 1000);
+        const totalSeconds = timer.plannedMinutes * 60;
+        const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
 
-      const minutes = Math.floor(remainingSeconds / 60);
-      const seconds = remainingSeconds % 60;
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
 
-      setDisplayState({ minutes, seconds });
+        setDisplayState({ minutes, seconds });
 
-      if (remainingSeconds === 0 && !completionTriggeredRef.current) {
-        completionTriggeredRef.current = true;
-        console.log("⏰ COMPLETION!");
-        triggerCompletion();
+        if (
+          timer.isRunning &&
+          remainingSeconds === 0 &&
+          !completionTriggeredRef.current
+        ) {
+          completionTriggeredRef.current = true;
+          console.log("⏰ COMPLETION!");
+          triggerCompletion();
+        }
+      } else {
+        const totalSeconds = timer.plannedMinutes * 60;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        setDisplayState({ minutes, seconds });
       }
     };
 
     updateDisplay();
 
-    const interval = setInterval(updateDisplay, 1000);
-
-    return () => clearInterval(interval);
+    if (timer.isRunning) {
+      const interval = setInterval(updateDisplay, 1000);
+      return () => clearInterval(interval);
+    }
   }, [
     timer.isRunning,
+    timer.sessionId,
     timer.sessionStartedAt,
     timer.plannedMinutes,
+    timer.pausedElapsedMs,
     triggerCompletion,
   ]);
 
   const [totalElapsedSeconds, setTotalElapsedSeconds] = React.useState(0);
 
   React.useEffect(() => {
-    if (!timer.isRunning || !timer.sessionStartedAt) {
+    if (!timer.sessionStartedAt) {
       setTotalElapsedSeconds(0);
       return;
     }
 
     const updateElapsed = () => {
-      const elapsedMs = Date.now() - timer.sessionStartedAt;
-      setTotalElapsedSeconds(Math.floor(elapsedMs / 1000));
+      const currentElapsedMs = timer.isRunning
+        ? Date.now() - timer.sessionStartedAt
+        : 0;
+      const totalElapsedMs = (timer.pausedElapsedMs || 0) + currentElapsedMs;
+      setTotalElapsedSeconds(Math.floor(totalElapsedMs / 1000));
     };
 
     updateElapsed();
-    const interval = setInterval(updateElapsed, 1000);
 
-    return () => clearInterval(interval);
-  }, [timer.isRunning, timer.sessionStartedAt]);
+    if (timer.isRunning) {
+      const interval = setInterval(updateElapsed, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [timer.isRunning, timer.sessionStartedAt, timer.pausedElapsedMs]);
 
   const displayMinutes = displayState.minutes;
   const displaySeconds = displayState.seconds;

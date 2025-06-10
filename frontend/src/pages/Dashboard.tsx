@@ -41,6 +41,7 @@ const TimerChip: React.FC<{
   profileColor: string;
   sessionStartedAt: number | null;
   plannedMinutes: number;
+  pausedElapsedMs: number;
   onNavigate: () => void;
   currentView: string;
 }> = React.memo(
@@ -50,19 +51,21 @@ const TimerChip: React.FC<{
     profileColor,
     sessionStartedAt,
     plannedMinutes,
+    pausedElapsedMs,
     onNavigate,
     currentView,
   }) => {
     const [countdown, setCountdown] = React.useState("00:00");
 
     React.useEffect(() => {
-      if (!isRunning || !sessionStartedAt) {
+      if (!sessionStartedAt) {
         return;
       }
 
       const updateCountdown = () => {
-        const elapsedMs = Date.now() - sessionStartedAt;
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+        const currentElapsedMs = isRunning ? Date.now() - sessionStartedAt : 0;
+        const totalElapsedMs = pausedElapsedMs + currentElapsedMs;
+        const elapsedSeconds = Math.floor(totalElapsedMs / 1000);
         const totalSeconds = plannedMinutes * 60;
         const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
 
@@ -77,12 +80,13 @@ const TimerChip: React.FC<{
 
       updateCountdown();
 
-      const interval = setInterval(updateCountdown, 1000);
+      if (isRunning) {
+        const interval = setInterval(updateCountdown, 1000);
+        return () => clearInterval(interval);
+      }
+    }, [isRunning, sessionStartedAt, plannedMinutes, pausedElapsedMs]);
 
-      return () => clearInterval(interval);
-    }, [isRunning, sessionStartedAt, plannedMinutes]);
-
-    if (!isRunning || currentView === "timer") return null;
+    if (!sessionStartedAt || currentView === "timer") return null;
 
     const getChipColor = () => {
       switch (sessionType) {
@@ -342,6 +346,7 @@ const Dashboard: React.FC = () => {
             profileColor={selectedProfile.color}
             sessionStartedAt={timer.sessionStartedAt}
             plannedMinutes={timer.plannedMinutes}
+            pausedElapsedMs={timer.pausedElapsedMs || 0}
             onNavigate={handleTimerNavigate}
             currentView={currentView}
           />

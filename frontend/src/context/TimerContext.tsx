@@ -13,7 +13,6 @@ import {
   getDefaultProfile,
 } from "../config/focusProfiles";
 
-
 interface TimerState {
   isRunning: boolean;
   sessionType: "WORK" | "SHORT_BREAK" | "LONG_BREAK";
@@ -21,8 +20,10 @@ interface TimerState {
   selectedTaskId: number | null;
   selectedProfile: string;
   completionCounter: number;
+
   sessionStartedAt: number | null;
   plannedMinutes: number;
+  pausedElapsedMs?: number;
 }
 
 interface TimerContextType {
@@ -70,6 +71,7 @@ export const TimerProvider: React.FC<{
       completionCounter: 0,
       sessionStartedAt: null,
       plannedMinutes: selectedProfile.work,
+      pausedElapsedMs: 0,
     };
   }, [selectedProfile]);
 
@@ -102,56 +104,6 @@ export const TimerProvider: React.FC<{
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
   }, []);
-
-  useEffect(() => {
-    if (timer.isRunning && timer.sessionStartedAt) {
-      const updateTitle = () => {
-        const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-        const totalSeconds = timer.plannedMinutes * 60;
-        const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-
-        const minutes = Math.floor(remainingSeconds / 60);
-        const seconds = remainingSeconds % 60;
-
-        const mins = String(minutes).padStart(2, "0");
-        const secs = String(seconds).padStart(2, "0");
-        const sessionLabel =
-          timer.sessionType === "WORK"
-            ? "Focus"
-            : timer.sessionType === "SHORT_BREAK"
-            ? "Break"
-            : "Long Break";
-
-        document.title = `${mins}:${secs} ${sessionLabel} - Lockin`;
-      };
-
-      updateTitle();
-
-      titleUpdateIntervalRef.current = setInterval(updateTitle, 1000);
-
-      return () => {
-        if (titleUpdateIntervalRef.current) {
-          clearInterval(titleUpdateIntervalRef.current);
-        }
-      };
-    } else {
-      document.title = "Lockin";
-      if (titleUpdateIntervalRef.current) {
-        clearInterval(titleUpdateIntervalRef.current);
-        titleUpdateIntervalRef.current = null;
-      }
-    }
-  }, [
-    timer.isRunning,
-    timer.sessionStartedAt,
-    timer.plannedMinutes,
-    timer.sessionType,
-  ]);
-
-  useEffect(() => {
-    localStorage.setItem("timerState", JSON.stringify(timer));
-  }, [timer]);
 
   const getMinutesForProfile = (
     profile: FocusProfile,
@@ -186,8 +138,7 @@ export const TimerProvider: React.FC<{
     }
   };
 
-
-  const triggerCompletion = useCallback(async () => {
+  const handleTimerComplete = useCallback(async () => {
     if (notificationShownRef.current) return;
     notificationShownRef.current = true;
 
@@ -253,6 +204,77 @@ export const TimerProvider: React.FC<{
     }, 2000);
   }, [timer, selectedProfile, onSessionComplete]);
 
+  useEffect(() => {
+    if (timer.sessionStartedAt) {
+      const updateTitleAndCheckCompletion = () => {
+        const currentElapsedMs = timer.isRunning
+          ? Date.now() - timer.sessionStartedAt
+          : 0;
+        const totalElapsedMs = (timer.pausedElapsedMs || 0) + currentElapsedMs;
+        const elapsedSeconds = Math.floor(totalElapsedMs / 1000);
+        const totalSeconds = timer.plannedMinutes * 60;
+        const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+
+        const mins = String(minutes).padStart(2, "0");
+        const secs = String(seconds).padStart(2, "0");
+        const sessionLabel =
+          timer.sessionType === "WORK"
+            ? "Focus"
+            : timer.sessionType === "SHORT_BREAK"
+            ? "Break"
+            : "Long Break";
+
+        const pausedLabel = timer.isRunning ? "" : " (Paused)";
+        document.title = `${mins}:${secs} ${sessionLabel}${pausedLabel} - Lockin`;
+
+        if (
+          timer.isRunning &&
+          remainingSeconds === 0 &&
+          !notificationShownRef.current
+        ) {
+          console.log("Timer completed");
+          handleTimerComplete();
+        }
+      };
+
+      updateTitleAndCheckCompletion();
+
+      if (timer.isRunning) {
+        titleUpdateIntervalRef.current = setInterval(
+          updateTitleAndCheckCompletion,
+          1000
+        );
+      }
+
+      return () => {
+        if (titleUpdateIntervalRef.current) {
+          clearInterval(titleUpdateIntervalRef.current);
+          titleUpdateIntervalRef.current = null;
+        }
+      };
+    } else {
+      document.title = "Lockin";
+      if (titleUpdateIntervalRef.current) {
+        clearInterval(titleUpdateIntervalRef.current);
+        titleUpdateIntervalRef.current = null;
+      }
+    }
+  }, [
+    timer.isRunning,
+    timer.sessionStartedAt,
+    timer.plannedMinutes,
+    timer.sessionType,
+    timer.pausedElapsedMs,
+    handleTimerComplete,
+  ]);
+
+  useEffect(() => {
+    localStorage.setItem("timerState", JSON.stringify(timer));
+  }, [timer]);
+
   const startTimer = async (taskId: number | null, notes?: string) => {
     try {
       const plannedMinutes = getMinutesForProfile(
@@ -274,6 +296,7 @@ export const TimerProvider: React.FC<{
         selectedTaskId: taskId,
         sessionStartedAt: Date.now(),
         plannedMinutes: plannedMinutes,
+        pausedElapsedMs: 0,
       }));
 
       if (notes && notes.trim() !== "") {
@@ -290,10 +313,22 @@ export const TimerProvider: React.FC<{
   };
 
   const pauseTimer = () => {
-    setTimer((prev) => ({
-      ...prev,
-      isRunning: !prev.isRunning,
-    }));
+    setTimer((prev) => {
+      if (prev.isRunning && prev.sessionStartedAt) {
+        const elapsedMs = Date.now() - prev.sessionStartedAt;
+        return {
+          ...prev,
+          isRunning: false,
+          pausedElapsedMs: (prev.pausedElapsedMs || 0) + elapsedMs,
+        };
+      } else {
+        return {
+          ...prev,
+          isRunning: true,
+          sessionStartedAt: Date.now(),
+        };
+      }
+    });
   };
 
   const stopTimer = async (notes?: string) => {
@@ -390,7 +425,7 @@ export const TimerProvider: React.FC<{
     getTimerColor,
     saveSessionNotes,
     onSessionComplete,
-    triggerCompletion,
+    triggerCompletion: handleTimerComplete,
   };
 
   return (
