@@ -11,6 +11,20 @@ interface PaginatedResponse<T> {
   last: boolean;
 }
 
+export interface TaskStatistics {
+  totalTasks: number;
+  todoCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  urgentCount?: number;
+  importantCount?: number;
+  urgentAndImportantCount?: number;
+  completionRate?: number;
+  tasksByCategory?: { [key: string]: number };
+  tasksCreatedThisWeek?: number;
+  tasksCompletedThisWeek?: number;
+}
+
 export const taskService = {
   async getTasksPaginated(
     page: number = 0,
@@ -115,10 +129,16 @@ export const taskService = {
     });
     return response.data;
   },
+
   getIncompleteTasks: async (): Promise<Task[]> => {
     const response = await api.get<Task[]>("/tasks/incomplete");
     return response.data;
   },
+
+  getStatistics: async (): Promise<TaskStatistics> => {
+    const response = await api.get<TaskStatistics>("/tasks/statistics");
+    return response.data;
+  },
 };
 
-export type { PaginatedResponse };
+export type { PaginatedResponse, Task };

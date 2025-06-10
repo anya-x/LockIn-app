@@ -30,13 +30,12 @@ import {
   TrendingUp,
 } from "@mui/icons-material";
 import { debounce } from "lodash";
-import { taskService } from "../services/taskService";
+import { taskService, type TaskStatistics } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
 import TaskFilters from "./TaskFilters";
 import StatCard from "./StatCard";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "./TaskFormModal";
-import api from "../services/api";
 
 interface PaginatedResponse<T> {
   content: T[];
@@ -44,13 +43,6 @@ interface PaginatedResponse<T> {
   totalPages: number;
   number: number;
   size: number;
-}
-
-interface TaskStatistics {
-  totalTasks: number;
-  todoCount: number;
-  inProgressCount: number;
-  completedCount: number;
 }
 
 const TaskList: React.FC = () => {
@@ -109,13 +101,8 @@ const TaskList: React.FC = () => {
   const fetchStatistics = async () => {
     try {
       setStatsLoading(true);
-      const response = await api.get("/tasks/statistics");
-      setStats({
-        totalTasks: response.data.totalTasks,
-        todoCount: response.data.todoCount,
-        inProgressCount: response.data.inProgressCount,
-        completedCount: response.data.completedCount,
-      });
+      const data = await taskService.getStatistics();
+      setStats(data);
     } catch (err: any) {
       console.error("Failed to fetch statistics:", err);
     } finally {

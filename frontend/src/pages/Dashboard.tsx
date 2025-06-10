@@ -23,6 +23,7 @@ import {
   GridOn as GridOnIcon,
   ExitToApp as LogoutIcon,
   Timer as TimerIcon,
+  BarChart as StatsIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -30,7 +31,7 @@ import { useTimer } from "../context/TimerContext";
 import TaskList from "../components/TaskList";
 import CategoryList from "../components/CategoryList";
 import EisenhowerMatrix from "../components/EisenhowerMatrix";
-import TaskStatistics from "../components/TaskStatistics";
+import FocusStatistics from "../components/FocusStatistics";
 import PomodoroTimer from "../components/PomodoroTimer";
 
 const drawerWidth = 240;
@@ -265,7 +266,7 @@ const Dashboard: React.FC = () => {
             selected={currentView === "statistics"}
           >
             <ListItemIcon>
-              <GridOnIcon />
+              <StatsIcon />
             </ListItemIcon>
             <ListItemText primary="Statistics" />
           </ListItemButton>
@@ -310,7 +311,7 @@ const Dashboard: React.FC = () => {
       case "matrix":
         return <EisenhowerMatrix />;
       case "statistics":
-        return <TaskStatistics />;
+        return <FocusStatistics />;
       case "timer":
         return <PomodoroTimer />;
       default:
