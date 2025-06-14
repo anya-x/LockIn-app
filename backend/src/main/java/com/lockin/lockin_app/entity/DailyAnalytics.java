@@ -30,32 +30,32 @@ public class DailyAnalytics {
     private LocalDate date;
 
     // Task metrics
-    private Integer tasksCreated = 0;
-    private Integer tasksCompleted = 0;
-    private Integer tasksDeleted = 0;
-    private Double completionRate = 0.0;
+    @Builder.Default private Integer tasksCreated = 0;
+    @Builder.Default private Integer tasksCompleted = 0;
+    @Builder.Default private Integer tasksDeleted = 0;
+    @Builder.Default private Double completionRate = 0.0;
 
     // Pomodoro metrics
-    private Integer pomodorosCompleted = 0;
+    @Builder.Default private Integer pomodorosCompleted = 0;
     private Integer focusMinutes = 0;
     private Integer breakMinutes = 0;
     private Integer interruptedSessions = 0;
 
     // Eisenhower distributions
-    private Integer urgentImportantCount = 0;
-    private Integer notUrgentImportantCount = 0;
-    private Integer urgentNotImportantCount = 0;
-    private Integer notUrgentNotImportantCount = 0;
+    @Builder.Default private Integer urgentImportantCount = 0;
+    @Builder.Default private Integer notUrgentImportantCount = 0;
+    @Builder.Default private Integer urgentNotImportantCount = 0;
+    @Builder.Default private Integer notUrgentNotImportantCount = 0;
 
     // Scores (0-100)
-    private Double productivityScore = 0.0;
-    private Double focusScore = 0.0;
-    private Double burnoutRiskScore = 0.0;
+    @Builder.Default private Double productivityScore = 0.0;
+    @Builder.Default private Double focusScore = 0.0;
+    @Builder.Default private Double burnoutRiskScore = 0.0;
 
     // Burnout indicators
     private Integer overworkMinutes = 0;
-    private Integer consecutiveWorkDays = 0;
-    private Integer lateNightSessions = 0;
+    @Builder.Default private Integer consecutiveWorkDays = 0;
+    @Builder.Default private Integer lateNightSessions = 0;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
