@@ -50,4 +50,11 @@ public class FocusSession {
     private String profileName;
 
     @Column private Integer breakMinutes;
+
+    public int getWorkDuration() {
+        if (Boolean.TRUE.equals(completed) && actualMinutes != null) {
+            return actualMinutes;
+        }
+        return plannedMinutes != null ? plannedMinutes : 0;
+    }
 }

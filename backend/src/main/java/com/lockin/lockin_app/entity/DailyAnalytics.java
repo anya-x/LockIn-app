@@ -37,8 +37,11 @@ public class DailyAnalytics {
 
     // Pomodoro metrics
     @Builder.Default private Integer pomodorosCompleted = 0;
+    @Builder.Default 
     private Integer focusMinutes = 0;
+    @Builder.Default 
     private Integer breakMinutes = 0;
+    @Builder.Default 
     private Integer interruptedSessions = 0;
 
     // Eisenhower distributions
@@ -53,12 +56,25 @@ public class DailyAnalytics {
     @Builder.Default private Double burnoutRiskScore = 0.0;
 
     // Burnout indicators
+    @Builder.Default 
     private Integer overworkMinutes = 0;
     @Builder.Default private Integer consecutiveWorkDays = 0;
     @Builder.Default private Integer lateNightSessions = 0;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /*
+        @ElementCollection
+        @CollectionTable(name = "daily_profile_usage",
+            joinColumns = @JoinColumn(name = "analytics_id"))
+        @MapKeyColumn(name = "profile_id")
+        @Column(name = "usage_count")
+        private Map<String, Integer> focusProfileUsage = new HashMap<>();
+
+        @Column(name = "most_used_profile")
+        private String mostUsedProfile;
+    */
 
     @PrePersist
     protected void onCreate() {

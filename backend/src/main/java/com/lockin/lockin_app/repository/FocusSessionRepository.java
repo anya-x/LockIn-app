@@ -2,6 +2,7 @@ package com.lockin.lockin_app.repository;
 
 import com.lockin.lockin_app.entity.FocusSession;
 import com.lockin.lockin_app.entity.SessionType;
+import com.lockin.lockin_app.entity.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +38,9 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             @Param("sessionType") SessionType sessionType,
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay);
+
+    List<FocusSession> findByUserAndStartTimeBetween(
+            User user,
+            LocalDateTime startOfDay,
+            LocalDateTime endOfDay);
 }

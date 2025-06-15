@@ -5,6 +5,7 @@ import com.lockin.lockin_app.entity.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -22,7 +23,6 @@ public interface DailyAnalyticsRepository extends JpaRepository<DailyAnalytics, 
     @Query(
             "SELECT d FROM DailyAnalytics d WHERE d.user = :user "
                     + "AND d.date >= :startDate ORDER BY d.date ASC")
-    List<DailyAnalytics> findLast30Days(User user, LocalDate startDate);
-
-    // TODO: queries for trends
+    List<DailyAnalytics> findLastNDays(
+            @Param("user") User user, @Param("startDate") LocalDate startDate);
 }
