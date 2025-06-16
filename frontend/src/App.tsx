@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import PrivateRoute from "./components/PrivateRoute";
+import PrivateRoute from "./components/shared/PrivateRoute";
 import { authService } from "./services/authService";
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

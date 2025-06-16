@@ -22,7 +22,7 @@ import {
 import InfoIcon from "@mui/icons-material/Info";
 import ScienceIcon from "@mui/icons-material/Science";
 import VerifiedIcon from "@mui/icons-material/Verified";
-import { FOCUS_PROFILES, type FocusProfile } from "../config/focusProfiles";
+import { FOCUS_PROFILES, type FocusProfile } from "../../config/focusProfiles";
 
 interface ProfileSelectorProps {
   selectedProfile: FocusProfile;

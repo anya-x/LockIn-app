@@ -11,8 +11,8 @@ import {
   MenuItem,
   Box,
 } from "@mui/material";
-import type { Task } from "../types/task";
-import CategorySelector from "./CategorySelector";
+import type { Task } from "../../types/task";
+import CategorySelector from "../categories/CategorySelector";
 
 interface TaskFormModalProps {
   open: boolean;

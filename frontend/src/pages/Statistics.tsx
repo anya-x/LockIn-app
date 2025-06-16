@@ -67,7 +67,7 @@ interface Statistics {
   focusQualityRate: number;
 }
 
-const FocusStatistics: React.FC = () => {
+const Statistics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Statistics | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -816,4 +816,4 @@ const FocusStatistics: React.FC = () => {
   );
 };
 
-export default FocusStatistics;
+export default Statistics;

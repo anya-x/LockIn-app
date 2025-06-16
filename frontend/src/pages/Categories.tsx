@@ -21,7 +21,7 @@ import {
 } from "@mui/icons-material";
 import { categoryService, type Category } from "../services/categoryService";
 
-const CategoryList: React.FC = () => {
+const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -230,4 +230,4 @@ const CategoryList: React.FC = () => {
   );
 };
 
-export default CategoryList;
+export default Categories;

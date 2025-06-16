@@ -15,8 +15,8 @@ import {
   Assignment as AssignmentIcon,
 } from "@mui/icons-material";
 
-import { ProfileSelector } from "./ProfileSelector";
-import SessionHistory from "./sessionHistory";
+import { ProfileSelector } from "../components/timer/ProfileSelector";
+import SessionHistory from "../components/timer/SessionHistory";
 import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
 import { useTimer } from "../context/TimerContext";

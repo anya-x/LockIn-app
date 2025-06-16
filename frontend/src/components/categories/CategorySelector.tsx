@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
-import { categoryService, type Category } from "../services/categoryService";
+import { categoryService, type Category } from "../../services/categoryService";
 
 interface CategorySelectorProps {
   value: number | null;

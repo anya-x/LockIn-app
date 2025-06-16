@@ -28,12 +28,16 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTimer } from "../context/TimerContext";
-import TaskList from "../components/TaskList";
-import CategoryList from "../components/CategoryList";
-import EisenhowerMatrix from "../components/EisenhowerMatrix";
-import FocusStatistics from "../components/FocusStatistics";
-import PomodoroTimer from "../components/PomodoroTimer";
+import TaskList from "./Tasks";
+import CategoryList from "./Categories";
+import EisenhowerMatrix from "./Matrix";
+import FocusStatistics from "./Statistics";
+import PomodoroTimer from "./PomodoroTimer";
 import TaskLinkingDiagnostic from "../components/TaskLinkingDiagnosic";
+import Categories from "./Categories";
+import Matrix from "./Matrix";
+import Statistics from "./Statistics";
+import Tasks from "./Tasks";
 
 const drawerWidth = 240;
 
@@ -306,17 +310,17 @@ const Dashboard: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case "tasks":
-        return <TaskList />;
+        return <Tasks />;
       case "categories":
-        return <CategoryList />;
+        return <Categories />;
       case "matrix":
-        return <EisenhowerMatrix />;
+        return <Matrix />;
       case "statistics":
-        return <FocusStatistics />;
+        return <Statistics />;
       case "timer":
         return <PomodoroTimer />;
       default:
-        return <TaskList />;
+        return <Tasks />;
     }
   };
 

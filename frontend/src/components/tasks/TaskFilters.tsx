@@ -12,8 +12,8 @@ import {
 
 import type { SelectChangeEvent } from "@mui/material";
 
-import type { Category } from "../services/categoryService";
-import type { FilterState } from "../types/task";
+import type { Category } from "../../services/categoryService";
+import type { FilterState } from "../../types/task";
 
 interface TaskFiltersProps {
   filters: FilterState;

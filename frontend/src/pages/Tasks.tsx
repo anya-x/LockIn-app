@@ -32,10 +32,10 @@ import {
 import { debounce } from "lodash";
 import { taskService, type TaskStatistics } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
-import TaskFilters from "./TaskFilters";
-import StatCard from "./StatCard";
+import TaskFilters from "../components/tasks/TaskFilters";
+import StatCard from "../components/shared/StatCard";
 import type { FilterState, Task, TaskRequest } from "../types/task";
-import TaskFormModal from "./TaskFormModal";
+import TaskFormModal from "../components/tasks/TaskFormModal";
 
 interface PaginatedResponse<T> {
   content: T[];
@@ -45,7 +45,7 @@ interface PaginatedResponse<T> {
   size: number;
 }
 
-const TaskList: React.FC = () => {
+const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -628,4 +628,4 @@ const TaskList: React.FC = () => {
   );
 };
 
-export default TaskList;
+export default Tasks;

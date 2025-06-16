@@ -13,8 +13,8 @@ import {
   Schedule,
   TrendingUp,
 } from "@mui/icons-material";
-import StatCard from "./StatCard";
-import api from "../services/api";
+import StatCard from "../shared/StatCard";
+import api from "../../services/api";
 
 interface Statistics {
   totalTasks: number;

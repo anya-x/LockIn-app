@@ -10,8 +10,8 @@ import {
   CircularProgress,
   Divider,
 } from "@mui/material";
-import { useSessionHistory } from "../hooks/useSessionHistory";
-import { FOCUS_PROFILES } from "../config/focusProfiles";
+import { useSessionHistory } from "../../hooks/useSessionHistory";
+import { FOCUS_PROFILES } from "../../config/focusProfiles";
 
 interface SessionHistoryProps {
   refresh?: number;

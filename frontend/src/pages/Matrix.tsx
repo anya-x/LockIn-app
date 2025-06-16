@@ -33,7 +33,7 @@ interface MatrixData {
   eliminate: Task[];
 }
 
-const EisenhowerMatrix: React.FC = () => {
+const Matrix: React.FC = () => {
   const [matrix, setMatrix] = useState<MatrixData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -408,4 +408,4 @@ const EisenhowerMatrix: React.FC = () => {
   );
 };
 
-export default EisenhowerMatrix;
+export default Matrix;
