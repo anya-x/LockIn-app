@@ -16,9 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
 import java.util.List;
 
-/**
- * Calculates daily analytics metrics Research-based algorithms for productivity scoring
- */
+/** Calculates daily analytics metrics Research-based algorithms for productivity scoring */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,8 +28,8 @@ public class AnalyticsCalculationService {
     private final UserRepository userRepository;
 
     // Research-based constants
-    private static final int OPTIMAL_FOCUS_MINUTES = 240; 
-    private static final int MAX_HEALTHY_MINUTES = 360; 
+    private static final int OPTIMAL_FOCUS_MINUTES = 240;
+    private static final int MAX_HEALTHY_MINUTES = 360;
     private static final int LATE_NIGHT_HOUR = 22;
 
     @Transactional
@@ -93,7 +91,7 @@ public class AnalyticsCalculationService {
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
         List<FocusSession> sessions =
-                focusSessionRepository.findByUserAndStartTimeBetween(user, startOfDay, endOfDay);
+                focusSessionRepository.findByUserAndStartedAtBetween(user, startOfDay, endOfDay);
 
         int completed = 0;
         int totalFocusMinutes = 0;
@@ -141,13 +139,13 @@ public class AnalyticsCalculationService {
 
         for (Task task : allTasks) {
             if (task.getIsUrgent() && task.getIsImportant()) {
-                UrgentImportant++; 
+                UrgentImportant++;
             } else if (!task.getIsUrgent() && task.getIsImportant()) {
-                NotUrgentImportant++; 
+                NotUrgentImportant++;
             } else if (task.getIsUrgent() && !task.getIsImportant()) {
-                UrgentNotImportant++; 
+                UrgentNotImportant++;
             } else {
-                NotUrgentNotImportant++; 
+                NotUrgentNotImportant++;
             }
         }
 

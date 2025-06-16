@@ -39,8 +39,6 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay);
 
-    List<FocusSession> findByUserAndStartTimeBetween(
-            User user,
-            LocalDateTime startOfDay,
-            LocalDateTime endOfDay);
+    List<FocusSession> findByUserAndStartedAtBetween(
+            User user, LocalDateTime start, LocalDateTime end);
 }
