@@ -66,14 +66,40 @@ public class AnalyticsCalculationService {
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
 
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        System.out.println("total tasks : " + allTasks.size());
+        System.out.println("date: " + date);
+
         int created = 0;
         int completed = 0;
         int deleted = 0;
 
         for (Task task : allTasks) {
-            created++;
-            if (task.getStatus() == TaskStatus.COMPLETED) {
-                completed++;
+            System.out.println(
+                    " taskId"
+                            + task.getId()
+                            + " created: "
+                            + task.getCreatedAt()
+                            + " status: "
+                            + task.getStatus());
+
+            if (task.getCreatedAt() != null
+                    && task.getCreatedAt().isAfter(startOfDay)
+                    && task.getCreatedAt().isBefore(endOfDay)) {
+
+                created++;
+
+                if (task.getStatus() == TaskStatus.COMPLETED
+                        && task.getUpdatedAt() != null
+                        && task.getUpdatedAt().isAfter(startOfDay)
+                        && task.getUpdatedAt().isBefore(endOfDay)) {
+
+                    completed++;
+
+                    System.out.println("counting as completed");
+                }
             }
         }
 
@@ -83,7 +109,8 @@ public class AnalyticsCalculationService {
 
         // calculate completion rate
         double completionRate = created > 0 ? (completed / (double) created) * 100 : 0.0;
-        analytics.setCompletionRate(completionRate);
+        System.out.println("completion rate: " + completionRate);
+        analytics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
     }
 
     private void calculatePomodoroMetrics(DailyAnalytics analytics, User user, LocalDate date) {
