@@ -193,13 +193,15 @@ const Dashboard: React.FC = () => {
     | "categories"
     | "matrix"
     | "statistics"
-    | "timer" => {
+    | "timer"
+    | "analytics" => {
     const path = location.pathname;
     if (path === "/tasks") return "tasks";
     if (path === "/categories") return "categories";
     if (path === "/matrix") return "matrix";
     if (path === "/statistics") return "statistics";
     if (path === "/timer") return "timer";
+    if (path === "/analytics") return "analytics";
     return "tasks";
   };
 
@@ -210,7 +212,15 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleMenuItemClick = useCallback(
-    (view: "tasks" | "categories" | "matrix" | "statistics" | "timer") => {
+    (
+      view:
+        | "tasks"
+        | "categories"
+        | "matrix"
+        | "statistics"
+        | "timer"
+        | "analytics"
+    ) => {
       navigate(`/${view}`);
       if (isMobile) {
         setMobileOpen(false);
@@ -290,6 +300,17 @@ const Dashboard: React.FC = () => {
               sessionType={timer.sessionType}
               profileColor={selectedProfile.color}
             />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("analytics")}
+            selected={currentView === "analytics"}
+          >
+            <ListItemIcon>
+              <StatsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Analytics" />
           </ListItemButton>
         </ListItem>
       </List>

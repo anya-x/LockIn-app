@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import PrivateRoute from "./components/shared/PrivateRoute";
 import { authService } from "./services/authService";
+import Analytics from "./pages/Analytics";
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -87,7 +88,14 @@ function App() {
           </PrivateRoute>
         }
       />
-
+      <Route
+        path="/analytics"
+        element={
+          <PrivateRoute>
+            <Analytics />
+          </PrivateRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
