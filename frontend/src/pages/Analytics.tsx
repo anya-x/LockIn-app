@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
+  Box,
   Container,
   Typography,
-  Box,
   Paper,
   Grid,
+  Card,
+  CardContent,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   LineChart,
@@ -21,40 +24,31 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import api from "../services/api";
+import { analyticsService, type Analytics } from "../services/analyticsService";
 
-interface Analytics {
-  date: string;
-  tasksCreated: number;
-  tasksCompleted: number;
-  completionRate: number;
-  pomodorosCompleted: number;
-  focusMinutes: number;
-  productivityScore: number;
-  focusScore: number;
-  burnoutRiskScore: number;
-}
-
-const Analytics = () => {
-  const [todayStats, setTodayStats] = useState<Analytics | null>(null);
-  const [historicalData, setHistoricalData] = useState<Analytics[]>([]);
+const AnalyticsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [todayData, setTodayData] = useState<Analytics | null>(null);
+  const [historicalData, setHistoricalData] = useState<Analytics[]>([]);
 
   useEffect(() => {
     fetchAnalytics();
   }, []);
 
   const fetchAnalytics = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
+      const today = await analyticsService.getTodayAnalytics();
+      setTodayData(today);
 
-      const todayResponse = await api.get("/api/analytics/today");
-      setTodayStats(todayResponse.data);
-
-      const rangeResponse = await api.get("/api/analytics/range?days=30");
-      setHistoricalData(rangeResponse.data);
-    } catch (error: any) {
-      console.error("Failed to fetch analytics:", error);
+      const historical = await analyticsService.getAnalyticsRange(500);
+      setHistoricalData(historical);
+    } catch (err: any) {
+      console.error("Failed to fetch analytics:", err);
+      setError(err.response?.data?.message || "Failed to load analytics data");
     } finally {
       setLoading(false);
     }
@@ -62,86 +56,139 @@ const Analytics = () => {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, textAlign: "center" }}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="80vh"
+      >
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
+
+  if (!todayData) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Alert severity="info">
+          No analytics data available. Complete some tasks and focus sessions to
+          see your analytics!
+        </Alert>
       </Container>
     );
   }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h3" gutterBottom>
         Analytics Dashboard
       </Typography>
 
-      {/* Today's Stats */}
-      {todayStats && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Paper sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="h6" color="text.secondary">
-                Tasks Completed
+      {/* Today's Score Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Productivity Score */}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" variant="body2" gutterBottom>
+                Productivity Score
               </Typography>
-              <Typography variant="h3">{todayStats.tasksCompleted}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {todayStats.completionRate.toFixed(1)}% rate
-              </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Paper sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="h6" color="text.secondary">
-                Pomodoros
-              </Typography>
-              <Typography variant="h3">
-                {todayStats.pomodorosCompleted}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {Math.floor(todayStats.focusMinutes / 60)}h{" "}
-                {todayStats.focusMinutes % 60}m focus
-              </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Paper sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="h6" color="text.secondary">
-                Productivity
-              </Typography>
-              <Typography variant="h3">
-                {todayStats.productivityScore.toFixed(0)}
+              <Typography
+                variant="h3"
+                color={
+                  todayData.productivityScore >= 70
+                    ? "success.main"
+                    : todayData.productivityScore >= 40
+                    ? "warning.main"
+                    : "error.main"
+                }
+              >
+                {todayData.productivityScore.toFixed(0)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 out of 100
               </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Paper
-              sx={{
-                p: 2,
-                textAlign: "center",
-                bgcolor:
-                  todayStats.burnoutRiskScore > 60
-                    ? "error.light"
-                    : "success.light",
-              }}
-            >
-              <Typography variant="h6">Burnout Risk</Typography>
-              <Typography variant="h3">
-                {todayStats.burnoutRiskScore.toFixed(0)}
-              </Typography>
-              <Typography variant="body2">
-                {todayStats.burnoutRiskScore > 60 ? "High" : "Low"}
-              </Typography>
-            </Paper>
-          </Grid>
+            </CardContent>
+          </Card>
         </Grid>
-      )}
 
-      {/* Historical Charts */}
+        {/* Focus Score */}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" variant="body2" gutterBottom>
+                Focus Score
+              </Typography>
+              <Typography
+                variant="h3"
+                color={
+                  todayData.focusScore >= 70
+                    ? "success.main"
+                    : todayData.focusScore >= 40
+                    ? "warning.main"
+                    : "error.main"
+                }
+              >
+                {todayData.focusScore.toFixed(0)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {todayData.focusMinutes} minutes focused
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Burnout Risk */}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" variant="body2" gutterBottom>
+                Burnout Risk
+              </Typography>
+              <Typography
+                variant="h3"
+                color={
+                  todayData.burnoutRiskScore >= 60
+                    ? "error.main"
+                    : todayData.burnoutRiskScore >= 30
+                    ? "warning.main"
+                    : "success.main"
+                }
+              >
+                {todayData.burnoutRiskScore.toFixed(0)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {todayData.lateNightSessions} late sessions
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Tasks Completed */}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" variant="body2" gutterBottom>
+                Tasks Today
+              </Typography>
+              <Typography variant="h3">{todayData.tasksCompleted}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {todayData.completionRate.toFixed(0)}% completion rate
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Charts */}
       {historicalData.length > 0 ? (
         <>
           {/* Productivity Trend */}
@@ -152,69 +199,138 @@ const Analytics = () => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={historicalData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => {
+                    const d = new Date(date);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="productivityScore"
                   stroke="#8884d8"
+                  strokeWidth={2}
                   name="Productivity"
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="focusScore"
+                  stroke="#82ca9d"
+                  strokeWidth={2}
+                  name="Focus"
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </Paper>
 
-          {/* Focus Time */}
+          {/* Focus Time Area Chart */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h5" gutterBottom>
-              Daily Focus Time
+              Focus Time Distribution (Last 30 Days)
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={historicalData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => {
+                    const d = new Date(date);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                />
+                <Legend />
                 <Area
                   type="monotone"
                   dataKey="focusMinutes"
                   stroke="#82ca9d"
                   fill="#82ca9d"
+                  fillOpacity={0.6}
                   name="Focus Minutes"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </Paper>
 
-          {/* Task Completion */}
-          <Paper sx={{ p: 3 }}>
+          {/* Task Completion Bar Chart */}
+          <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h5" gutterBottom>
-              Task Completion
+              Task Activity (Last 30 Days)
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={historicalData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => {
+                    const d = new Date(date);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                />
                 <Legend />
                 <Bar dataKey="tasksCompleted" fill="#8884d8" name="Completed" />
                 <Bar dataKey="tasksCreated" fill="#82ca9d" name="Created" />
               </BarChart>
             </ResponsiveContainer>
           </Paper>
+
+          {/* Burnout Risk Chart */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h5" gutterBottom>
+              Burnout Risk Trend (Last 30 Days)
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={historicalData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => {
+                    const d = new Date(date);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="burnoutRiskScore"
+                  stroke="#ff7300"
+                  strokeWidth={2}
+                  name="Burnout Risk"
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Paper>
         </>
       ) : (
         <Paper sx={{ p: 3 }}>
-          <Typography color="text.secondary">
-            No historical data yet. Check back tomorrow!
-          </Typography>
+          <Alert severity="info">
+            No historical data available yet. Check back tomorrow after the
+            scheduled analytics job runs!
+          </Alert>
         </Paper>
       )}
     </Container>
   );
 };
 
-export default Analytics;
+export default AnalyticsPage;
