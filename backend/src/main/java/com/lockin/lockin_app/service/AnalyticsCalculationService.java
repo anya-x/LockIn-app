@@ -165,14 +165,17 @@ public class AnalyticsCalculationService {
         int NotUrgentNotImportant = 0;
 
         for (Task task : allTasks) {
-            if (task.getIsUrgent() && task.getIsImportant()) {
-                UrgentImportant++;
-            } else if (!task.getIsUrgent() && task.getIsImportant()) {
-                NotUrgentImportant++;
-            } else if (task.getIsUrgent() && !task.getIsImportant()) {
-                UrgentNotImportant++;
-            } else {
-                NotUrgentNotImportant++;
+            if (task.getStatus() != TaskStatus.COMPLETED) {
+
+                if (task.getIsUrgent() && task.getIsImportant()) {
+                    UrgentImportant++;
+                } else if (!task.getIsUrgent() && task.getIsImportant()) {
+                    NotUrgentImportant++;
+                } else if (task.getIsUrgent() && !task.getIsImportant()) {
+                    UrgentNotImportant++;
+                } else {
+                    NotUrgentNotImportant++;
+                }
             }
         }
 
