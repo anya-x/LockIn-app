@@ -10,6 +10,7 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class AnalyticsCalculationService {
     private static final int MAX_HEALTHY_MINUTES = 360;
     private static final int LATE_NIGHT_HOUR = 22;
 
+    @Cacheable(value = "dailyAnalytics", key = "#userId + '_' + #date")
     @Transactional
     public DailyAnalyticsDTO calculateDailyAnalytics(Long userId, LocalDate date) {
         User user =
