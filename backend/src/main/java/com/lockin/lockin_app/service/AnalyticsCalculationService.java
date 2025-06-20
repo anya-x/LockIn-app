@@ -33,7 +33,6 @@ public class AnalyticsCalculationService {
     private static final int MAX_HEALTHY_MINUTES = 360;
     private static final int LATE_NIGHT_HOUR = 22;
 
-    @Cacheable(value = "dailyAnalytics", key = "#userId + '_' + #date")
     @Transactional
     public DailyAnalyticsDTO calculateDailyAnalytics(Long userId, LocalDate date) {
         User user =
