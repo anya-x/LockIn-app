@@ -10,7 +10,6 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,7 +74,6 @@ public class AnalyticsCalculationService {
 
         int created = 0;
         int completed = 0;
-        int deleted = 0;
 
         for (Task task : allTasks) {
             System.out.println(
@@ -98,7 +96,6 @@ public class AnalyticsCalculationService {
                         && task.getUpdatedAt().isBefore(endOfDay)) {
 
                     completed++;
-
                     System.out.println("counting as completed");
                 }
             }
@@ -160,30 +157,30 @@ public class AnalyticsCalculationService {
             DailyAnalytics analytics, User user, LocalDate date) {
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
 
-        int UrgentImportant = 0;
-        int NotUrgentImportant = 0;
-        int UrgentNotImportant = 0;
-        int NotUrgentNotImportant = 0;
+        int urgentImportant = 0;
+        int notUrgentImportant = 0;
+        int urgentNotImportant = 0;
+        int notUrgentNotImportant = 0;
 
         for (Task task : allTasks) {
             if (task.getStatus() != TaskStatus.COMPLETED) {
 
                 if (task.getIsUrgent() && task.getIsImportant()) {
-                    UrgentImportant++;
+                    urgentImportant++;
                 } else if (!task.getIsUrgent() && task.getIsImportant()) {
-                    NotUrgentImportant++;
+                    notUrgentImportant++;
                 } else if (task.getIsUrgent() && !task.getIsImportant()) {
-                    UrgentNotImportant++;
+                    urgentNotImportant++;
                 } else {
-                    NotUrgentNotImportant++;
+                    notUrgentNotImportant++;
                 }
             }
         }
 
-        analytics.setUrgentImportantCount(UrgentImportant);
-        analytics.setNotUrgentImportantCount(NotUrgentImportant);
-        analytics.setUrgentNotImportantCount(UrgentNotImportant);
-        analytics.setNotUrgentNotImportantCount(NotUrgentNotImportant);
+        analytics.setUrgentImportantCount(urgentImportant);
+        analytics.setNotUrgentImportantCount(notUrgentImportant);
+        analytics.setUrgentNotImportantCount(urgentNotImportant);
+        analytics.setNotUrgentNotImportantCount(notUrgentNotImportant);
     }
 
     private void calculateScores(DailyAnalytics analytics) {
@@ -200,20 +197,13 @@ public class AnalyticsCalculationService {
         analytics.setProductivityScore(productivity);
 
         // 4. BURNOUT RISK SCORE
-        double overworkRisk = (analytics.getOverworkMinutes() / 60.0) * 20; // 20 points per hour
-        double lateNightRisk = analytics.getLateNightSessions() * 15; // 15 points per session
-        double consecutiveRisk = analytics.getConsecutiveWorkDays() * 5; // 5 points per day
-
-        double burnout = overworkRisk + lateNightRisk + consecutiveRisk;
-        burnout = Math.min(100, burnout);
-
-        analytics.setBurnoutRiskScore(burnout);
+        calculateBurnoutRisk(analytics);
 
         log.debug(
                 "Scores calculated - Productivity: {}, Focus: {}, Burnout: {}",
-                productivity,
-                focusScore,
-                burnout);
+                analytics.getProductivityScore(),
+                analytics.getFocusScore(),
+                analytics.getBurnoutRiskScore());
     }
 
     private double calculateFocusScore(int focusMinutes) {
@@ -234,6 +224,47 @@ public class AnalyticsCalculationService {
         return Math.max(0, Math.min(100, score));
     }
 
+    private void calculateBurnoutRisk(DailyAnalytics analytics) {
+        double riskScore = 0;
+
+        // overwork indicator (0-40 points)
+        // flags if over limit (>60 minutes)
+        if (analytics.getOverworkMinutes() > 60) {
+            riskScore += Math.min(40, analytics.getOverworkMinutes() / 6.0);
+        }
+
+        // late night work (0-30 points)
+        // need 2+ sessions to start flagging
+        if (analytics.getLateNightSessions() >= 2) {
+            riskScore += Math.min(30, (analytics.getLateNightSessions() - 1) * 10);
+        }
+
+        // interrupted sessions (0-20 points)
+        // flags if > 50% interrupted
+        int totalSessions = analytics.getPomodorosCompleted() + analytics.getInterruptedSessions();
+        if (totalSessions > 0) {
+            double interruptRate = analytics.getInterruptedSessions() / (double) totalSessions;
+            if (interruptRate > 0.5) {
+                riskScore += (interruptRate - 0.5) * 40;
+            }
+        }
+
+        // low productivity as burnout indicator (0-10 points)
+        if (analytics.getProductivityScore() < 30) {
+            riskScore += 10;
+        }
+
+        // consecutive work days (0-10 points)
+        // flags if working 7+ days straight
+        if (analytics.getConsecutiveWorkDays() >= 7) {
+            riskScore += Math.min(10, (analytics.getConsecutiveWorkDays() - 6) * 2);
+        }
+
+        analytics.setBurnoutRiskScore(Math.min(100, riskScore));
+
+        log.debug("Burnout risk calculated: {} points", riskScore);
+    }
+
     // TODO: implement consecutive work days calculation
-    // TODO: add weekly/monthly
+    // TODO: add weekly/monthly aggregation
 }
