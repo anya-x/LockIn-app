@@ -9,6 +9,7 @@ import {
   CardContent,
   CircularProgress,
   Alert,
+  Skeleton,
 } from "@mui/material";
 import {
   LineChart,
@@ -73,14 +74,21 @@ const AnalyticsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="80vh"
-      >
-        <CircularProgress />
-      </Box>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Analytics Dashboard
+        </Typography>
+        <Grid container spacing={3}>
+          {[1, 2, 3, 4].map((n) => (
+            <Grid key={n} size={{ xs: 12, md: 3 }}>
+              <Skeleton variant="rectangular" height={120} />
+            </Grid>
+          ))}
+          <Grid size={{ xs: 12 }}>
+            <Skeleton variant="rectangular" height={300} />
+          </Grid>
+        </Grid>
+      </Container>
     );
   }
 
