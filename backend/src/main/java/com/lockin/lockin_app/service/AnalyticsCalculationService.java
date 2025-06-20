@@ -189,14 +189,10 @@ public class AnalyticsCalculationService {
         double focusScore = calculateFocusScore(focusMinutes);
         analytics.setFocusScore(focusScore);
 
-        // 2. TASK COMPLETION SCORE
-        double taskScore = analytics.getCompletionRate();
+        // 2. PRODUCTIVITY SCORE
+        calculateProductivityScore(analytics);
 
-        // 3. OVERALL PRODUCTIVITY SCORE
-        double productivity = (taskScore * 0.4) + (focusScore * 0.6);
-        analytics.setProductivityScore(productivity);
-
-        // 4. BURNOUT RISK SCORE
+        // 3. BURNOUT RISK SCORE
         calculateBurnoutRisk(analytics);
 
         log.debug(
@@ -265,6 +261,55 @@ public class AnalyticsCalculationService {
         log.debug("Burnout risk calculated: {} points", riskScore);
     }
 
+    private void calculateProductivityScore(DailyAnalytics analytics) {
+        double taskScore = 0;
+        double focusScore = 0;
+        double balanceScore = 0;
+
+        // 1. Task completion (40% weight)
+        taskScore = Math.min(40, analytics.getCompletionRate() * 0.4);
+
+        // 2. Focus time (40% weight)
+        int focusMinutes = analytics.getFocusMinutes();
+        if (focusMinutes == 0) {
+            focusScore = 0;
+        } else if (focusMinutes <= OPTIMAL_FOCUS_MINUTES) {
+            focusScore = (focusMinutes / (double) OPTIMAL_FOCUS_MINUTES) * 40;
+        } else {
+            int excessMinutes = focusMinutes - OPTIMAL_FOCUS_MINUTES;
+            double excessScore = 40 - (excessMinutes / 30.0); // lose 1 point per 30 min excess
+            focusScore = Math.max(25, excessScore); // floor at 25 for actually working
+        }
+
+        // 3.Work-Break balance score (20% weight)
+        int breakMinutes = analytics.getBreakMinutes();
+        if (focusMinutes > 0 && breakMinutes > 0) {
+            double ratio = breakMinutes / (double) focusMinutes;
+            if (ratio >= 0.15 && ratio <= 0.25) {
+                balanceScore = 20;
+            } else if (ratio >= 0.10 && ratio <= 0.30) {
+                balanceScore = 15;
+            } else if (ratio >= 0.05 && ratio <= 0.35) {
+                balanceScore = 10;
+            } else {
+                balanceScore = 5;
+            }
+        } else if (focusMinutes > 0) {
+            balanceScore = 5;
+        }
+
+        double totalScore = taskScore + focusScore + balanceScore;
+        analytics.setProductivityScore(Math.min(100, Math.max(0, totalScore)));
+
+        analytics.setFocusScore(Math.min(100, focusScore * 2.5));
+
+        log.debug(
+                "Productivity breakdown - Task: {}, Focus: {}, Balance: {}, Total: {}",
+                taskScore,
+                focusScore,
+                balanceScore,
+                totalScore);
+    }
     // TODO: implement consecutive work days calculation
     // TODO: add weekly/monthly aggregation
 }
