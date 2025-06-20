@@ -32,6 +32,14 @@ const AnalyticsPage: React.FC = () => {
   const [todayData, setTodayData] = useState<Analytics | null>(null);
   const [historicalData, setHistoricalData] = useState<Analytics[]>([]);
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   useEffect(() => {
     fetchAnalytics();
   }, []);
@@ -201,15 +209,13 @@ const AnalyticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(date) => {
-                    const d = new Date(date);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
+                  tickFormatter={formatDate}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
                 <YAxis domain={[0, 100]} />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip labelFormatter={formatDate} />
                 <Legend />
                 <Line
                   type="monotone"
@@ -241,15 +247,13 @@ const AnalyticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(date) => {
-                    const d = new Date(date);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
+                  tickFormatter={formatDate}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
                 <YAxis />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip labelFormatter={formatDate} />
                 <Legend />
                 <Area
                   type="monotone"
@@ -273,15 +277,13 @@ const AnalyticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(date) => {
-                    const d = new Date(date);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
+                  tickFormatter={formatDate}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
                 <YAxis />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip labelFormatter={formatDate} />
                 <Legend />
                 <Bar dataKey="tasksCompleted" fill="#8884d8" name="Completed" />
                 <Bar dataKey="tasksCreated" fill="#82ca9d" name="Created" />
@@ -299,15 +301,13 @@ const AnalyticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(date) => {
-                    const d = new Date(date);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
+                  tickFormatter={formatDate}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
                 <YAxis domain={[0, 100]} />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip labelFormatter={formatDate} />
                 <Legend />
                 <Line
                   type="monotone"
