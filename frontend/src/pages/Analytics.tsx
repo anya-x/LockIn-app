@@ -32,6 +32,15 @@ const AnalyticsPage: React.FC = () => {
   const [todayData, setTodayData] = useState<Analytics | null>(null);
   const [historicalData, setHistoricalData] = useState<Analytics[]>([]);
 
+  const chartColors = {
+    productivity: "#1976d2",
+    focus: "#2e7d32",
+    burnout: "#d32f2f",
+    tasksCompleted: "#1976d2",
+    tasksCreated: "#ed6c02",
+    focusMinutes: "#2e7d32",
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -220,7 +229,7 @@ const AnalyticsPage: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="productivityScore"
-                  stroke="#8884d8"
+                  stroke={chartColors.productivity}
                   strokeWidth={2}
                   name="Productivity"
                   dot={false}
@@ -228,7 +237,7 @@ const AnalyticsPage: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="focusScore"
-                  stroke="#82ca9d"
+                  stroke={chartColors.focus}
                   strokeWidth={2}
                   name="Focus"
                   dot={false}
@@ -258,8 +267,8 @@ const AnalyticsPage: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="focusMinutes"
-                  stroke="#82ca9d"
-                  fill="#82ca9d"
+                  stroke={chartColors.focusMinutes}
+                  fill={chartColors.focusMinutes}
                   fillOpacity={0.6}
                   name="Focus Minutes"
                 />
@@ -285,8 +294,16 @@ const AnalyticsPage: React.FC = () => {
                 <YAxis />
                 <Tooltip labelFormatter={formatDate} />
                 <Legend />
-                <Bar dataKey="tasksCompleted" fill="#8884d8" name="Completed" />
-                <Bar dataKey="tasksCreated" fill="#82ca9d" name="Created" />
+                <Bar
+                  dataKey="tasksCompleted"
+                  fill={chartColors.tasksCompleted}
+                  name="Completed"
+                />
+                <Bar
+                  dataKey="tasksCreated"
+                  fill={chartColors.tasksCreated}
+                  name="Created"
+                />
               </BarChart>
             </ResponsiveContainer>
           </Paper>
@@ -312,7 +329,7 @@ const AnalyticsPage: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="burnoutRiskScore"
-                  stroke="#ff7300"
+                  stroke={chartColors.burnout}
                   strokeWidth={2}
                   name="Burnout Risk"
                   dot={false}
