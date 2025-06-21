@@ -13,6 +13,7 @@ import {
   DialogActions,
   TextField,
   Grid,
+  Skeleton,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -100,10 +101,52 @@ const Categories: React.FC = () => {
     }
   };
 
+  const CategorySkeleton = () => (
+    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <Card>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="start">
+            <Box display="flex" alignItems="center" gap={1}>
+              <Skeleton variant="rectangular" width={40} height={40} />
+              <Skeleton variant="text" width={120} height={32} />
+            </Box>
+            <Box>
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                sx={{ mr: 1, display: "inline-block" }}
+              />
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                sx={{ display: "inline-block" }}
+              />
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+    </Grid>
+  );
+
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
+      <Box>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
+          <Skeleton variant="text" width={150} height={48} />
+          <Skeleton variant="rectangular" width={160} height={40} />
+        </Box>
+        <Grid container spacing={2}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <CategorySkeleton key={i} />
+          ))}
+        </Grid>
       </Box>
     );
   }
