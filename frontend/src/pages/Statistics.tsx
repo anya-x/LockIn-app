@@ -12,6 +12,7 @@ import {
   Button,
   ToggleButtonGroup,
   ToggleButton,
+  Skeleton,
 } from "@mui/material";
 import {
   Timer as TimerIcon,
@@ -270,10 +271,39 @@ const Statistics: React.FC = () => {
     return `${mins}m`;
   };
 
+  const StatCardSkeleton = () => (
+    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Card>
+        <CardContent>
+          <Skeleton variant="text" width="60%" height={24} />
+          <Skeleton variant="text" width="40%" height={48} />
+          <Skeleton variant="text" width="80%" height={20} />
+        </CardContent>
+      </Card>
+    </Grid>
+  );
+
+  const StatsSkeleton = () => (
+    <Paper sx={{ p: 3, mb: 3 }}>
+      <Skeleton variant="text" width={250} height={32} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" height={200} />
+    </Paper>
+  );
+
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
+      <Box sx={{ p: 3 }}>
+        <Skeleton variant="text" width={200} height={48} sx={{ mb: 3 }} />
+
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </Grid>
+
+        <StatsSkeleton />
+        <StatsSkeleton />
+        <StatsSkeleton />
       </Box>
     );
   }
