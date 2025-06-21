@@ -9,6 +9,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Skeleton,
 } from "@mui/material";
 import type { Task } from "../types/task";
 import api from "../services/api";
@@ -268,16 +269,56 @@ const Matrix: React.FC = () => {
       </Paper>
     );
   };
+  const MatrixSkeleton = () => (
+    <Paper sx={{ p: 2, minHeight: { xs: 200, md: 300 } }}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Box>
+          <Skeleton variant="text" width={150} height={32} />
+          <Skeleton variant="text" width={120} height={20} />
+        </Box>
+        <Skeleton variant="circular" width={32} height={32} />
+      </Box>
+      <Box>
+        {[1, 2, 3].map((i) => (
+          <Skeleton
+            key={i}
+            variant="rectangular"
+            height={60}
+            sx={{ mb: 1, borderRadius: 1 }}
+          />
+        ))}
+      </Box>
+    </Paper>
+  );
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
+      <Box sx={{ p: 3 }}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
+          <Box>
+            <Skeleton variant="text" width={250} height={48} />
+            <Skeleton variant="text" width={300} height={24} />
+          </Box>
+          <Skeleton variant="rectangular" width={200} height={56} />
+        </Box>
+
+        <Grid container spacing={2}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid size={{ xs: 12, md: 6 }} key={i}>
+              <MatrixSkeleton />
+            </Grid>
+          ))}
+        </Grid>
       </Box>
     );
   }
