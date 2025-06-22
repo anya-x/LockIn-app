@@ -1,8 +1,12 @@
 package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
+import com.lockin.lockin_app.dto.WeeklyReportDTO;
+import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.service.AnalyticsCalculationService;
 import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.service.WeeklyReportService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +27,8 @@ public class DailyAnalyticsController {
 
     private final AnalyticsCalculationService calculationService;
     private final UserService userService;
+    private final WeeklyReportService weeklyReportService;
+    private final UserRepository userRepository;
 
     @GetMapping("/today")
     public ResponseEntity<DailyAnalyticsDTO> getTodayAnalytics(
@@ -72,5 +78,26 @@ public class DailyAnalyticsController {
                 calculationService.calculateDailyAnalytics(userId, targetDate);
 
         return ResponseEntity.ok(analytics);
+    }
+
+    @GetMapping("/weekly-report")
+    public ResponseEntity<WeeklyReportDTO> getWeeklyReport(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/analytics/weekly-report: User: {}", userDetails.getUsername());
+
+        User user =
+                userRepository
+                        .findByEmail(userDetails.getUsername())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+        WeeklyReportDTO report = weeklyReportService.generateWeeklyReport(user);
+
+        if (report == null) {
+            log.info("No data available for weekly report for user {}", user.getEmail());
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(report);
     }
 }
