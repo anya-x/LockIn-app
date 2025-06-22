@@ -6,6 +6,8 @@ import com.lockin.lockin_app.entity.FocusSession;
 import com.lockin.lockin_app.entity.SessionType;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
+import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
@@ -47,7 +49,7 @@ public class FocusSessionService {
         User user =
                 userRepository
                         .findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         FocusSession session = new FocusSession();
         session.setUser(user);
@@ -63,17 +65,17 @@ public class FocusSessionService {
             Task task =
                     taskRepository
                             .findById(request.getTaskId())
-                            .orElseThrow(() -> new RuntimeException("Task not found"));
+                            .orElseThrow(
+                                    () ->
+                                            new ResourceNotFoundException(
+                                                    "Task", "id", request.getTaskId()));
+
+            if (!task.getUser().getId().equals(userId)) {
+                throw new UnauthorizedException(
+                        "Cannot link session to task owned by another user");
+            }
 
             session.setTask(task);
-        }
-
-        if (request.getProfileName() != null) {
-            log.info(
-                    "Starting session with profile: {} ({}min work / {}min break)",
-                    request.getProfileName(),
-                    request.getPlannedMinutes(),
-                    request.getBreakMinutes());
         }
 
         FocusSession saved = sessionRepository.save(session);
@@ -86,21 +88,30 @@ public class FocusSessionService {
     @Transactional
     public FocusSessionResponseDTO completeSession(
             Long sessionId, Long userId, Integer actualMinutes) {
-        log.info("Completing session: {} for user: {}", sessionId, userId);
 
         FocusSession session =
                 sessionRepository
                         .findById(sessionId)
-                        .orElseThrow(() -> new RuntimeException("Session not found"));
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Focus Session", "id", sessionId));
+
+        validateSessionOwnership(session, userId);
+
+        if (session.getCompleted()) {
+            throw new ResourceNotFoundException("Session is already completed");
+        }
+
+        if (actualMinutes != null && actualMinutes < 0) {
+            throw new ResourceNotFoundException("Actual minutes cannot be negative");
+        }
 
         session.setActualMinutes(actualMinutes);
         session.setCompletedAt(LocalDateTime.now());
         session.setCompleted(true);
 
         FocusSession updated = sessionRepository.save(session);
-
-        log.info("Completed session: {}", updated.getId());
-
         return FocusSessionResponseDTO.fromEntity(updated);
     }
 
@@ -112,10 +123,15 @@ public class FocusSessionService {
         FocusSession session =
                 sessionRepository
                         .findById(sessionId)
-                        .orElseThrow(() -> new RuntimeException("Session not found"));
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Focus Session", "id", sessionId));
 
-        if (!session.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Session does not belong to user");
+        validateSessionOwnership(session, userId);
+
+        if (actualMinutes != null && actualMinutes < 0) {
+            throw new ResourceNotFoundException("Actual minutes cannot be negative");
         }
 
         session.setActualMinutes(actualMinutes);
@@ -160,11 +176,27 @@ public class FocusSessionService {
         FocusSession session =
                 sessionRepository
                         .findById(sessionId)
-                        .orElseThrow(() -> new RuntimeException("Session not found"));
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Focus Session", "id", sessionId));
+
+        validateSessionOwnership(session, userId);
 
         session.setNotes(notes);
         FocusSession updated = sessionRepository.save(session);
 
         return FocusSessionResponseDTO.fromEntity(updated);
+    }
+
+    private void validateSessionOwnership(FocusSession session, Long userId) {
+        if (!session.getUser().getId().equals(userId)) {
+            log.warn(
+                    "User {} attempted to access session {} owned by user {}",
+                    userId,
+                    session.getId(),
+                    session.getUser().getId());
+            throw new UnauthorizedException("You do not have permission to access this session");
+        }
     }
 }

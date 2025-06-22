@@ -190,11 +190,9 @@ public class TaskService {
         Task task =
                 taskRepository
                         .findById(taskId)
-                        .orElseThrow(() -> new RuntimeException("Task not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
-        if (!task.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorised");
-        }
+        validateTaskOwnership(task, userId);
 
         task.setIsUrgent(isUrgent);
         task.setIsImportant(isImportant);

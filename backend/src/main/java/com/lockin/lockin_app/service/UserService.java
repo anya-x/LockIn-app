@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class UserService {
 
         return userRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
     }
 
     @Transactional(readOnly = true)
