@@ -86,10 +86,7 @@ public class DailyAnalyticsController {
 
         log.debug("GET /api/analytics/weekly-report: User: {}", userDetails.getUsername());
 
-        User user =
-                userRepository
-                        .findByEmail(userDetails.getUsername())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userService.getUserByEmail(userDetails.getUsername());
 
         WeeklyReportDTO report = weeklyReportService.generateWeeklyReport(user);
 
