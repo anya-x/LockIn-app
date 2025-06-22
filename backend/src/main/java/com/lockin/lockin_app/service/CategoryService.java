@@ -28,6 +28,13 @@ public class CategoryService {
         return categoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    /**
+     * Creates a new category
+     *
+     * <p>Validates that category name is unique for this user
+     *
+     * @throws ResourceNotFoundException if duplicate name exists
+     */
     @Transactional
     public Category createCategory(Long userId, Category category) {
         log.info("Creating category for user: {}", userId);
@@ -50,6 +57,16 @@ public class CategoryService {
         return saved;
     }
 
+    /**
+     * Updates a category
+     *
+     * <p>If name is changed, validates new name is unique.
+     *
+     * @param categoryId category id to update
+     * @param updatedCategory
+     * @param userId owner of category
+     * @return returns updated category
+     */
     @Transactional
     public Category updateCategory(Long categoryId, Long userId, Category updatedCategory) {
         log.info("Updating category: {} for user: {}", categoryId, userId);
@@ -62,6 +79,7 @@ public class CategoryService {
 
         validateCategoryOwnership(category, userId);
 
+        // check for duplicate name only if name is being changed
         if (!category.getName().equals(updatedCategory.getName())
                 && categoryRepository.existsByUserIdAndName(userId, updatedCategory.getName())) {
             throw new ResourceNotFoundException(
@@ -79,6 +97,7 @@ public class CategoryService {
         return saved;
     }
 
+    /** Deletes a category, associated tasks will have their category set to null */
     @Transactional
     public void deleteCategory(Long categoryId, Long userId) {
         log.info("Deleting category: {} for user: {}", categoryId, userId);
@@ -91,6 +110,7 @@ public class CategoryService {
 
         validateCategoryOwnership(category, userId);
 
+        // unlink tasks from this category
         category.getTasks().forEach(task -> task.setCategory(null));
 
         categoryRepository.delete(category);
@@ -113,6 +133,7 @@ public class CategoryService {
         return category;
     }
 
+    /** validates category ownership */
     private void validateCategoryOwnership(Category category, Long userId) {
         if (!category.getUser().getId().equals(userId)) {
             log.warn(

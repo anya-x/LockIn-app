@@ -42,6 +42,15 @@ public class FocusSessionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Starts a new focus session
+     *
+     * @param userId user starting the session
+     * @param request session configuration (duration, profile, optional task link)
+     * @return created session with start timestamp
+     * @throws ResourceNotFoundException if task doesn't exist
+     * @throws UnauthorizedException if task belongs to another user
+     */
     @Transactional
     public FocusSessionResponseDTO startSession(Long userId, FocusSessionRequestDTO request) {
         log.info("Starting session for user: {}", userId);
@@ -61,6 +70,7 @@ public class FocusSessionService {
         session.setProfileName(request.getProfileName());
         session.setBreakMinutes(request.getBreakMinutes());
 
+        // link to task if provided
         if (request.getTaskId() != null) {
             Task task =
                     taskRepository
@@ -85,9 +95,19 @@ public class FocusSessionService {
         return FocusSessionResponseDTO.fromEntity(saved);
     }
 
+    /**
+     * marks a session as completed
+     *
+     * <p>Records actual minutes worked and completion timestamp, prevents completing an
+     * already-completed session.
+     *
+     * @param actualMinutes actual time worked
+     * @throws ResourceNotFoundException if session already completed or minutes negative
+     */
     @Transactional
     public FocusSessionResponseDTO completeSession(
             Long sessionId, Long userId, Integer actualMinutes) {
+        log.info("Completing session: {} for user: {}", sessionId, userId);
 
         FocusSession session =
                 sessionRepository
@@ -112,6 +132,9 @@ public class FocusSessionService {
         session.setCompleted(true);
 
         FocusSession updated = sessionRepository.save(session);
+
+        log.info("Completed session: {}", updated.getId());
+
         return FocusSessionResponseDTO.fromEntity(updated);
     }
 

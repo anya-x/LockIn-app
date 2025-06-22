@@ -3,6 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.AuthResponseDTO;
 import com.lockin.lockin_app.dto.LoginRequestDTO;
 import com.lockin.lockin_app.dto.RegisterRequestDTO;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +27,14 @@ public class AuthController {
 
     private final AuthService authService;
 
+    /**
+     * Registers a new user account: creates user with encoded password and generates JWT token for
+     * login
+     *
+     * @param request user details (email, password, name)
+     * @return authentication response with JWT token and user infos
+     * @throws ResourceNotFoundException if email already exists
+     */
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(
             @Valid @RequestBody RegisterRequestDTO request) {
@@ -37,6 +47,13 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /**
+     * Authentificcates user and generates JWT token
+     *
+     * @param request login credentials (email and password)
+     * @return authentification response with JWT token and user infos
+     * @throws AuthenticationException if credentials are not valid
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         log.info("POST /api/auth/login : email: {}", request.getEmail());

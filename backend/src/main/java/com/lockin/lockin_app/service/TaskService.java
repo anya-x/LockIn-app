@@ -34,6 +34,16 @@ public class TaskService {
     private final UserService userService;
     private final CategoryService categoryService;
 
+    /**
+     * Creates a new task for the user
+     *
+     * <p>validates it belongs to the user
+     *
+     * @param userId owner of the task
+     * @param request task details (title, description, category, priority)
+     * @return created task with generated ID
+     * @throws ResourceNotFoundException if user or category doesn't exist
+     */
     @Transactional
     public TaskResponseDTO createTask(Long userId, TaskRequestDTO request) {
         log.info("Creating task for user: {}", userId);
@@ -51,6 +61,8 @@ public class TaskService {
         return TaskResponseDTO.fromEntity(saved);
     }
 
+    // updates task fields from request DTO
+    // handles category linking and default status
     private void updateTaskFromRequest(Task task, TaskRequestDTO request) {
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
@@ -85,6 +97,14 @@ public class TaskService {
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
 
+    /**
+     * Gets a specific task
+     *
+     * <p>Validates user owns the task before returning.
+     *
+     * @throws ResourceNotFoundException if task doesn't exist
+     * @throws UnauthorizedException if user doesn't own task
+     */
     @Transactional(readOnly = true)
     public TaskResponseDTO getTask(Long taskId, Long userId) {
         log.debug("Fetching task: {} for user: {}", taskId, userId);
@@ -99,6 +119,15 @@ public class TaskService {
         return TaskResponseDTO.fromEntity(task);
     }
 
+    /**
+     * Updates an existing task
+     *
+     * <p>Automatically sets completedAt timestamp when status changes to COMPLETED. Clears
+     * completedAt if status changes away from COMPLETED.
+     *
+     * @throws ResourceNotFoundException if task doesn't exist
+     * @throws UnauthorizedException if user doesn't own task
+     */
     @Transactional
     public TaskResponseDTO updateTask(Long taskId, Long userId, TaskRequestDTO request) {
         log.info("Updating task: {} for user: {}", taskId, userId);
@@ -113,6 +142,7 @@ public class TaskService {
         TaskStatus oldStatus = task.getStatus();
         TaskStatus newStatus = request.getStatus();
 
+        // automatically track completion timestamp
         if (oldStatus != TaskStatus.COMPLETED && newStatus == TaskStatus.COMPLETED) {
             task.setCompletedAt(LocalDateTime.now());
         } else if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {
@@ -143,9 +173,16 @@ public class TaskService {
         log.info("Deleted task: {}", taskId);
     }
 
+    /**
+     * Gets tasks by Eisenhower matrix quadrant
+     *
+     * @param isImportant boolean
+     * @param isUrgent boolean
+     */
     @Transactional(readOnly = true)
     public List<TaskResponseDTO> getTasksByQuadrant(
             Long userId, Boolean isUrgent, Boolean isImportant) {
+
         log.debug("Fetching tasks for user by quadrant: {}", userId);
 
         List<Task> tasks = taskRepository.findByQuadrant(userId, isUrgent, isImportant);
@@ -156,7 +193,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public EisenhowerMatrixDTO getEisenhowerMatrix(Long userId) {
 
-        log.debug("Fetching Einshenhower matrix for user: {}", userId);
+        log.debug("Fetching Eisenhower matrix for user: {}", userId);
 
         EisenhowerMatrixDTO matrix = new EisenhowerMatrixDTO();
 
@@ -207,7 +244,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<TaskResponseDTO> searchTasks(Long userId, String searchTerm) {
 
-        log.debug("Fetching tasks for user {} by searchTerm: {}", userId, searchTerm);
+        log.debug("Searching tasks for user {} with term: {}", userId, searchTerm);
 
         List<Task> tasks = taskRepository.searchTasks(userId, searchTerm);
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
@@ -221,13 +258,7 @@ public class TaskService {
             Boolean isUrgent,
             Boolean isImportant) {
 
-        log.debug(
-                "=========================== Fetching tasks for user : {} ===========================",
-                userId);
-        log.debug("filters status: {}", status);
-        log.debug("filters category: {}", categoryId);
-        log.debug("filters IsUrgent: {}", isUrgent);
-        log.debug("filters IsImportant: {}", isImportant);
+        log.debug("Fetching filtered tasks for user: {}", userId);
 
         List<Task> tasks =
                 taskRepository.findByFilters(userId, status, categoryId, isUrgent, isImportant);
@@ -235,6 +266,12 @@ public class TaskService {
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
 
+    /**
+     * Calculates task statistics
+     *
+     * @return statistics: counted by status, completion rate, category distribution and this week's
+     *     activity
+     */
     public TaskStatisticsDTO getStatistics(Long userId) {
         TaskStatisticsDTO stats = new TaskStatisticsDTO();
 
@@ -257,7 +294,7 @@ public class TaskService {
         // Completion rate
         if (stats.getTotalTasks() > 0) {
             double rate = (stats.getCompletedCount().doubleValue() / stats.getTotalTasks()) * 100;
-            stats.setCompletionRate(Math.round(rate * 10.0) / 10.0); // Round to 1 decimal
+            stats.setCompletionRate(Math.round(rate * 10.0) / 10.0);
         } else {
             stats.setCompletionRate(0.0);
         }
@@ -321,6 +358,11 @@ public class TaskService {
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
 
+    /**
+     * Validates task ownership and throws exception if user doesn't own it
+     *
+     * @throws UnauthorizedException if task doesn't belong to user
+     */
     private void validateTaskOwnership(Task task, Long userId) {
         if (!task.getUser().getId().equals(userId)) {
             log.warn(

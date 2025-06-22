@@ -32,6 +32,17 @@ public class AnalyticsCalculationService {
     private static final int MAX_HEALTHY_MINUTES = 360;
     private static final int LATE_NIGHT_HOUR = 22;
 
+    /**
+     * Calculates daily analytics for a specific date
+     *
+     * <p>Scoring algorithms based on: - Productivity: 40% task completion + 40% focus time + 20%
+     * work-break balance - Burnout risk: Overwork, late night sessions, interruption rate - Focus:
+     * Optimal range 240min, diminishing returns after 360min
+     *
+     * @param userId user to calculate analytics for
+     * @param date specific date to analyze
+     * @return daily analytics with scores and metrics
+     */
     @Transactional
     public DailyAnalyticsDTO calculateDailyAnalytics(Long userId, LocalDate date) {
         User user =
@@ -63,27 +74,17 @@ public class AnalyticsCalculationService {
         return DailyAnalyticsDTO.fromEntity(saved);
     }
 
+    // counts tasks created and completed on the given date
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
 
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        System.out.println("total tasks : " + allTasks.size());
-        System.out.println("date: " + date);
-
         int created = 0;
         int completed = 0;
 
         for (Task task : allTasks) {
-            System.out.println(
-                    " taskId"
-                            + task.getId()
-                            + " created: "
-                            + task.getCreatedAt()
-                            + " status: "
-                            + task.getStatus());
-
             if (task.getCreatedAt() != null
                     && task.getCreatedAt().isAfter(startOfDay)
                     && task.getCreatedAt().isBefore(endOfDay)) {
@@ -96,7 +97,6 @@ public class AnalyticsCalculationService {
                         && task.getUpdatedAt().isBefore(endOfDay)) {
 
                     completed++;
-                    System.out.println("counting as completed");
                 }
             }
         }
@@ -105,12 +105,16 @@ public class AnalyticsCalculationService {
         analytics.setTasksCompleted(completed);
         analytics.setTasksDeleted(0);
 
-        // calculate completion rate
         double completionRate = created > 0 ? (completed / (double) created) * 100 : 0.0;
-        System.out.println("completion rate: " + completionRate);
         analytics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
     }
 
+    /**
+     * Calculates Pomodoro session metrics
+     *
+     * <p>Includes focus minutes, break minutes, interrupted sessions and late night work detection
+     * (sessions after 10 PM).
+     */
     private void calculatePomodoroMetrics(DailyAnalytics analytics, User user, LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
@@ -136,7 +140,6 @@ public class AnalyticsCalculationService {
                 interrupted++;
             }
 
-            // check if late night session
             if (session.getStartedAt().getHour() >= LATE_NIGHT_HOUR) {
                 lateNight++;
             }
@@ -148,11 +151,11 @@ public class AnalyticsCalculationService {
         analytics.setInterruptedSessions(interrupted);
         analytics.setLateNightSessions(lateNight);
 
-        // calculate overwork
         int overwork = Math.max(0, totalFocusMinutes - MAX_HEALTHY_MINUTES);
         analytics.setOverworkMinutes(overwork);
     }
 
+    // counts current tasks by Eisenhower matrix quadrant
     private void calculateEisenhowerDistribution(
             DailyAnalytics analytics, User user, LocalDate date) {
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
@@ -184,15 +187,11 @@ public class AnalyticsCalculationService {
     }
 
     private void calculateScores(DailyAnalytics analytics) {
-        // 1. FOCUS SCORE (0-100)
         int focusMinutes = analytics.getFocusMinutes();
         double focusScore = calculateFocusScore(focusMinutes);
         analytics.setFocusScore(focusScore);
 
-        // 2. PRODUCTIVITY SCORE
         calculateProductivityScore(analytics);
-
-        // 3. BURNOUT RISK SCORE
         calculateBurnoutRisk(analytics);
 
         log.debug(
@@ -202,6 +201,12 @@ public class AnalyticsCalculationService {
                 analytics.getBurnoutRiskScore());
     }
 
+    /**
+     * Calculates focus score based on minutes worked
+     *
+     * <p>Optimal zone: 240 minutes (100 points) Diminishing returns: 240-360 minutes (100-80
+     * points) Over-focus penalty: >360 minutes (decreasing below 80)
+     */
     private double calculateFocusScore(int focusMinutes) {
         double score;
 
@@ -220,23 +225,27 @@ public class AnalyticsCalculationService {
         return Math.max(0, Math.min(100, score));
     }
 
+    /**
+     * Calculates burnout risk score (0-100)
+     *
+     * <p>Risk factors weighted: - Overwork: 40 points max (>60 min over limit) - Late night: 30
+     * points max (2+ sessions after 10 PM) - Interruptions: 20 points max (>50% interrupted) - Low
+     * productivity: 10 points (score <30) - Consecutive days: 10 points (7+ days straight)
+     */
     private void calculateBurnoutRisk(DailyAnalytics analytics) {
         double riskScore = 0;
 
         // overwork indicator (0-40 points)
-        // flags if over limit (>60 minutes)
         if (analytics.getOverworkMinutes() > 60) {
             riskScore += Math.min(40, analytics.getOverworkMinutes() / 6.0);
         }
 
         // late night work (0-30 points)
-        // need 2+ sessions to start flagging
         if (analytics.getLateNightSessions() >= 2) {
             riskScore += Math.min(30, (analytics.getLateNightSessions() - 1) * 10);
         }
 
         // interrupted sessions (0-20 points)
-        // flags if > 50% interrupted
         int totalSessions = analytics.getPomodorosCompleted() + analytics.getInterruptedSessions();
         if (totalSessions > 0) {
             double interruptRate = analytics.getInterruptedSessions() / (double) totalSessions;
@@ -251,7 +260,6 @@ public class AnalyticsCalculationService {
         }
 
         // consecutive work days (0-10 points)
-        // flags if working 7+ days straight
         if (analytics.getConsecutiveWorkDays() >= 7) {
             riskScore += Math.min(10, (analytics.getConsecutiveWorkDays() - 6) * 2);
         }
@@ -261,6 +269,12 @@ public class AnalyticsCalculationService {
         log.debug("Burnout risk calculated: {} points", riskScore);
     }
 
+    /**
+     * Calculates overall productivity score (0-100)
+     *
+     * <p>Weighted formula: - Task completion: 40% (completion rate * 0.4) - Focus time: 40%
+     * (optimal at 240 min) - Work-break balance: 20% (ideal ratio 0.15-0.25)
+     */
     private void calculateProductivityScore(DailyAnalytics analytics) {
         double taskScore = 0;
         double focusScore = 0;

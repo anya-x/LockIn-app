@@ -29,6 +29,13 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
 
+    /**
+     * Registers a new user account
+     *
+     * @param request user registration details
+     * @return authentication response with token and user infos
+     * @throws ResourceNotFoundException if email already exists
+     */
     @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
         if (userService.existsByEmail(request.getEmail())) {
@@ -58,6 +65,13 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * Authentificates user and generates JWT token
+     *
+     * @param request login credentials
+     * @return authentification response with token and user info
+     * @throws AuthenticationException if credentials are invalid
+     */
     public AuthResponseDTO login(LoginRequestDTO request) {
         try {
             authenticationManager.authenticate(

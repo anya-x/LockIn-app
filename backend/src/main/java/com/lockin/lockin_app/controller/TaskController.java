@@ -34,6 +34,13 @@ public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
 
+    /**
+     * Gets paginated list of user's tasks
+     *
+     * @param page page number (default 0)
+     * @param size page size (default 20)
+     * @return paginated tasks sorted by creation date, descending
+     */
     @GetMapping
     public ResponseEntity<Page<TaskResponseDTO>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
@@ -62,6 +69,12 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
+    /**
+     * Creates a new task
+     *
+     * @param request task details
+     * @return created task with generated ID
+     */
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(
             @Valid @RequestBody TaskRequestDTO request,
@@ -101,6 +114,16 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Gets tasks by Eisenhower matrix quadrant
+     *
+     * <p>Quadrants: Urgent+Important (Do First), Not Urgent+Important (Schedule), Urgent+Not
+     * Important (Delegate), Not Urgent+Not Important (Eliminate)
+     *
+     * @param isImportant boolean
+     * @param isUrgent boolean
+     * @return returns tasks by quadrant
+     */
     @GetMapping("/quadrant")
     public ResponseEntity<List<TaskResponseDTO>> getTasksByQuadrant(
             @RequestParam Boolean isUrgent,
@@ -114,6 +137,11 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
 
+    /**
+     * gets complete Eisenhower Matrix
+     *
+     * @return returns complete Eisenhower matrix with all four quadrants populated
+     */
     @GetMapping("/matrix")
     public ResponseEntity<EisenhowerMatrixDTO> getEisenhowerMatrix(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -139,6 +167,11 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
+    /**
+     * Searches tasks by title or description
+     *
+     * @param query string being searched
+     */
     @GetMapping("/search")
     public ResponseEntity<List<TaskResponseDTO>> searchTasks(
             @RequestParam String query, @AuthenticationPrincipal UserDetails userDetails) {
@@ -153,6 +186,19 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
 
+    /**
+     * Filters tasks by status, category and priority flags with pagination
+     *
+     * <p>All filters are optional. If no filters provided, returns all tasks.
+     *
+     * @param categoryId categoryId
+     * @param isUrgent boolean
+     * @param isImportant boolean
+     * @param size number of items
+     * @param status status
+     * @param page page
+     * @return returns filtered tasks
+     */
     @GetMapping("/filter")
     public ResponseEntity<Page<TaskResponseDTO>> filterTasks(
             @RequestParam(required = false) String status,
@@ -164,10 +210,6 @@ public class TaskController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("GET /api/tasks/filter : User: {}", userDetails.getUsername());
-        log.debug("filters status: {}", status);
-        log.debug("filters category: {}", categoryId);
-        log.debug("filters IsUrgent: {}", isUrgent);
-        log.debug("filters IsImportant: {}", isImportant);
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
 
