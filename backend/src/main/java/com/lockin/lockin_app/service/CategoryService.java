@@ -1,8 +1,9 @@
 package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.entity.Category;
-import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
+import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.CategoryRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 
@@ -29,20 +30,22 @@ public class CategoryService {
 
     @Transactional
     public Category createCategory(Long userId, Category category) {
-        log.info("Creating category for: {}", userId);
+        log.info("Creating category for user: {}", userId);
+
         User user =
                 userRepository
                         .findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (categoryRepository.existsByUserIdAndName(userId, category.getName())) {
-            throw new RuntimeException("Category with this name already exists");
+            throw new ResourceNotFoundException(
+                    "Category with name '" + category.getName() + "' already exists");
         }
 
         category.setUser(user);
         Category saved = categoryRepository.save(category);
 
-        log.info("Created task: {}", category.getId());
+        log.info("Created category: {}", saved.getId());
 
         return saved;
     }
@@ -54,15 +57,15 @@ public class CategoryService {
         Category category =
                 categoryRepository
                         .findById(categoryId)
-                        .orElseThrow(() -> new RuntimeException("Category not found"));
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Category", "id", categoryId));
 
-        if (!category.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorised");
-        }
+        validateCategoryOwnership(category, userId);
 
         if (!category.getName().equals(updatedCategory.getName())
                 && categoryRepository.existsByUserIdAndName(userId, updatedCategory.getName())) {
-            throw new RuntimeException("Category with this name already exists");
+            throw new ResourceNotFoundException(
+                    "Category with name '" + updatedCategory.getName() + "' already exists");
         }
 
         category.setName(updatedCategory.getName());
@@ -71,7 +74,7 @@ public class CategoryService {
 
         Category saved = categoryRepository.save(category);
 
-        log.info("Updated categor");
+        log.info("Updated category: {}", saved.getId());
 
         return saved;
     }
@@ -83,19 +86,16 @@ public class CategoryService {
         Category category =
                 categoryRepository
                         .findById(categoryId)
-                        .orElseThrow(() -> new RuntimeException("Category not found"));
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Category", "id", categoryId));
 
-        if (!category.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorised");
-        }
+        validateCategoryOwnership(category, userId);
 
-        for (Task task : category.getTasks()) {
-            task.setCategory(null);
-        }
+        category.getTasks().forEach(task -> task.setCategory(null));
 
         categoryRepository.delete(category);
 
-        log.info("Category deleted");
+        log.info("Deleted category: {}", categoryId);
     }
 
     @Transactional(readOnly = true)
@@ -105,12 +105,22 @@ public class CategoryService {
         Category category =
                 categoryRepository
                         .findById(categoryId)
-                        .orElseThrow(() -> new RuntimeException("Category not found"));
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Category", "id", categoryId));
 
-        if (!category.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Category does not belong to user");
-        }
+        validateCategoryOwnership(category, userId);
 
         return category;
+    }
+
+    private void validateCategoryOwnership(Category category, Long userId) {
+        if (!category.getUser().getId().equals(userId)) {
+            log.warn(
+                    "User {} attempted to access category {} owned by user {}",
+                    userId,
+                    category.getId(),
+                    category.getUser().getId());
+            throw new UnauthorizedException("You do not have permission to access this category");
+        }
     }
 }

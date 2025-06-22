@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.AuthResponseDTO;
 import com.lockin.lockin_app.dto.LoginRequestDTO;
 import com.lockin.lockin_app.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.security.JwtUtil;
 
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,7 @@ public class AuthService {
     @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
         if (userService.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ResourceNotFoundException("Email already registered: " + request.getEmail());
         }
 
         User user = new User();
@@ -41,6 +43,8 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         String token = jwtUtil.generateToken(savedUser.getEmail());
+
+        log.info("User registered successfully: {}", savedUser.getEmail());
 
         return AuthResponseDTO.builder()
                 .token(token)
@@ -60,19 +64,14 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(), request.getPassword()));
 
-            log.info("Authentification successful for: {}", request.getEmail());
-        } catch (Exception e) {
-            log.warn(
-                    "Authentification failed for email: {}  Reason: {}",
-                    request.getEmail(),
-                    e.getMessage());
+            log.info("Authentication successful for: {}", request.getEmail());
+        } catch (AuthenticationException e) {
+            log.warn("Authentication failed for: {}", request.getEmail());
             throw e;
         }
 
         User user = userService.getUserByEmail(request.getEmail());
-
         String token = jwtUtil.generateToken(user.getEmail());
-        log.debug("JWT token generated");
 
         return AuthResponseDTO.builder()
                 .token(token)

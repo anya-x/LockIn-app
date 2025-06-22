@@ -8,6 +8,8 @@ import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
+import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -90,11 +92,9 @@ public class TaskService {
         Task task =
                 taskRepository
                         .findById(taskId)
-                        .orElseThrow(() -> new RuntimeException("Task not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
-        if (!task.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorised");
-        }
+        validateTaskOwnership(task, userId);
 
         return TaskResponseDTO.fromEntity(task);
     }
@@ -106,11 +106,9 @@ public class TaskService {
         Task task =
                 taskRepository
                         .findById(taskId)
-                        .orElseThrow(() -> new RuntimeException("Task not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
-        if (!task.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorised");
-        }
+        validateTaskOwnership(task, userId);
 
         TaskStatus oldStatus = task.getStatus();
         TaskStatus newStatus = request.getStatus();
@@ -122,7 +120,6 @@ public class TaskService {
         }
 
         updateTaskFromRequest(task, request);
-
         Task updated = taskRepository.save(task);
 
         log.info("Updated task: {}", updated.getId());
@@ -137,11 +134,9 @@ public class TaskService {
         Task task =
                 taskRepository
                         .findById(taskId)
-                        .orElseThrow(() -> new RuntimeException("Task not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
-        if (!task.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorised: You don't own this task");
-        }
+        validateTaskOwnership(task, userId);
 
         taskRepository.delete(task);
 
@@ -326,5 +321,16 @@ public class TaskService {
         log.info("Found {} incomplete tasks for user {}", tasks.size(), userId);
 
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
+
+    private void validateTaskOwnership(Task task, Long userId) {
+        if (!task.getUser().getId().equals(userId)) {
+            log.warn(
+                    "User {} attempted to access task {} owned by user {}",
+                    userId,
+                    task.getId(),
+                    task.getUser().getId());
+            throw new UnauthorizedException("You do not have permission to access this task");
+        }
     }
 }
