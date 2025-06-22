@@ -1,0 +1,16 @@
+package com.lockin.lockin_app.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.FORBIDDEN)
+public class UnauthorizedException extends BusinessException {
+
+    public UnauthorizedException(String message) {
+        super(message, "UNAUTHORIZED_ACCESS");
+    }
+
+    public UnauthorizedException() {
+        super("You do not have permission to access this resource", "UNAUTHORIZED_ACCESS");
+    }
+}
