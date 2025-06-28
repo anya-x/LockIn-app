@@ -90,7 +90,7 @@ public class DailyAnalyticsController {
 
         WeeklyReportDTO report = weeklyReportService.generateWeeklyReport(user);
 
-        if (report == null) {
+        if (report == null || report.getRecommendations() == null) {
             log.info("No data available for weekly report for user {}", user.getEmail());
             return ResponseEntity.noContent().build();
         }

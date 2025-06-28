@@ -5,150 +5,194 @@ import com.lockin.lockin_app.entity.DailyAnalytics;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
 
-import lombok.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WeeklyReportService {
 
     private final DailyAnalyticsRepository dailyAnalyticsRepository;
 
+    @Transactional(readOnly = true)
     public WeeklyReportDTO generateWeeklyReport(User user) {
-        LocalDate today = LocalDate.now();
-        LocalDate weekStart = today.minusDays(7);
+        log.debug("Generating weekly report for user: {}", user.getId());
+
+        LocalDate weekEnd = LocalDate.now();
+        LocalDate weekStart = weekEnd.minusDays(6);
 
         List<DailyAnalytics> weekData =
                 dailyAnalyticsRepository.findByUserAndDateBetweenOrderByDateDesc(
-                        user, weekStart, today);
+                        user, weekStart, weekEnd);
 
-        if (weekData.isEmpty()) {
-            return null;
+        if (weekData == null || weekData.isEmpty()) {
+            return WeeklyReportDTO.createEmpty(weekStart, weekEnd);
         }
 
-        int totalTasks = weekData.stream().mapToInt(DailyAnalytics::getTasksCompleted).sum();
+        int totalTasks = calculateTotalTasks(weekData);
+        int totalPomodoros = calculateTotalPomodoros(weekData);
+        int totalMinutes = calculateTotalMinutes(weekData);
+        double avgProductivity = calculateAverageProductivity(weekData);
+        double avgBurnout = calculateAverageBurnout(weekData);
 
-        int totalPomodoros =
-                weekData.stream().mapToInt(DailyAnalytics::getPomodorosCompleted).sum();
+        WeeklyReportDTO.DayHighlight bestDay = findBestDay(weekData);
+        WeeklyReportDTO.DayHighlight worstDay = findWorstDay(weekData);
 
-        int totalFocusMinutes = weekData.stream().mapToInt(DailyAnalytics::getFocusMinutes).sum();
+        String productivityTrend = calculateProductivityTrend(weekData);
+        String focusTrend = calculateFocusTrend(weekData);
 
-        double avgProductivity =
-                weekData.stream()
-                        .mapToDouble(DailyAnalytics::getProductivityScore)
-                        .average()
-                        .orElse(0.0);
-
-        double avgBurnout =
-                weekData.stream()
-                        .mapToDouble(DailyAnalytics::getBurnoutRiskScore)
-                        .average()
-                        .orElse(0.0);
-
-        // best and worst days
-        DailyAnalytics bestDay =
-                weekData.stream()
-                        .max(Comparator.comparingDouble(DailyAnalytics::getProductivityScore))
-                        .orElse(null);
-
-        DailyAnalytics worstDay =
-                weekData.stream()
-                        .min(Comparator.comparingDouble(DailyAnalytics::getProductivityScore))
-                        .orElse(null);
-
-        // detect trends (first half v second half)
-        String productivityTrend = detectTrend(weekData, DailyAnalytics::getProductivityScore);
-        String focusTrend = detectTrend(weekData, d -> (double) d.getFocusMinutes());
-
-        // recommendations
         List<String> recommendations =
-                generateRecommendations(avgProductivity, avgBurnout, totalFocusMinutes, weekData);
+                generateRecommendations(avgProductivity, avgBurnout, totalMinutes, totalPomodoros);
 
-        return WeeklyReportDTO.builder()
-                .weekStart(weekStart)
-                .weekEnd(today)
-                .totalTasksCompleted(totalTasks)
-                .totalPomodoros(totalPomodoros)
-                .totalFocusMinutes(totalFocusMinutes)
-                .averageProductivityScore(avgProductivity)
-                .averageBurnoutRisk(avgBurnout)
-                .bestDay(
-                        bestDay != null
-                                ? WeeklyReportDTO.DayHighlight.builder()
-                                        .date(bestDay.getDate())
-                                        .score(bestDay.getProductivityScore())
-                                        .reason("Highest productivity")
-                                        .build()
-                                : null)
-                .worstDay(
-                        worstDay != null
-                                ? WeeklyReportDTO.DayHighlight.builder()
-                                        .date(worstDay.getDate())
-                                        .score(worstDay.getProductivityScore())
-                                        .reason("Lowest productivity")
-                                        .build()
-                                : null)
-                .productivityTrend(productivityTrend)
-                .focusTrend(focusTrend)
-                .recommendations(recommendations)
-                .build();
+        return WeeklyReportDTO.fromCalculatedData(
+                weekStart,
+                weekEnd,
+                totalTasks,
+                totalPomodoros,
+                totalMinutes,
+                avgProductivity,
+                avgBurnout,
+                bestDay,
+                worstDay,
+                productivityTrend,
+                focusTrend,
+                recommendations);
     }
 
-    private String detectTrend(
-            List<DailyAnalytics> data,
-            java.util.function.ToDoubleFunction<DailyAnalytics> extractor) {
-        if (data.size() < 4) return "STABLE";
+    private int calculateTotalTasks(List<DailyAnalytics> weekData) {
+        return weekData.stream().mapToInt(DailyAnalytics::getTasksCompleted).sum();
+    }
 
-        int mid = data.size() / 2;
-        double firstHalf = data.subList(0, mid).stream().mapToDouble(extractor).average().orElse(0);
+    private int calculateTotalPomodoros(List<DailyAnalytics> weekData) {
+        return weekData.stream().mapToInt(DailyAnalytics::getPomodorosCompleted).sum();
+    }
+
+    private int calculateTotalMinutes(List<DailyAnalytics> weekData) {
+        return weekData.stream().mapToInt(DailyAnalytics::getFocusMinutes).sum();
+    }
+
+    private double calculateAverageProductivity(List<DailyAnalytics> weekData) {
+        return weekData.stream()
+                .mapToDouble(DailyAnalytics::getProductivityScore)
+                .average()
+                .orElse(0.0);
+    }
+
+    private double calculateAverageBurnout(List<DailyAnalytics> weekData) {
+        return weekData.stream()
+                .mapToDouble(DailyAnalytics::getBurnoutRiskScore)
+                .average()
+                .orElse(0.0);
+    }
+
+    private WeeklyReportDTO.DayHighlight findBestDay(List<DailyAnalytics> weekData) {
+        return weekData.stream()
+                .max(Comparator.comparingDouble(DailyAnalytics::getProductivityScore))
+                .map(
+                        day ->
+                                WeeklyReportDTO.DayHighlight.fromEntity(
+                                        day, "Highest productivity score"))
+                .orElse(null);
+    }
+
+    private WeeklyReportDTO.DayHighlight findWorstDay(List<DailyAnalytics> weekData) {
+        return weekData.stream()
+                .min(Comparator.comparingDouble(DailyAnalytics::getProductivityScore))
+                .map(
+                        day ->
+                                WeeklyReportDTO.DayHighlight.fromEntity(
+                                        day, "Lowest productivity score"))
+                .orElse(null);
+    }
+
+    private String calculateProductivityTrend(List<DailyAnalytics> weekData) {
+        if (weekData.size() < 3) {
+            return "STABLE";
+        }
+
+        double firstHalf =
+                weekData.stream()
+                        .limit(weekData.size() / 2)
+                        .mapToDouble(DailyAnalytics::getProductivityScore)
+                        .average()
+                        .orElse(0);
+
         double secondHalf =
-                data.subList(mid, data.size()).stream().mapToDouble(extractor).average().orElse(0);
+                weekData.stream()
+                        .skip(weekData.size() / 2)
+                        .mapToDouble(DailyAnalytics::getProductivityScore)
+                        .average()
+                        .orElse(0);
 
-        double change = ((secondHalf - firstHalf) / firstHalf) * 100;
+        if (secondHalf > firstHalf + 10) {
+            return "IMPROVING";
+        } else if (secondHalf < firstHalf - 10) {
+            return "DECLINING";
+        }
 
-        if (change > 10) return "IMPROVING";
-        if (change < -10) return "DECLINING";
+        return "STABLE";
+    }
+
+    private String calculateFocusTrend(List<DailyAnalytics> weekData) {
+        if (weekData.size() < 3) {
+            return "STABLE";
+        }
+
+        double firstHalf =
+                weekData.stream()
+                        .limit(weekData.size() / 2)
+                        .mapToDouble(DailyAnalytics::getFocusMinutes)
+                        .average()
+                        .orElse(0);
+
+        double secondHalf =
+                weekData.stream()
+                        .skip(weekData.size() / 2)
+                        .mapToDouble(DailyAnalytics::getFocusMinutes)
+                        .average()
+                        .orElse(0);
+
+        if (secondHalf > firstHalf + 30) {
+            return "IMPROVING";
+        } else if (secondHalf < firstHalf - 30) {
+            return "DECLINING";
+        }
+
         return "STABLE";
     }
 
     private List<String> generateRecommendations(
-            double avgProductivity,
-            double avgBurnout,
-            int totalFocus,
-            List<DailyAnalytics> weekData) {
-        List<String> recs = new ArrayList<>();
+            double avgProductivity, double avgBurnout, int totalMinutes, int totalPomodoros) {
+
+        List<String> recommendations = new ArrayList<>();
 
         if (avgProductivity < 50) {
-            recs.add("Your productivity is below average. Try breaking tasks into smaller chunks.");
+            recommendations.add("Focus on completing fewer, higher-priority tasks");
         }
 
-        if (avgBurnout > 60) {
-            recs.add(
-                    "High burnout risk detected. Consider taking more breaks and reducing late-night work.");
+        if (avgBurnout > 50) {
+            recommendations.add("Consider taking more breaks and avoiding late-night work");
         }
 
-        if (totalFocus < 600) { // less than 10 hours/week
-            recs.add("Low focus time this week. Try scheduling dedicated focus blocks.");
+        if (totalMinutes / 7 < 180) {
+            recommendations.add("Try to maintain at least 3-4 hours of focused work daily");
         }
 
-        // count days with no activity
-        long inactiveDays = weekData.stream().filter(d -> d.getFocusMinutes() == 0).count();
-
-        if (inactiveDays >= 3) {
-            recs.add(
-                    "You had "
-                            + inactiveDays
-                            + " inactive days. Consistency is key to productivity.");
+        if (totalPomodoros / 7 < 6) {
+            recommendations.add("Use the Pomodoro timer more consistently");
         }
 
-        if (recs.isEmpty()) {
-            recs.add("Great week! Keep up the consistent work.");
+        if (recommendations.isEmpty()) {
+            recommendations.add("Great week! Keep up the good work!");
         }
 
-        return recs;
+        return recommendations;
     }
 }
