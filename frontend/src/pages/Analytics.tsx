@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { analyticsService, type Analytics } from "../services/analyticsService";
+import BurnoutAlert from "../components/analytics/BurnOutAlert";
 
 const AnalyticsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -57,21 +58,19 @@ const AnalyticsPage: React.FC = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const today = await analyticsService.getTodayAnalytics();
-      setTodayData(today);
+      const todayResponse = await analyticsService.getTodayAnalytics();
+      setTodayData(todayResponse);
 
-      const historical = await analyticsService.getAnalyticsRange(500);
-      setHistoricalData(historical);
-    } catch (err: any) {
-      console.error("Failed to fetch analytics:", err);
-      setError(err.response?.data?.message || "Failed to load analytics data");
+      const rangeResponse = await analyticsService.getAnalyticsRange(30);
+      setHistoricalData(rangeResponse);
+    } catch (error: any) {
+      console.error("Failed to fetch analytics:", error);
+      setError("Failed to load analytics. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -92,14 +91,6 @@ const AnalyticsPage: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
-    );
-  }
-
   if (!todayData) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -116,7 +107,11 @@ const AnalyticsPage: React.FC = () => {
       <Typography variant="h3" gutterBottom>
         Analytics Dashboard
       </Typography>
-
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
       {/* Today's Score Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Productivity Score */}
@@ -212,7 +207,13 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
-
+      {todayData && todayData.burnoutRiskScore > 40 && (
+        <BurnoutAlert
+          riskScore={todayData.burnoutRiskScore}
+          lateNightSessions={todayData.lateNightSessions}
+          overworkMinutes={todayData.overworkMinutes}
+        />
+      )}
       {/* Charts */}
       {historicalData.length > 0 ? (
         <>

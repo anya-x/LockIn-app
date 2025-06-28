@@ -24,6 +24,7 @@ import {
   ExitToApp as LogoutIcon,
   Timer as TimerIcon,
   BarChart as StatsIcon,
+  Analytics,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -340,6 +341,8 @@ const Dashboard: React.FC = () => {
         return <Statistics />;
       case "timer":
         return <PomodoroTimer />;
+      case "analytics":
+        return <Analytics />;
       default:
         return <Tasks />;
     }
