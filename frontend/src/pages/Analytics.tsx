@@ -27,6 +27,7 @@ import {
 } from "recharts";
 import { analyticsService, type Analytics } from "../services/analyticsService";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
+import WeeklyReport from "../components/analytics/WeeklyReport";
 
 const AnalyticsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -112,6 +113,7 @@ const AnalyticsPage: React.FC = () => {
           {error}
         </Alert>
       )}
+
       {/* Today's Score Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Productivity Score */}
@@ -214,6 +216,7 @@ const AnalyticsPage: React.FC = () => {
           overworkMinutes={todayData.overworkMinutes}
         />
       )}
+      <WeeklyReport />
       {/* Charts */}
       {historicalData.length > 0 ? (
         <>
