@@ -123,6 +123,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgument(
+            IllegalArgumentException ex, WebRequest request) {
+
+        log.warn("Validation error: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }

@@ -1,36 +1,34 @@
 package com.lockin.lockin_app.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "goals")
-@Setter
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Setter
 public class Goal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
+    @NotBlank
+    @Size(max = 200)
     private String title;
 
     @Column(length = 1000)
     private String description;
 
     @Enumerated(EnumType.STRING)
-    private GoalType type; // DAILY, WEEKLY, MONTHLY
+    private GoalType type;
 
     private Integer targetTasks;
     private Integer targetPomodoros;
@@ -45,6 +43,10 @@ public class Goal {
 
     private LocalDate startDate;
     private LocalDate endDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
