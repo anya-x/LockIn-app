@@ -65,4 +65,31 @@ public class Goal {
         WEEKLY,
         MONTHLY
     }
+
+    public double getProgressPercentage() {
+        int targetCount = 0;
+        double achievedScore = 0;
+
+        if (targetTasks != null && targetTasks > 0) {
+            targetCount++;
+            double taskProgress = Math.min(100, (currentTasks / (double) targetTasks) * 100);
+            achievedScore += taskProgress;
+        }
+
+        if (targetPomodoros != null && targetPomodoros > 0) {
+            targetCount++;
+            double pomodoroProgress =
+                    Math.min(100, (currentPomodoros / (double) targetPomodoros) * 100);
+            achievedScore += pomodoroProgress;
+        }
+
+        if (targetFocusMinutes != null && targetFocusMinutes > 0) {
+            targetCount++;
+            double focusProgress =
+                    Math.min(100, (currentFocusMinutes / (double) targetFocusMinutes) * 100);
+            achievedScore += focusProgress;
+        }
+
+        return targetCount > 0 ? achievedScore / targetCount : 0;
+    }
 }
