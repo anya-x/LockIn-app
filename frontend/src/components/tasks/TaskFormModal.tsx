@@ -41,7 +41,11 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
   useEffect(() => {
     if (task) {
-      setFormData(task);
+      const taskData = { ...task };
+      if (taskData.dueDate) {
+        taskData.dueDate = taskData.dueDate.split("T")[0];
+      }
+      setFormData(taskData);
     } else {
       setFormData({
         title: "",
@@ -75,7 +79,14 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     setError("");
 
     try {
-      await onSave(formData);
+      const taskData = { ...formData };
+      if (taskData.dueDate && taskData.dueDate.trim() !== "") {
+        taskData.dueDate = `${taskData.dueDate}T23:59:59`;
+      } else {
+        taskData.dueDate = undefined;
+      }
+
+      await onSave(taskData);
       onClose();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to save task");
@@ -142,6 +153,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 inputLabel: { shrink: true },
               }}
               fullWidth
+              helperText="Optional: Set a due date for this task"
             />
 
             <FormControlLabel
