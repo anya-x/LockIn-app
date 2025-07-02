@@ -24,7 +24,8 @@ import {
   ExitToApp as LogoutIcon,
   Timer as TimerIcon,
   BarChart as StatsIcon,
-  Analytics,
+  Analytics as AnalyticsIcon,
+  Checklist as GoalsIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -39,6 +40,8 @@ import Categories from "./Categories";
 import Matrix from "./Matrix";
 import Statistics from "./Statistics";
 import Tasks from "./Tasks";
+import Analytics from "./Analytics";
+import Goals from "./Goals";
 
 const drawerWidth = 240;
 
@@ -195,7 +198,8 @@ const Dashboard: React.FC = () => {
     | "matrix"
     | "statistics"
     | "timer"
-    | "analytics" => {
+    | "analytics"
+    | "goals" => {
     const path = location.pathname;
     if (path === "/tasks") return "tasks";
     if (path === "/categories") return "categories";
@@ -203,6 +207,7 @@ const Dashboard: React.FC = () => {
     if (path === "/statistics") return "statistics";
     if (path === "/timer") return "timer";
     if (path === "/analytics") return "analytics";
+    if (path === "/goals") return "goals";
     return "tasks";
   };
 
@@ -221,6 +226,7 @@ const Dashboard: React.FC = () => {
         | "statistics"
         | "timer"
         | "analytics"
+        | "goals"
     ) => {
       navigate(`/${view}`);
       if (isMobile) {
@@ -309,9 +315,21 @@ const Dashboard: React.FC = () => {
             selected={currentView === "analytics"}
           >
             <ListItemIcon>
-              <StatsIcon />
+              <AnalyticsIcon />
             </ListItemIcon>
             <ListItemText primary="Analytics" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("goals")}
+            selected={currentView === "goals"}
+          >
+            <ListItemIcon>
+              <GoalsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Goals" />
           </ListItemButton>
         </ListItem>
       </List>
@@ -343,6 +361,8 @@ const Dashboard: React.FC = () => {
         return <PomodoroTimer />;
       case "analytics":
         return <Analytics />;
+      case "goals":
+        return <Goals />;
       default:
         return <Tasks />;
     }

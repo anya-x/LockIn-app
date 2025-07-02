@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import PrivateRoute from "./components/shared/PrivateRoute";
 import { authService } from "./services/authService";
 import Analytics from "./pages/Analytics";
+import Goals from "./pages/Goals";
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -92,7 +93,15 @@ function App() {
         path="/analytics"
         element={
           <PrivateRoute>
-            <Analytics />
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/goals"
+        element={
+          <PrivateRoute>
+            <Dashboard />
           </PrivateRoute>
         }
       />
