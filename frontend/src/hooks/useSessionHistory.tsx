@@ -1,39 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   sessionService,
   type FocusSessionResponse,
 } from "../services/sessionService";
 
 export const useSessionHistory = () => {
-  const [sessions, setSessions] = useState<FocusSessionResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchSessions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await sessionService.getUserSessions();
-      setSessions(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load sessions");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
-
-  const refreshSessions = useCallback(() => {
-    return fetchSessions();
-  }, [fetchSessions]);
+  const {
+    data: sessions = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["sessions"],
+    queryFn: async () => {
+      return await sessionService.getUserSessions();
+    },
+    staleTime: 10000,
+  });
 
   return {
     sessions,
     loading,
-    error,
-    refreshSessions,
+    error: error ? "Failed to load sessions" : null,
+    refreshSessions: refetch,
   };
 };
