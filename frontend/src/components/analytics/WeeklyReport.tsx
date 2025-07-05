@@ -19,6 +19,7 @@ import {
   Warning as WarningIcon,
 } from "@mui/icons-material";
 import api from "../../services/api";
+import { useQuery } from "@tanstack/react-query";
 
 interface WeeklyReportData {
   weekStart: string;
@@ -44,27 +45,16 @@ interface WeeklyReportData {
 }
 
 const WeeklyReport: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState<WeeklyReportData | null>(null);
-
-  useEffect(() => {
-    fetchReport();
-  }, []);
-
-  const fetchReport = async () => {
-    setLoading(true);
-    try {
+  const { data: report, isLoading: loading } = useQuery({
+    queryKey: ["analytics", "weekly-report"],
+    queryFn: async () => {
       const response = await api.get<WeeklyReportData>(
         "/analytics/weekly-report"
       );
-      setReport(response.data);
-    } catch (error) {
-      console.error("Failed to fetch report:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+      return response.data;
+    },
+    staleTime: 3600000,
+  });
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>

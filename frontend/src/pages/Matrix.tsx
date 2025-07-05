@@ -41,16 +41,15 @@ const Matrix: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<number | null>(null);
 
-  // ✅ Get loading state too
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories();
   const [selectedCategory, setSelectedCategory] = useState<number | "all">(
     "all"
   );
   React.useEffect(() => {
-    console.log("Categories loaded:", categories);
-    console.log("Selected category:", selectedCategory);
-    console.log("Category loading:", categoriesLoading);
+    console.log("categories loaded:", categories);
+    console.log("selected category:", selectedCategory);
+    console.log("category loading:", categoriesLoading);
   }, [categories, selectedCategory, categoriesLoading]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -68,7 +67,6 @@ const Matrix: React.FC = () => {
       const response = await api.get("/tasks/matrix");
       const data = response.data;
 
-      // Filter out completed tasks from all quadrants - only show TODO and IN_PROGRESS
       const filteredMatrix: MatrixData = {
         doFirst: data.doFirst.filter(
           (task: Task) => task.status !== "COMPLETED"
@@ -159,14 +157,14 @@ const Matrix: React.FC = () => {
   };
 
   const filterByCategory = (tasks: Task[]): Task[] => {
-    console.log("🔍 Filtering tasks:", {
+    console.log("filtering :", {
       totalTasks: tasks.length,
       selectedCategory,
       selectedCategoryType: typeof selectedCategory,
     });
 
     if (selectedCategory === "all") {
-      console.log("✅ Showing all tasks");
+      console.log(" all tasks");
       return tasks;
     }
 
@@ -175,26 +173,25 @@ const Matrix: React.FC = () => {
         ? selectedCategory
         : parseInt(selectedCategory);
 
-    console.log("🎯 Filtering for category ID:", categoryId);
+    console.log(" cat id:", categoryId);
 
     const filtered = tasks.filter((task) => {
       const taskCategoryId = task.category?.id;
       const matches = taskCategoryId === categoryId;
 
-      // Log each task being checked
       console.log(
-        "Task:",
+        "task:",
         task.title,
-        "Category ID:",
+        "category:",
         taskCategoryId,
-        "Matches:",
+        "matches:",
         matches
       );
 
       return matches;
     });
 
-    console.log("📊 Filtered results:", filtered.length, "tasks");
+    console.log("results:", filtered.length, "tasks");
     return filtered;
   };
   interface DroppableQuadrantProps {
@@ -452,10 +449,9 @@ const Matrix: React.FC = () => {
               label="Filter by Category"
               onChange={(e) => {
                 const value = e.target.value;
-                // ✅ Ensure proper type conversion
                 setSelectedCategory(value === "all" ? "all" : Number(value));
               }}
-              disabled={categoriesLoading} // ✅ Disable while loading
+              disabled={categoriesLoading}
             >
               <MenuItem value="all">All Categories</MenuItem>
               {categoriesLoading ? (

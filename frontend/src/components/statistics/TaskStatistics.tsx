@@ -15,6 +15,7 @@ import {
 } from "@mui/icons-material";
 import StatCard from "../shared/StatCard";
 import api from "../../services/api";
+import { useQuery } from "@tanstack/react-query";
 
 interface Statistics {
   totalTasks: number;
@@ -31,24 +32,13 @@ interface Statistics {
 }
 
 const TaskStatistics: React.FC = () => {
-  const [stats, setStats] = useState<Statistics | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStatistics();
-  }, []);
-
-  const fetchStatistics = async () => {
-    try {
+  const { data: stats, isLoading: loading } = useQuery({
+    queryKey: ["tasks", "statistics"],
+    queryFn: async () => {
       const response = await api.get("/tasks/statistics");
-      setStats(response.data);
-    } catch (error) {
-      console.error("Error fetching statistics:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+      return response.data;
+    },
+  });
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
