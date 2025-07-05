@@ -10,6 +10,7 @@ import {
   FormControl,
   InputLabel,
   Skeleton,
+  Chip,
 } from "@mui/material";
 import type { Task } from "../types/task";
 import api from "../services/api";
@@ -26,6 +27,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import { useCategories } from "../hooks/useCategories";
 
 interface MatrixData {
   doFirst: Task[];
@@ -39,11 +41,17 @@ const Matrix: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<number | null>(null);
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  // ✅ Get loading state too
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useCategories();
   const [selectedCategory, setSelectedCategory] = useState<number | "all">(
     "all"
   );
-
+  React.useEffect(() => {
+    console.log("Categories loaded:", categories);
+    console.log("Selected category:", selectedCategory);
+    console.log("Category loading:", categoriesLoading);
+  }, [categories, selectedCategory, categoriesLoading]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -51,25 +59,32 @@ const Matrix: React.FC = () => {
       },
     })
   );
-
   useEffect(() => {
-    loadCategories();
     fetchMatrix();
   }, []);
-
-  const loadCategories = async () => {
-    try {
-      const data = await categoryService.getCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error("Error loading categories:", error);
-    }
-  };
 
   const fetchMatrix = async () => {
     try {
       const response = await api.get("/tasks/matrix");
-      setMatrix(response.data);
+      const data = response.data;
+
+      // Filter out completed tasks from all quadrants - only show TODO and IN_PROGRESS
+      const filteredMatrix: MatrixData = {
+        doFirst: data.doFirst.filter(
+          (task: Task) => task.status !== "COMPLETED"
+        ),
+        schedule: data.schedule.filter(
+          (task: Task) => task.status !== "COMPLETED"
+        ),
+        delegate: data.delegate.filter(
+          (task: Task) => task.status !== "COMPLETED"
+        ),
+        eliminate: data.eliminate.filter(
+          (task: Task) => task.status !== "COMPLETED"
+        ),
+      };
+
+      setMatrix(filteredMatrix);
     } catch (error) {
       console.error("Error fetching matrix:", error);
     } finally {
@@ -144,10 +159,44 @@ const Matrix: React.FC = () => {
   };
 
   const filterByCategory = (tasks: Task[]): Task[] => {
-    if (selectedCategory === "all") return tasks;
-    return tasks.filter((task) => task.category?.id === selectedCategory);
-  };
+    console.log("🔍 Filtering tasks:", {
+      totalTasks: tasks.length,
+      selectedCategory,
+      selectedCategoryType: typeof selectedCategory,
+    });
 
+    if (selectedCategory === "all") {
+      console.log("✅ Showing all tasks");
+      return tasks;
+    }
+
+    const categoryId =
+      typeof selectedCategory === "number"
+        ? selectedCategory
+        : parseInt(selectedCategory);
+
+    console.log("🎯 Filtering for category ID:", categoryId);
+
+    const filtered = tasks.filter((task) => {
+      const taskCategoryId = task.category?.id;
+      const matches = taskCategoryId === categoryId;
+
+      // Log each task being checked
+      console.log(
+        "Task:",
+        task.title,
+        "Category ID:",
+        taskCategoryId,
+        "Matches:",
+        matches
+      );
+
+      return matches;
+    });
+
+    console.log("📊 Filtered results:", filtered.length, "tasks");
+    return filtered;
+  };
   interface DroppableQuadrantProps {
     id: string;
     title: string;
@@ -380,9 +429,17 @@ const Matrix: React.FC = () => {
             <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
               Eisenhower Matrix
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Organise your tasks by urgency and importance
-            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2" color="text.secondary">
+                Organise your tasks by urgency and importance
+              </Typography>
+              <Chip
+                label="Showing incomplete tasks only"
+                size="small"
+                color="info"
+                variant="outlined"
+              />
+            </Box>
           </Box>
 
           <FormControl sx={{ minWidth: 200 }}>
@@ -393,16 +450,23 @@ const Matrix: React.FC = () => {
               labelId="category-filter-label"
               value={selectedCategory}
               label="Filter by Category"
-              onChange={(e) =>
-                setSelectedCategory(e.target.value as number | "all")
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                // ✅ Ensure proper type conversion
+                setSelectedCategory(value === "all" ? "all" : Number(value));
+              }}
+              disabled={categoriesLoading} // ✅ Disable while loading
             >
               <MenuItem value="all">All Categories</MenuItem>
-              {categories.map((cat) => (
-                <MenuItem key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
-                </MenuItem>
-              ))}
+              {categoriesLoading ? (
+                <MenuItem disabled>Loading categories...</MenuItem>
+              ) : (
+                categories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
+                  </MenuItem>
+                ))
+              )}
             </Select>
           </FormControl>
         </Box>
