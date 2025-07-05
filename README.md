@@ -277,6 +277,7 @@ A science based task management tool that's going to change how you view product
 - sessions marked complete when stopping [x]
 - new session started when paused [x]
 - filtering by time in stats issue + quality measurement odd behaviour
+- filterbycategories in matrix
 
 **To do (low priority)**
 
