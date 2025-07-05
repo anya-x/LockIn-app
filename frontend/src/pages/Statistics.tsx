@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -6,7 +6,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CircularProgress,
   Chip,
   Divider,
   Button,
@@ -25,17 +24,12 @@ import {
   Speed as SpeedIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
-import {
-  sessionService,
-  type FocusSessionResponse,
-} from "../services/sessionService";
-import {
-  taskService,
-  type Task,
-  type TaskStatistics,
-} from "../services/taskService";
+import { type FocusSessionResponse } from "../services/sessionService";
+import { type Task, type TaskStatistics } from "../services/taskService";
 import { FOCUS_PROFILES, type FocusProfile } from "../config/focusProfiles";
 import { useTimer } from "../context/TimerContext";
+import { useStatisticsData } from "../hooks/useStatistics";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProfileStats {
   profile: FocusProfile;
@@ -69,83 +63,43 @@ interface Statistics {
 }
 
 const Statistics: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<Statistics | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [dateRange, setDateRange] = useState<
-    "Today" | "7days" | "30days" | "90days" | "all"
-  >("30days");
   const { timer } = useTimer();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchStatistics();
-  }, [dateRange]);
+  const { data, isLoading: loading, refetch } = useStatisticsData();
 
-  useEffect(() => {
-    if (timer.completionCounter > 0) {
-      fetchStatistics();
+  const getSavedDateRange = ():
+    | "Today"
+    | "7days"
+    | "30days"
+    | "90days"
+    | "all" => {
+    const saved = localStorage.getItem("statistics-date-range");
+    if (
+      saved === "Today" ||
+      saved === "7days" ||
+      saved === "30days" ||
+      saved === "90days" ||
+      saved === "all"
+    ) {
+      return saved;
     }
-  }, [timer.completionCounter]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchStatistics();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchStatistics();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchStatistics = async () => {
-    setLoading(true);
-    try {
-      const [allSessions, taskStats, allTasks] = await Promise.all([
-        sessionService.getUserSessions(),
-        taskService.getStatistics(),
-        taskService.getTasks(),
-      ]);
-
-      const tasks = Array.isArray(allTasks) ? allTasks : [];
-
-      if (tasks.length === 0) {
-        console.warn("⚠️ No tasks returned from API!");
-      }
-
-      let recentSessions = allSessions;
-
-      if (dateRange !== "all") {
-        const daysMap = { Today: 1, "7days": 7, "30days": 30, "90days": 90 };
-        const daysAgo = new Date();
-        daysAgo.setDate(daysAgo.getDate() - daysMap[dateRange]);
-
-        recentSessions = allSessions.filter((session) => {
-          if (!session.startedAt) return true;
-          const sessionDate = new Date(session.startedAt);
-          return sessionDate >= daysAgo;
-        });
-      }
-
-      const calculated = calculateStatistics(recentSessions, taskStats, tasks);
-      setStats(calculated);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Failed to fetch statistics:", error);
-    } finally {
-      setLoading(false);
-    }
+    return "30days";
   };
 
+  const [dateRange, setDateRange] = useState<
+    "Today" | "7days" | "30days" | "90days" | "all"
+  >(getSavedDateRange());
+
+  useEffect(() => {
+    localStorage.setItem("statistics-date-range", dateRange);
+  }, [dateRange]);
+
+  React.useEffect(() => {
+    if (timer.completionCounter > 0) {
+      queryClient.invalidateQueries({ queryKey: ["statistics-page"] });
+    }
+  }, [timer.completionCounter, queryClient]);
   const calculateStatistics = (
     sessions: FocusSessionResponse[],
     taskStats: TaskStatistics,
@@ -225,7 +179,7 @@ const Statistics: React.FC = () => {
         (sum, s) => sum + (s.actualMinutes || 0),
         0
       );
-      return totalMinutes >= 1; // CHANGE TTHIS
+      return totalMinutes >= 5;
     }).length;
 
     const focusQualityRate =
@@ -234,7 +188,6 @@ const Statistics: React.FC = () => {
         : 0;
 
     return {
-      // Focus metrics
       totalFocusMinutes,
       totalSessions: sessions.length,
       completedSessions,
@@ -242,25 +195,60 @@ const Statistics: React.FC = () => {
       workSessions: workSessions.length,
       breakSessions,
       completionRate: Math.round(completionRate),
-
-      // Profile metrics
       profileBreakdown,
       mostUsedProfile,
-
-      // Task metrics
       totalTasks,
       completedTasks,
       inProgressTasks,
       todoTasks,
       taskCompletionRate,
-
-      // Integration metrics
       averageFocusTimePerTask,
       tasksWithFocusSessions,
       tasksWithMeaningfulWork,
       focusQualityRate,
     };
   };
+  const stats = useMemo(() => {
+    if (!data) return null;
+
+    const { sessions: allSessions, taskStats, tasks } = data;
+
+    let recentSessions = allSessions;
+
+    if (dateRange !== "all") {
+      let filterDate: Date;
+
+      if (dateRange === "Today") {
+        filterDate = new Date();
+        filterDate.setHours(0, 0, 0, 0);
+      } else {
+        const daysMap: Record<string, number> = {
+          "7days": 7,
+          "30days": 30,
+          "90days": 90,
+        };
+        filterDate = new Date();
+        filterDate.setDate(filterDate.getDate() - daysMap[dateRange]);
+        filterDate.setHours(0, 0, 0, 0);
+      }
+
+      recentSessions = allSessions.filter((session: any) => {
+        if (!session.startedAt) return false;
+        const sessionDate = new Date(session.startedAt);
+        return sessionDate >= filterDate;
+      });
+
+      console.log("📅 Date filtering:", {
+        dateRange,
+        filterDate: filterDate.toISOString(),
+        now: new Date().toISOString(),
+        totalSessions: allSessions.length,
+        filteredSessions: recentSessions.length,
+      });
+    }
+
+    return calculateStatistics(recentSessions, taskStats, tasks);
+  }, [data, dateRange]);
 
   const formatTime = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -294,13 +282,11 @@ const Statistics: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Skeleton variant="text" width={200} height={48} sx={{ mb: 3 }} />
-
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {[1, 2, 3, 4].map((i) => (
             <StatCardSkeleton key={i} />
           ))}
         </Grid>
-
         <StatsSkeleton />
         <StatsSkeleton />
         <StatsSkeleton />
@@ -345,14 +331,12 @@ const Statistics: React.FC = () => {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Track your focus sessions and task progress
-            {lastUpdated &&
-              ` • Last updated: ${lastUpdated.toLocaleTimeString()}`}
           </Typography>
         </Box>
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
-          onClick={fetchStatistics}
+          onClick={() => refetch()}
           disabled={loading}
         >
           Refresh
@@ -654,7 +638,7 @@ const Statistics: React.FC = () => {
 
               <Typography variant="body2" color="text.secondary">
                 {stats.focusQualityRate}% of started tasks received focused work
-                (1+ min) {/* change back!!!*/}
+                (5+ min)
               </Typography>
 
               {stats.tasksWithFocusSessions > 0 &&
