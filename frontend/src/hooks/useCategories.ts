@@ -5,7 +5,7 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: categoryService.getCategories,
-    staleTime: 300000,
+    staleTime: Infinity,
   });
 }
 

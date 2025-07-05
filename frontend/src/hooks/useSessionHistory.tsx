@@ -15,7 +15,7 @@ export const useSessionHistory = () => {
     queryFn: async () => {
       return await sessionService.getUserSessions();
     },
-    staleTime: 10000,
+    staleTime: Infinity,
   });
 
   return {

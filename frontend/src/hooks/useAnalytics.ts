@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { analyticsService, type Analytics } from "../services/analyticsService";
 
-export function useTodayAnalytics(refreshInterval = 30000) {
+export function useTodayAnalytics() {
   return useQuery({
     queryKey: ["analytics", "today"],
     queryFn: async () => {
@@ -10,8 +10,7 @@ export function useTodayAnalytics(refreshInterval = 30000) {
 
       return await analyticsService.getTodayAnalytics();
     },
-    refetchInterval: refreshInterval,
-    staleTime: 10000,
+    staleTime: 3600000,
   });
 }
 
@@ -19,7 +18,7 @@ export function useAnalyticsRange(days: number = 7) {
   return useQuery({
     queryKey: ["analytics", "range", days],
     queryFn: () => analyticsService.getAnalyticsRange(days),
-    staleTime: 60000,
+    staleTime: Infinity,
   });
 }
 
