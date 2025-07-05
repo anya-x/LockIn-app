@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import { categoryService, type Category } from "../../services/categoryService";
+import { useCategories, useCreateCategory } from "../../hooks/useCategories";
 
 interface CategorySelectorProps {
   value: number | null;
@@ -26,8 +27,9 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   value,
   onChange,
 }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories = [], isLoading: loading } = useCategories();
+  const createMutation = useCreateCategory();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -36,22 +38,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
     color: "#1976d2",
     icon: "📁",
   });
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    try {
-      setLoading(true);
-      const data = await categoryService.getCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error("Failed to load categories:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenModal = () => {
     setNewCategory({
@@ -84,21 +70,16 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
     try {
       setCreating(true);
-      const created = await categoryService.createCategory(newCategory);
-      setCategories([...categories, created]);
+      const created = await createMutation.mutateAsync(newCategory);
       onChange(created.id!);
       handleCloseModal();
     } catch (error: any) {
       console.error("Failed to create category:", error);
-      alert(
-        error.response?.data?.message ||
-          "Failed to create category. Please try again."
-      );
+      alert("Failed to create category");
     } finally {
       setCreating(false);
     }
   };
-
   return (
     <>
       <FormControl fullWidth margin="normal" disabled={loading}>

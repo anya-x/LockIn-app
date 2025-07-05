@@ -21,10 +21,19 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { categoryService, type Category } from "../services/categoryService";
+import {
+  useCategories,
+  useCreateCategory,
+  useDeleteCategory,
+  useUpdateCategory,
+} from "../hooks/useCategories";
 
 const Categories: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories = [], isLoading: loading } = useCategories();
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory();
+  const deleteMutation = useDeleteCategory();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
@@ -32,23 +41,6 @@ const Categories: React.FC = () => {
     color: "#1976d2",
     icon: "📁",
   });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const data = await categoryService.getCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-      alert("Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenModal = (category?: Category) => {
     if (category) {
@@ -77,30 +69,29 @@ const Categories: React.FC = () => {
   const handleSave = async () => {
     try {
       if (editingCategory) {
-        await categoryService.updateCategory(editingCategory.id!, formData);
+        await updateMutation.mutateAsync({
+          id: editingCategory.id!,
+          data: formData,
+        });
       } else {
-        await categoryService.createCategory(formData);
+        await createMutation.mutateAsync(formData);
       }
-      await fetchCategories();
       handleCloseModal();
     } catch (error) {
       console.error("Failed to save category:", error);
       alert("Failed to save category");
     }
   };
-
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this category? Tasks will not be deleted.")) return;
 
     try {
-      await categoryService.deleteCategory(id);
-      await fetchCategories();
+      await deleteMutation.mutateAsync(id);
     } catch (error) {
       console.error("Failed to delete category:", error);
       alert("Failed to delete category");
     }
   };
-
   const CategorySkeleton = () => (
     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
       <Card>
