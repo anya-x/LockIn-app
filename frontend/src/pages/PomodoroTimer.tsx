@@ -301,14 +301,16 @@ const PomodoroTimer: React.FC = () => {
               {...params}
               label="Link to Task (Optional)"
               placeholder="Search tasks..."
-              InputProps={{
-                ...params.InputProps,
-                startAdornment: (
-                  <>
-                    <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
-                    {params.InputProps.startAdornment}
-                  </>
-                ),
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
+                      {params.InputProps.startAdornment}
+                    </>
+                  ),
+                },
               }}
             />
           )}

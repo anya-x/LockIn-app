@@ -137,7 +137,11 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             required
             autoFocus
             helperText={`${newCategory.name.length}/50 characters`}
-            inputProps={{ maxLength: 50 }}
+            slotProps={{
+              htmlInput: {
+                maxLength: 50,
+              },
+            }}
           />
 
           <Box sx={{ mt: 2 }}>
@@ -151,7 +155,11 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                 setNewCategory({ ...newCategory, icon: e.target.value })
               }
               placeholder="📁"
-              inputProps={{ maxLength: 10 }}
+              slotProps={{
+                htmlInput: {
+                  maxLength: 10,
+                },
+              }}
             />
           </Box>
 
