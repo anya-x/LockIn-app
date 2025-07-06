@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
   Paper,
   Grid,
-  CircularProgress,
   Select,
   MenuItem,
   FormControl,
@@ -13,8 +12,6 @@ import {
   Chip,
 } from "@mui/material";
 import type { Task } from "../types/task";
-import api from "../services/api";
-import { categoryService, type Category } from "../services/categoryService";
 import {
   DndContext,
   DragOverlay,
@@ -28,29 +25,19 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { useCategories } from "../hooks/useCategories";
-
-interface MatrixData {
-  doFirst: Task[];
-  schedule: Task[];
-  delegate: Task[];
-  eliminate: Task[];
-}
+import { useMatrix, useUpdateTaskQuadrant } from "../hooks/useMatrix";
 
 const Matrix: React.FC = () => {
-  const [matrix, setMatrix] = useState<MatrixData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<number | null>(null);
-
+  const { data: matrix, isLoading: loading } = useMatrix();
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories();
+  const updateQuadrantMutation = useUpdateTaskQuadrant();
+
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | "all">(
     "all"
   );
-  React.useEffect(() => {
-    console.log("categories loaded:", categories);
-    console.log("selected category:", selectedCategory);
-    console.log("category loading:", categoriesLoading);
-  }, [categories, selectedCategory, categoriesLoading]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -58,37 +45,6 @@ const Matrix: React.FC = () => {
       },
     })
   );
-  useEffect(() => {
-    fetchMatrix();
-  }, []);
-
-  const fetchMatrix = async () => {
-    try {
-      const response = await api.get("/tasks/matrix");
-      const data = response.data;
-
-      const filteredMatrix: MatrixData = {
-        doFirst: data.doFirst.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-        schedule: data.schedule.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-        delegate: data.delegate.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-        eliminate: data.eliminate.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-      };
-
-      setMatrix(filteredMatrix);
-    } catch (error) {
-      console.error("Error fetching matrix:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as number);
@@ -131,11 +87,11 @@ const Matrix: React.FC = () => {
     }
 
     try {
-      await api.patch(`/tasks/${taskId}/quadrant`, null, {
-        params: { isUrgent, isImportant },
+      await updateQuadrantMutation.mutateAsync({
+        taskId,
+        isUrgent,
+        isImportant,
       });
-
-      await fetchMatrix();
     } catch (error) {
       console.error("Error updating task quadrant:", error);
     } finally {
@@ -157,14 +113,7 @@ const Matrix: React.FC = () => {
   };
 
   const filterByCategory = (tasks: Task[]): Task[] => {
-    console.log("filtering :", {
-      totalTasks: tasks.length,
-      selectedCategory,
-      selectedCategoryType: typeof selectedCategory,
-    });
-
     if (selectedCategory === "all") {
-      console.log(" all tasks");
       return tasks;
     }
 
@@ -173,27 +122,9 @@ const Matrix: React.FC = () => {
         ? selectedCategory
         : parseInt(selectedCategory);
 
-    console.log(" cat id:", categoryId);
-
-    const filtered = tasks.filter((task) => {
-      const taskCategoryId = task.category?.id;
-      const matches = taskCategoryId === categoryId;
-
-      console.log(
-        "task:",
-        task.title,
-        "category:",
-        taskCategoryId,
-        "matches:",
-        matches
-      );
-
-      return matches;
-    });
-
-    console.log("results:", filtered.length, "tasks");
-    return filtered;
+    return tasks.filter((task) => task.category?.id === categoryId);
   };
+
   interface DroppableQuadrantProps {
     id: string;
     title: string;
@@ -289,9 +220,7 @@ const Matrix: React.FC = () => {
       <Paper
         ref={setNodeRef}
         style={style}
-        // @ts-ignore
         {...listeners}
-        // @ts-ignore
         {...attributes}
         sx={{
           p: 1.5,
@@ -315,6 +244,7 @@ const Matrix: React.FC = () => {
       </Paper>
     );
   };
+
   const MatrixSkeleton = () => (
     <Paper sx={{ p: 2, minHeight: { xs: 200, md: 300 } }}>
       <Box

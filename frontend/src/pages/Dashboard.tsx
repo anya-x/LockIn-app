@@ -347,7 +347,7 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
-  const renderContent = () => {
+  const renderContent = useMemo(() => {
     switch (currentView) {
       case "tasks":
         return <Tasks />;
@@ -366,7 +366,7 @@ const Dashboard: React.FC = () => {
       default:
         return <Tasks />;
     }
-  };
+  }, [currentView]);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -446,7 +446,7 @@ const Dashboard: React.FC = () => {
           mt: 8,
         }}
       >
-        {renderContent()}
+        {renderContent}
       </Box>
     </Box>
   );

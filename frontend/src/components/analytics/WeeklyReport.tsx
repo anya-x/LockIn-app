@@ -53,7 +53,7 @@ const WeeklyReport: React.FC = () => {
       );
       return response.data;
     },
-    staleTime: 3600000,
+    staleTime: Infinity,
   });
   if (loading) {
     return (

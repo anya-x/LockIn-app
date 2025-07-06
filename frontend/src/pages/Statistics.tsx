@@ -65,8 +65,13 @@ interface Statistics {
 const Statistics: React.FC = () => {
   const { timer } = useTimer();
   const queryClient = useQueryClient();
+  console.log("statistics component mounted");
 
   const { data, isLoading: loading, refetch } = useStatisticsData();
+  console.log("statistics query state:", {
+    hasData: !!data,
+    loading,
+  });
 
   const getSavedDateRange = ():
     | "Today"
