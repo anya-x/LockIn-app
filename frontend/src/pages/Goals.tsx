@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Card,
@@ -20,14 +20,24 @@ import {
   CalendarToday as CalendarIcon,
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
-import goalService, { type Goal } from "../services/goalService";
 import type { GoalFormData } from "../components/goals/GoalsDialog";
 import GoalsDialog from "../components/goals/GoalsDialog";
+import { useGoals, useCreateGoal, useDeleteGoal } from "../hooks/useGoals";
+import { useTimer } from "../context/TimerContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Goals: React.FC = () => {
-  const [allGoals, setAllGoals] = useState<Goal[]>([]);
-  const [displayedGoals, setDisplayedGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: allGoals = [],
+    isLoading: loading,
+    error: queryError,
+  } = useGoals();
+  const createGoalMutation = useCreateGoal();
+  const deleteGoalMutation = useDeleteGoal();
+
+  const { timer } = useTimer();
+  const queryClient = useQueryClient();
+
   const [error, setError] = useState<string>("");
   const [tabValue, setTabValue] = useState<"all" | "active" | "completed">(
     "active"
@@ -35,42 +45,24 @@ const Goals: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchGoals();
-  }, []);
-
-  useEffect(() => {
-    filterGoals();
-  }, [tabValue, allGoals]);
-
-  const fetchGoals = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await goalService.getAllGoals();
-      setAllGoals(response.data);
-    } catch (err: any) {
-      console.error("Failed to fetch goals:", err);
-      setError("Failed to load goals. Please try again.");
-    } finally {
-      setLoading(false);
+    if (timer.completionCounter > 0) {
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
     }
-  };
+  }, [timer.completionCounter, queryClient]);
 
-  const filterGoals = () => {
+  const displayedGoals = useMemo(() => {
     if (tabValue === "active") {
-      setDisplayedGoals(allGoals.filter((goal) => !goal.completed));
+      return allGoals.filter((goal) => !goal.completed);
     } else if (tabValue === "completed") {
-      setDisplayedGoals(allGoals.filter((goal) => goal.completed));
-    } else {
-      setDisplayedGoals(allGoals);
+      return allGoals.filter((goal) => goal.completed);
     }
-  };
+    return allGoals;
+  }, [tabValue, allGoals]);
 
   const handleCreateGoal = async (goalData: GoalFormData) => {
     try {
-      await goalService.createGoal(goalData);
-      fetchGoals();
+      await createGoalMutation.mutateAsync(goalData);
+      setCreateDialogOpen(false);
     } catch (err: any) {
       console.error("Failed to create goal:", err);
       setError(
@@ -86,8 +78,7 @@ const Goals: React.FC = () => {
     }
 
     try {
-      await goalService.deleteGoal(id);
-      fetchGoals();
+      await deleteGoalMutation.mutateAsync(id);
     } catch (err: any) {
       console.error("Failed to delete goal:", err);
       setError("Failed to delete goal. Please try again.");
@@ -157,9 +148,9 @@ const Goals: React.FC = () => {
         <Tab label="All" value="all" />
       </Tabs>
 
-      {error && (
+      {(error || queryError) && (
         <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>
-          {error}
+          {error || "Failed to load goals. Please try again."}
         </Alert>
       )}
 
