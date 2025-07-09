@@ -164,6 +164,9 @@ public class FocusSessionService {
         session.setActualMinutes(actualMinutes);
 
         FocusSession updated = sessionRepository.save(session);
+        FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
+
+        goalService.updateGoalsFromSession(userId, response);
 
         log.info("Updated session: {} with {} minutes", updated.getId(), actualMinutes);
 
