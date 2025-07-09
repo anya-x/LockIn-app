@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -195,7 +196,6 @@ public class GoalService {
         }
     }
 
-
     @Transactional
     public void updateGoalsFromSession(Long userId, FocusSessionResponseDTO session) {
         log.debug("Updating goals for user {} after session completion", userId);
@@ -222,12 +222,14 @@ public class GoalService {
             boolean updated = false;
 
             if ("WORK".equals(session.getSessionType().name())
+                    && Boolean.TRUE.equals(session.getCompleted())
                     && goal.getTargetPomodoros() != null
                     && goal.getTargetPomodoros() > 0) {
+
                 goal.setCurrentPomodoros(goal.getCurrentPomodoros() + 1);
                 updated = true;
                 log.debug(
-                        "Updated goal {} pomodoros: {}/{}",
+                        "✅ Counted full pomodoro for goal {}: {}/{}",
                         goal.getId(),
                         goal.getCurrentPomodoros(),
                         goal.getTargetPomodoros());
@@ -241,7 +243,8 @@ public class GoalService {
                         goal.getCurrentFocusMinutes() + session.getActualMinutes());
                 updated = true;
                 log.debug(
-                        "Updated goal {} focus minutes: {}/{}",
+                        "Added {} focus minutes to goal {}: {}/{}",
+                        session.getActualMinutes(),
                         goal.getId(),
                         goal.getCurrentFocusMinutes(),
                         goal.getTargetFocusMinutes());
@@ -253,6 +256,35 @@ public class GoalService {
                 log.info(
                         "Updated goal {} progress to {}%",
                         goal.getId(), Math.round(goal.getProgressPercentage()));
+            }
+        }
+    }
+
+    @Transactional
+    public void updateGoalsFromTaskCompletion(Long userId, LocalDateTime taskCompletedAt) {
+        log.debug("Updating goals for user {} after task completion", userId);
+
+        List<Goal> activeGoals =
+                goalRepository.findByUserIdAndCompletedOrderByCreatedAtDesc(userId, false);
+
+        if (activeGoals.isEmpty()) {
+            log.debug("No active goals to update for user {}", userId);
+            return;
+        }
+
+        LocalDate completionDate =
+                taskCompletedAt != null ? taskCompletedAt.toLocalDate() : LocalDate.now();
+
+        for (Goal goal : activeGoals) {
+            if (completionDate.isBefore(goal.getStartDate())
+                    || completionDate.isAfter(goal.getEndDate())) {
+                continue;
+            }
+
+            if (goal.getTargetTasks() != null && goal.getTargetTasks() > 0) {
+                goal.setCurrentTasks(goal.getCurrentTasks() + 1);
+                checkAndMarkComplete(goal);
+                goalRepository.save(goal);
             }
         }
     }

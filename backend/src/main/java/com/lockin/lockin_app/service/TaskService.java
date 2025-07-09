@@ -33,6 +33,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserService userService;
     private final CategoryService categoryService;
+    private final GoalService goalService;
 
     /**
      * Creates a new task for the user
@@ -142,9 +143,12 @@ public class TaskService {
         TaskStatus oldStatus = task.getStatus();
         TaskStatus newStatus = request.getStatus();
 
-        // automatically track completion timestamp
         if (oldStatus != TaskStatus.COMPLETED && newStatus == TaskStatus.COMPLETED) {
-            task.setCompletedAt(LocalDateTime.now());
+            LocalDateTime completionTime = LocalDateTime.now();
+            task.setCompletedAt(completionTime);
+
+            log.debug("Task {} marked as completed, updating goals", taskId);
+            goalService.updateGoalsFromTaskCompletion(userId, completionTime);
         } else if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {
             task.setCompletedAt(null);
         }
