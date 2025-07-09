@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.service;
 
+import com.lockin.lockin_app.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
 import com.lockin.lockin_app.entity.Goal;
@@ -191,6 +192,68 @@ public class GoalService {
             goal.setCompleted(true);
             goal.setCompletedDate(LocalDate.now());
             log.info("Goal {} marked as complete! 🎉", goal.getId());
+        }
+    }
+
+
+    @Transactional
+    public void updateGoalsFromSession(Long userId, FocusSessionResponseDTO session) {
+        log.debug("Updating goals for user {} after session completion", userId);
+
+        List<Goal> activeGoals =
+                goalRepository.findByUserIdAndCompletedOrderByCreatedAtDesc(userId, false);
+
+        if (activeGoals.isEmpty()) {
+            log.debug("No active goals to update for user {}", userId);
+            return;
+        }
+
+        LocalDate sessionDate =
+                session.getCompletedAt() != null
+                        ? session.getCompletedAt().toLocalDate()
+                        : LocalDate.now();
+
+        for (Goal goal : activeGoals) {
+            if (sessionDate.isBefore(goal.getStartDate())
+                    || sessionDate.isAfter(goal.getEndDate())) {
+                continue;
+            }
+
+            boolean updated = false;
+
+            if ("WORK".equals(session.getSessionType().name())
+                    && goal.getTargetPomodoros() != null
+                    && goal.getTargetPomodoros() > 0) {
+                goal.setCurrentPomodoros(goal.getCurrentPomodoros() + 1);
+                updated = true;
+                log.debug(
+                        "Updated goal {} pomodoros: {}/{}",
+                        goal.getId(),
+                        goal.getCurrentPomodoros(),
+                        goal.getTargetPomodoros());
+            }
+
+            if (session.getActualMinutes() != null
+                    && session.getActualMinutes() > 0
+                    && goal.getTargetFocusMinutes() != null
+                    && goal.getTargetFocusMinutes() > 0) {
+                goal.setCurrentFocusMinutes(
+                        goal.getCurrentFocusMinutes() + session.getActualMinutes());
+                updated = true;
+                log.debug(
+                        "Updated goal {} focus minutes: {}/{}",
+                        goal.getId(),
+                        goal.getCurrentFocusMinutes(),
+                        goal.getTargetFocusMinutes());
+            }
+
+            if (updated) {
+                checkAndMarkComplete(goal);
+                goalRepository.save(goal);
+                log.info(
+                        "Updated goal {} progress to {}%",
+                        goal.getId(), Math.round(goal.getProgressPercentage()));
+            }
         }
     }
 

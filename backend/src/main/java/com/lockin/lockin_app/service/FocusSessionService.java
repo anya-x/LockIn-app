@@ -30,6 +30,7 @@ public class FocusSessionService {
     private final FocusSessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
+    private final GoalService goalService;
 
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
@@ -132,10 +133,13 @@ public class FocusSessionService {
         session.setCompleted(true);
 
         FocusSession updated = sessionRepository.save(session);
+        FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
+
+        goalService.updateGoalsFromSession(userId, response);
 
         log.info("Completed session: {}", updated.getId());
 
-        return FocusSessionResponseDTO.fromEntity(updated);
+        return response;
     }
 
     @Transactional
