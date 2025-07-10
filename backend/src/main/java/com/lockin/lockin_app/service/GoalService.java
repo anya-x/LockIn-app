@@ -192,7 +192,6 @@ public class GoalService {
         if (goal.getProgressPercentage() >= 100.0 && !goal.getCompleted()) {
             goal.setCompleted(true);
             goal.setCompletedDate(LocalDate.now());
-            log.info("Goal {} marked as complete! 🎉", goal.getId());
         }
     }
 
@@ -214,8 +213,14 @@ public class GoalService {
                         : LocalDate.now();
 
         for (Goal goal : activeGoals) {
+            if (Boolean.TRUE.equals(goal.getCompleted())) {
+                log.debug("Skipping completed goal {}", goal.getId());
+                continue;
+            }
+
             if (sessionDate.isBefore(goal.getStartDate())
                     || sessionDate.isAfter(goal.getEndDate())) {
+                log.debug("⏭Session outside date range for goal {}", goal.getId());
                 continue;
             }
 
@@ -226,36 +231,40 @@ public class GoalService {
                     && goal.getTargetPomodoros() != null
                     && goal.getTargetPomodoros() > 0) {
 
-                goal.setCurrentPomodoros(goal.getCurrentPomodoros() + 1);
-                updated = true;
-                log.debug(
-                        "✅ Counted full pomodoro for goal {}: {}/{}",
-                        goal.getId(),
-                        goal.getCurrentPomodoros(),
-                        goal.getTargetPomodoros());
+                if (goal.getCurrentPomodoros() < goal.getTargetPomodoros()) {
+                    goal.setCurrentPomodoros(goal.getCurrentPomodoros() + 1);
+                    updated = true;
+                } else {
+                    log.debug(
+                            "Goal {} already at pomodoro target ({}/{})",
+                            goal.getId(),
+                            goal.getCurrentPomodoros(),
+                            goal.getTargetPomodoros());
+                }
             }
 
             if (session.getActualMinutes() != null
                     && session.getActualMinutes() > 0
                     && goal.getTargetFocusMinutes() != null
                     && goal.getTargetFocusMinutes() > 0) {
-                goal.setCurrentFocusMinutes(
-                        goal.getCurrentFocusMinutes() + session.getActualMinutes());
-                updated = true;
-                log.debug(
-                        "Added {} focus minutes to goal {}: {}/{}",
-                        session.getActualMinutes(),
-                        goal.getId(),
-                        goal.getCurrentFocusMinutes(),
-                        goal.getTargetFocusMinutes());
+
+                if (goal.getCurrentFocusMinutes() < goal.getTargetFocusMinutes()) {
+                    int newMinutes = goal.getCurrentFocusMinutes() + session.getActualMinutes();
+
+                    goal.setCurrentFocusMinutes(Math.min(newMinutes, goal.getTargetFocusMinutes()));
+                    updated = true;
+                } else {
+                    log.debug(
+                            "Goal {} already at focus minutes target ({}/{})",
+                            goal.getId(),
+                            goal.getCurrentFocusMinutes(),
+                            goal.getTargetFocusMinutes());
+                }
             }
 
             if (updated) {
                 checkAndMarkComplete(goal);
                 goalRepository.save(goal);
-                log.info(
-                        "Updated goal {} progress to {}%",
-                        goal.getId(), Math.round(goal.getProgressPercentage()));
             }
         }
     }
@@ -276,15 +285,39 @@ public class GoalService {
                 taskCompletedAt != null ? taskCompletedAt.toLocalDate() : LocalDate.now();
 
         for (Goal goal : activeGoals) {
-            if (completionDate.isBefore(goal.getStartDate())
-                    || completionDate.isAfter(goal.getEndDate())) {
+            if (Boolean.TRUE.equals(goal.getCompleted())) {
+                log.debug("Skipping completed goal {}", goal.getId());
                 continue;
             }
 
+            if (completionDate.isBefore(goal.getStartDate())
+                    || completionDate.isAfter(goal.getEndDate())) {
+                log.debug("Task completion outside date range for goal {}", goal.getId());
+                continue;
+            }
+
+
             if (goal.getTargetTasks() != null && goal.getTargetTasks() > 0) {
-                goal.setCurrentTasks(goal.getCurrentTasks() + 1);
-                checkAndMarkComplete(goal);
-                goalRepository.save(goal);
+
+                if (goal.getCurrentTasks() < goal.getTargetTasks()) {
+                    goal.setCurrentTasks(goal.getCurrentTasks() + 1);
+
+                    log.debug(
+                            "Incremented tasks for goal {}: {}/{}",
+                            goal.getId(),
+                            goal.getCurrentTasks(),
+                            goal.getTargetTasks());
+
+                    checkAndMarkComplete(goal);
+                    goalRepository.save(goal);
+
+                } else {
+                    log.debug(
+                            "Goal {} already at task target ({}/{})",
+                            goal.getId(),
+                            goal.getCurrentTasks(),
+                            goal.getTargetTasks());
+                }
             }
         }
     }
