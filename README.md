@@ -24,30 +24,56 @@ A science based task management tool that's going to change how you view product
 
 ### Tasks (Authenticated)
 
-- GET `/api/tasks` - get all user tasks
-- GET `/api/tasks/{id}` -get a single task
+- GET `/api/tasks` - get all user tasks (paginated)
+- GET `/api/tasks/{id}` - get a single task
 - POST `/api/tasks` - create a new task
 - PUT `/api/tasks/{id}` - update a task
 - DELETE `/api/tasks/{id}` - delete a task
+- GET `/api/tasks/incomplete` - get all incomplete tasks
+- GET `/api/tasks/statistics` - get task statistics
 
-### Category Endpoints
+### Categories (Authenticated)
 
 - GET `/api/categories` - get all categories
 - GET `/api/categories/{id}` - get a single category
-- POST `/api/categories `- create a category
+- POST `/api/categories` - create a category
 - PUT `/api/categories/{id}` - update a category
 - DELETE `/api/categories/{id}` - delete a category
 
+### Goals (Authenticated)
+
+- GET `/api/goals` - get all user goals
+- GET `/api/goals/{id}` - get a single goal
+- POST `/api/goals` - create a goal
+- PUT `/api/goals/{id}` - update a goal
+- DELETE `/api/goals/{id}` - delete a goal
+
+### Focus Sessions (Authenticated)
+
+- GET `/api/sessions` - get all user focus sessions
+- POST `/api/sessions/start` - start a new focus session
+- POST `/api/sessions/{id}/complete` - complete a session
+- PUT `/api/sessions/{id}` - update a session
+- PUT `/api/sessions/{id}/notes` - update session notes
+- GET `/api/sessions/today` - get today's session stats
+
+### Analytics (Authenticated)
+
+- GET `/api/analytics/today` - get today's analytics
+- GET `/api/analytics/range?days={number}` - get analytics for date range
+- POST `/api/analytics/calculate/{date}` - calculate analytics for specific date
+- GET `/api/analytics/weekly-report` - get weekly performance report
+
 ### Eisenhower Matrix Endpoints
 
-- GET `/api/tasks/quadrant` - get tasks by quadrant
-- GET `/api/tasks/matrix `- get a vcomplete matrix
-- PATCH `/api/tasks/{id}/quadrant` - move a task between quadrants
+- GET `/api/tasks/quadrant?isUrgent=...&isImportant=...` - get tasks by quadrant
+- GET `/api/tasks/matrix` - get complete matrix
+- PATCH `/api/tasks/{id}/quadrant?isUrgent=...&isImportant=...` - move a task between quadrants
 
-### Search & Filter Endpoints (2)
+### Search & Filter Endpoints
 
 - GET `/api/tasks/search?query={term}` - search tasks
-- GET `/api/tasks/filter?status=...&category=...` - multi criteria filtering
+- GET `/api/tasks/filter?status=...&categoryId=...&isUrgent=...&isImportant=...` - multi-criteria filtering
 
 ## Features & Roadmap
 
@@ -276,7 +302,8 @@ A science based task management tool that's going to change how you view product
 
 - sessions marked complete when stopping [x]
 - new session started when paused [x]
-- filtering by time in stats issue + quality measurement odd behaviour
+- filtering by time in stats issue + quality measurement odd behaviour [x]
+- edit goals
 - filterbycategories in matrix
 
 **To do (low priority)**
