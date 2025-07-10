@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.controller;
 
+import com.lockin.lockin_app.dto.ComparisonDTO;
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.User;
@@ -96,5 +97,28 @@ public class DailyAnalyticsController {
         }
 
         return ResponseEntity.ok(report);
+    }
+
+    @PostMapping("/compare")
+    public ResponseEntity<ComparisonDTO> compareAnalytics(
+            @RequestParam int days, @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("POST /api/analytics/compare?days={}: User: {}", days, userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // current period
+        LocalDate currentEnd = LocalDate.now();
+        LocalDate currentStart = currentEnd.minusDays(days);
+
+        LocalDate previousEnd = currentStart.minusDays(1);
+        LocalDate previousStart = previousEnd.minusDays(days);
+
+        ComparisonDTO comparison = new ComparisonDTO();
+
+        // TODO: calculate percentage changes
+        // TODO: handle division by zero
+
+        return ResponseEntity.ok(comparison);
     }
 }
