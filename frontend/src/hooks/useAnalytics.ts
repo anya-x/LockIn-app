@@ -18,7 +18,7 @@ export function useAnalyticsRange(days: number = 7) {
   return useQuery({
     queryKey: ["analytics", "range", days],
     queryFn: () => analyticsService.getAnalyticsRange(days),
-    staleTime: Infinity,
+    staleTime: 3600000,
   });
 }
 
@@ -28,4 +28,32 @@ export function useRefreshAnalytics() {
   return async () => {
     await queryClient.invalidateQueries({ queryKey: ["analytics"] });
   };
+}
+
+export function useComparisonAnalytics(
+  currentStart: string,
+  currentEnd: string,
+  previousStart: string,
+  previousEnd: string,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: [
+      "analytics",
+      "compare",
+      currentStart,
+      currentEnd,
+      previousStart,
+      previousEnd,
+    ],
+    queryFn: () =>
+      analyticsService.comparePeriods({
+        currentStart,
+        currentEnd,
+        previousStart,
+        previousEnd,
+      }),
+    enabled,
+    staleTime: 3600000,
+  });
 }

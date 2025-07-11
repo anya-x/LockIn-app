@@ -41,6 +41,7 @@ import {
   useRefreshAnalytics,
   useTodayAnalytics,
 } from "../hooks/useAnalytics";
+import PeriodComparison from "../components/analytics/PeriodComparison";
 
 const AnalyticsPage: React.FC = () => {
   const { timer } = useTimer();
@@ -124,7 +125,7 @@ const AnalyticsPage: React.FC = () => {
           overworkMinutes={todayAnalytics.overworkMinutes}
         />
       )}
-
+      <PeriodComparison />
       {/* Today's Stats */}
       <Typography variant="h6" sx={{ mb: 2 }}>
         Today's Performance
