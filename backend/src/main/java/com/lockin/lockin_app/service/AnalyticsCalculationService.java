@@ -324,6 +324,61 @@ public class AnalyticsCalculationService {
                 balanceScore,
                 totalScore);
     }
-    // TODO: implement consecutive work days calculation
-    // TODO: add weekly/monthly aggregation
+
+    /**
+     * Calculates average analytics for a date range
+     *
+     * @param userId user to calculate analytics for
+     * @param startDate start of period
+     * @param endDate end of period
+     * @return averaged daily analytics for the period
+     */
+    public DailyAnalyticsDTO getAverageForPeriod(
+            Long userId, LocalDate startDate, LocalDate endDate) {
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+        DailyAnalytics average = new DailyAnalytics();
+        average.setUser(user);
+        average.setDate(endDate);
+
+        int totalTasksCreated = 0;
+        int totalTasksCompleted = 0;
+        int totalPomodoros = 0;
+        int totalFocusMinutes = 0;
+        int totalBreakMinutes = 0;
+        double totalProductivity = 0;
+        double totalBurnout = 0;
+        int dayCount = 0;
+
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            DailyAnalyticsDTO dayAnalytics = calculateDailyAnalytics(userId, date);
+            totalTasksCreated += dayAnalytics.getTasksCreated();
+            totalTasksCompleted += dayAnalytics.getTasksCompleted();
+            totalPomodoros += dayAnalytics.getPomodorosCompleted();
+            totalFocusMinutes += dayAnalytics.getFocusMinutes();
+            totalBreakMinutes += dayAnalytics.getBreakMinutes();
+            totalProductivity += dayAnalytics.getProductivityScore();
+            totalBurnout += dayAnalytics.getBurnoutRiskScore();
+            dayCount++;
+        }
+
+        if (dayCount > 0) {
+            average.setTasksCreated(totalTasksCreated / dayCount);
+            average.setTasksCompleted(totalTasksCompleted / dayCount);
+            average.setPomodorosCompleted(totalPomodoros / dayCount);
+            average.setFocusMinutes(totalFocusMinutes / dayCount);
+            average.setBreakMinutes(totalBreakMinutes / dayCount);
+            average.setProductivityScore(totalProductivity / dayCount);
+            average.setBurnoutRiskScore(totalBurnout / dayCount);
+            average.setCompletionRate(
+                    totalTasksCreated > 0
+                            ? (totalTasksCompleted / (double) totalTasksCreated) * 100
+                            : 0.0);
+        }
+
+        return DailyAnalyticsDTO.fromEntity(average);
+    }
 }

@@ -2,6 +2,7 @@ package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.ComparisonDTO;
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
+import com.lockin.lockin_app.dto.DateRangeDTO;
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.UserRepository;
@@ -100,25 +101,61 @@ public class DailyAnalyticsController {
     }
 
     @PostMapping("/compare")
-    public ResponseEntity<ComparisonDTO> compareAnalytics(
-            @RequestParam int days, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ComparisonDTO> comparePeriodsre(
+            @RequestBody DateRangeDTO request, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/analytics/compare?days={}: User: {}", days, userDetails.getUsername());
+        log.debug("POST /api/analytics/compare: User: {}", userDetails.getUsername());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
 
-        // current period
-        LocalDate currentEnd = LocalDate.now();
-        LocalDate currentStart = currentEnd.minusDays(days);
+        DailyAnalyticsDTO current =
+                calculationService.getAverageForPeriod(
+                        userId, request.getCurrentStart(), request.getCurrentEnd());
 
-        LocalDate previousEnd = currentStart.minusDays(1);
-        LocalDate previousStart = previousEnd.minusDays(days);
+        DailyAnalyticsDTO previous =
+                calculationService.getAverageForPeriod(
+                        userId, request.getPreviousStart(), request.getPreviousEnd());
 
         ComparisonDTO comparison = new ComparisonDTO();
+        comparison.setCurrent(current);
+        comparison.setPrevious(previous);
 
-        // TODO: calculate percentage changes
-        // TODO: handle division by zero
+        comparison.setTasksChange(
+                calculatePercentageChange(
+                        previous.getTasksCompleted(), current.getTasksCompleted()));
+        comparison.setProductivityChange(
+                calculatePercentageChange(
+                        previous.getProductivityScore(), current.getProductivityScore()));
+        comparison.setFocusChange(
+                calculatePercentageChange(previous.getFocusMinutes(), current.getFocusMinutes()));
+        comparison.setBurnoutChange(
+                calculatePercentageChange(
+                        previous.getBurnoutRiskScore(), current.getBurnoutRiskScore()));
+
+        comparison.setTasksTrend(getTrend(comparison.getTasksChange()));
+        comparison.setProductivityTrend(getTrend(comparison.getProductivityChange()));
+        comparison.setFocusTrend(getTrend(comparison.getFocusChange()));
+        comparison.setBurnoutTrend(getTrend(comparison.getBurnoutChange()));
 
         return ResponseEntity.ok(comparison);
+    }
+
+    private Double calculatePercentageChange(Number oldValue, Number newValue) {
+        if (oldValue == null || newValue == null) {
+            return 0.0;
+        }
+        double old = oldValue.doubleValue();
+        double newVal = newValue.doubleValue();
+        if (old == 0) {
+            return newVal > 0 ? 100.0 : 0.0;
+        }
+        return ((newVal - old) / old) * 100;
+    }
+
+    private String getTrend(Double change) {
+        if (change == null || Math.abs(change) < 5) {
+            return "stable";
+        }
+        return change > 0 ? "up" : "down";
     }
 }

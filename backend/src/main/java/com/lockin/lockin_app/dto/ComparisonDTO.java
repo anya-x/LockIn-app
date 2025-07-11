@@ -4,11 +4,17 @@ import lombok.Data;
 
 @Data
 public class ComparisonDTO {
-    private DailyAnalyticsDTO currentPeriod;
-    private DailyAnalyticsDTO previousPeriod;
+    private DailyAnalyticsDTO current;
+    private DailyAnalyticsDTO previous;
 
+    // percentage changes
     private Double tasksChange;
     private Double productivityChange;
     private Double focusChange;
     private Double burnoutChange;
+
+    private String tasksTrend; // up, down, stable
+    private String productivityTrend;
+    private String focusTrend;
+    private String burnoutTrend;
 }
