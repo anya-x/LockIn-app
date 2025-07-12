@@ -85,30 +85,40 @@ public class AnalyticsCalculationService {
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
         int created = 0;
-        int completed = 0;
+        int completedTotal = 0; 
+        int completedFromToday = 0;
 
         for (Task task : allTasks) {
-            if (task.getCreatedAt() != null
-                    && task.getCreatedAt().isAfter(startOfDay)
-                    && task.getCreatedAt().isBefore(endOfDay)) {
+            boolean createdToday =
+                    task.getCreatedAt() != null
+                            && task.getCreatedAt().isAfter(startOfDay)
+                            && task.getCreatedAt().isBefore(endOfDay);
 
+            boolean completedToday =
+                    task.getStatus() == TaskStatus.COMPLETED
+                            && task.getUpdatedAt() != null
+                            && task.getUpdatedAt().isAfter(startOfDay)
+                            && task.getUpdatedAt().isBefore(endOfDay);
+
+            if (createdToday) {
                 created++;
 
-                if (task.getStatus() == TaskStatus.COMPLETED
-                        && task.getUpdatedAt() != null
-                        && task.getUpdatedAt().isAfter(startOfDay)
-                        && task.getUpdatedAt().isBefore(endOfDay)) {
-
-                    completed++;
+                if (completedToday) {
+                    completedFromToday++;
                 }
+            }
+
+            if (completedToday) {
+                completedTotal++;
             }
         }
 
         analytics.setTasksCreated(created);
-        analytics.setTasksCompleted(completed);
+        analytics.setTasksCompleted(completedTotal);
+        analytics.setTasksCompletedFromToday(completedFromToday);
         analytics.setTasksDeleted(0);
 
-        double completionRate = created > 0 ? (completed / (double) created) * 100 : 0.0;
+        double completionRate = created > 0 ? (completedFromToday / (double) created) * 100 : 0.0;
         analytics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
     }
 
@@ -350,6 +360,7 @@ public class AnalyticsCalculationService {
 
         int totalTasksCreated = 0;
         int totalTasksCompleted = 0;
+        int totalTasksCompletedFromToday = 0;
         int totalPomodoros = 0;
         int totalFocusMinutes = 0;
         int totalBreakMinutes = 0;
@@ -361,6 +372,7 @@ public class AnalyticsCalculationService {
             DailyAnalyticsDTO dayAnalytics = calculateDailyAnalytics(userId, date);
             totalTasksCreated += dayAnalytics.getTasksCreated();
             totalTasksCompleted += dayAnalytics.getTasksCompleted();
+            totalTasksCompletedFromToday += dayAnalytics.getTasksCompletedFromToday();
             totalPomodoros += dayAnalytics.getPomodorosCompleted();
             totalFocusMinutes += dayAnalytics.getFocusMinutes();
             totalBreakMinutes += dayAnalytics.getBreakMinutes();
@@ -372,6 +384,7 @@ public class AnalyticsCalculationService {
         if (dayCount > 0) {
             average.setTasksCreated(totalTasksCreated / dayCount);
             average.setTasksCompleted(totalTasksCompleted / dayCount);
+            average.setTasksCompletedFromToday(totalTasksCompletedFromToday / dayCount);
             average.setPomodorosCompleted(totalPomodoros / dayCount);
             average.setFocusMinutes(totalFocusMinutes / dayCount);
             average.setBreakMinutes(totalBreakMinutes / dayCount);
@@ -379,7 +392,7 @@ public class AnalyticsCalculationService {
             average.setBurnoutRiskScore(totalBurnout / dayCount);
             average.setCompletionRate(
                     totalTasksCreated > 0
-                            ? (totalTasksCompleted / (double) totalTasksCreated) * 100
+                            ? (totalTasksCompletedFromToday / (double) totalTasksCreated) * 100
                             : 0.0);
         }
 

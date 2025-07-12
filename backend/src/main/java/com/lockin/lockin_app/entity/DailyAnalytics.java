@@ -32,17 +32,15 @@ public class DailyAnalytics {
     // Task metrics
     @Builder.Default private Integer tasksCreated = 0;
     @Builder.Default private Integer tasksCompleted = 0;
+    @Builder.Default private Integer tasksCompletedFromToday = 0;
     @Builder.Default private Integer tasksDeleted = 0;
     @Builder.Default private Double completionRate = 0.0;
 
     // Pomodoro metrics
     @Builder.Default private Integer pomodorosCompleted = 0;
-    @Builder.Default 
-    private Integer focusMinutes = 0;
-    @Builder.Default 
-    private Integer breakMinutes = 0;
-    @Builder.Default 
-    private Integer interruptedSessions = 0;
+    @Builder.Default private Integer focusMinutes = 0;
+    @Builder.Default private Integer breakMinutes = 0;
+    @Builder.Default private Integer interruptedSessions = 0;
 
     // Eisenhower distributions
     @Builder.Default private Integer urgentImportantCount = 0;
@@ -56,8 +54,7 @@ public class DailyAnalytics {
     @Builder.Default private Double burnoutRiskScore = 0.0;
 
     // Burnout indicators
-    @Builder.Default 
-    private Integer overworkMinutes = 0;
+    @Builder.Default private Integer overworkMinutes = 0;
     @Builder.Default private Integer consecutiveWorkDays = 0;
     @Builder.Default private Integer lateNightSessions = 0;
 

@@ -19,6 +19,7 @@ public class DailyAnalyticsDTO {
     // Task metrics
     private Integer tasksCreated;
     private Integer tasksCompleted;
+    private Integer tasksCompletedFromToday;
     private Double completionRate;
 
     // Pomodoro metrics
@@ -47,6 +48,7 @@ public class DailyAnalyticsDTO {
                 .date(analytics.getDate())
                 .tasksCreated(analytics.getTasksCreated())
                 .tasksCompleted(analytics.getTasksCompleted())
+                .tasksCompletedFromToday(analytics.getTasksCompletedFromToday())
                 .completionRate(analytics.getCompletionRate())
                 .pomodorosCompleted(analytics.getPomodorosCompleted())
                 .focusMinutes(analytics.getFocusMinutes())
