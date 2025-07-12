@@ -3,6 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.CategoryRequestDTO;
 import com.lockin.lockin_app.dto.CategoryResponseDTO;
 import com.lockin.lockin_app.entity.Category;
+import com.lockin.lockin_app.repository.CategoryRepository;
 import com.lockin.lockin_app.service.CategoryService;
 import com.lockin.lockin_app.service.UserService;
 
@@ -28,6 +29,7 @@ public class CategoryController {
 
     private final CategoryService categoryService;
     private final UserService userService;
+    private final CategoryRepository categoryRepository;
 
     @GetMapping
     public ResponseEntity<List<CategoryResponseDTO>> getAllCategories(
@@ -40,7 +42,12 @@ public class CategoryController {
 
         List<CategoryResponseDTO> response =
                 categories.stream()
-                        .map(CategoryResponseDTO::fromEntity)
+                        .map(
+                                category ->
+                                        CategoryResponseDTO.fromEntity(
+                                                category,
+                                                categoryRepository.countTasksByCategoryId(
+                                                        category.getId())))
                         .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -55,7 +62,9 @@ public class CategoryController {
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         Category category = categoryService.getCategoryForUser(id, userId);
 
-        return ResponseEntity.ok(CategoryResponseDTO.fromEntity(category));
+        return ResponseEntity.ok(
+                CategoryResponseDTO.fromEntity(
+                        category, categoryRepository.countTasksByCategoryId(category.getId())));
     }
 
     @PostMapping
@@ -78,7 +87,10 @@ public class CategoryController {
         Category created = categoryService.createCategory(userId, category);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CategoryResponseDTO.fromEntity(created));
+                .body(
+                        CategoryResponseDTO.fromEntity(
+                                created,
+                                categoryRepository.countTasksByCategoryId(created.getId())));
     }
 
     @PutMapping("/{id}")
@@ -102,7 +114,9 @@ public class CategoryController {
 
         Category updated = categoryService.updateCategory(id, userId, updatedCategory);
 
-        return ResponseEntity.ok(CategoryResponseDTO.fromEntity(updated));
+        return ResponseEntity.ok(
+                CategoryResponseDTO.fromEntity(
+                        updated, categoryRepository.countTasksByCategoryId(updated.getId())));
     }
 
     @DeleteMapping("/{id}")

@@ -79,13 +79,13 @@ public class AnalyticsCalculationService {
 
     // counts tasks created and completed on the given date
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
-        List<Task> allTasks = taskRepository.findByUserId(user.getId());
+        List<Task> allTasks = taskRepository.findByUserIdWithCategory(user.getId());
 
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
         int created = 0;
-        int completedTotal = 0; 
+        int completedTotal = 0;
         int completedFromToday = 0;
 
         for (Task task : allTasks) {
@@ -133,7 +133,8 @@ public class AnalyticsCalculationService {
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
         List<FocusSession> sessions =
-                focusSessionRepository.findByUserAndStartedAtBetween(user, startOfDay, endOfDay);
+                focusSessionRepository.findByUserAndStartedAtBetweenWithRelations(
+                        user, startOfDay, endOfDay);
 
         int completed = 0;
         int totalFocusMinutes = 0;
@@ -171,7 +172,7 @@ public class AnalyticsCalculationService {
     // counts current tasks by Eisenhower matrix quadrant
     private void calculateEisenhowerDistribution(
             DailyAnalytics analytics, User user, LocalDate date) {
-        List<Task> allTasks = taskRepository.findByUserId(user.getId());
+        List<Task> allTasks = taskRepository.findByUserIdWithCategory(user.getId());
 
         int urgentImportant = 0;
         int notUrgentImportant = 0;

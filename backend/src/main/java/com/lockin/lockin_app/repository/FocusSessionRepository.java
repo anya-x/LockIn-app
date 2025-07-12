@@ -18,7 +18,10 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     List<FocusSession> findByUserIdOrderByStartedAtDesc(Long userId);
 
     @Query(
-            "SELECT s FROM FocusSession s WHERE s.user.id = :userId "
+            "SELECT s FROM FocusSession s "
+                    + "LEFT JOIN FETCH s.user "
+                    + "LEFT JOIN FETCH s.task "
+                    + "WHERE s.user.id = :userId "
                     + "AND s.startedAt >= :startDate AND s.startedAt < :endDate "
                     + "ORDER BY s.startedAt DESC")
     List<FocusSession> findSessionsByDateRange(
@@ -27,7 +30,10 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             @Param("endDate") LocalDateTime endDate);
 
     @Query(
-            "SELECT s FROM FocusSession s WHERE s.user.id = :userId "
+            "SELECT s FROM FocusSession s "
+                    + "LEFT JOIN FETCH s.user "
+                    + "LEFT JOIN FETCH s.task "
+                    + "WHERE s.user.id = :userId "
                     + "AND s.sessionType = :sessionType "
                     + "AND s.completed = true "
                     + "AND s.startedAt >= :startOfDay "
@@ -41,4 +47,23 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
 
     List<FocusSession> findByUserAndStartedAtBetween(
             User user, LocalDateTime start, LocalDateTime end);
+
+    @Query(
+            "SELECT s FROM FocusSession s "
+                    + "LEFT JOIN FETCH s.user "
+                    + "LEFT JOIN FETCH s.task "
+                    + "WHERE s.user.id = :userId "
+                    + "ORDER BY s.startedAt DESC")
+    List<FocusSession> findByUserIdOrderByStartedAtDescWithRelations(@Param("userId") Long userId);
+
+    @Query(
+            "SELECT s FROM FocusSession s "
+                    + "LEFT JOIN FETCH s.user "
+                    + "LEFT JOIN FETCH s.task "
+                    + "WHERE s.user = :user "
+                    + "AND s.startedAt BETWEEN :start AND :end")
+    List<FocusSession> findByUserAndStartedAtBetweenWithRelations(
+            @Param("user") User user,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

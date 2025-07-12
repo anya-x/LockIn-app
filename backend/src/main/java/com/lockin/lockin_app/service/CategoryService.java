@@ -5,6 +5,7 @@ import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.CategoryRepository;
+import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
 
     @Transactional(readOnly = true)
     public List<Category> getUserCategories(Long userId) {
@@ -110,8 +112,8 @@ public class CategoryService {
 
         validateCategoryOwnership(category, userId);
 
-        // unlink tasks from this category
-        category.getTasks().forEach(task -> task.setCategory(null));
+        // unlink tasks from this category using bulk update
+        taskRepository.removeCategoryFromTasks(categoryId);
 
         categoryRepository.delete(category);
 

@@ -93,7 +93,7 @@ public class TaskService {
     public List<TaskResponseDTO> getUserTasks(Long userId) {
         log.debug("Fetching tasks for user: {}", userId);
 
-        List<Task> tasks = taskRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Task> tasks = taskRepository.findByUserIdOrderByCreatedAtDescWithCategory(userId);
 
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
     }
@@ -279,7 +279,7 @@ public class TaskService {
     public TaskStatisticsDTO getStatistics(Long userId) {
         TaskStatisticsDTO stats = new TaskStatisticsDTO();
 
-        List<Task> allTasks = taskRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Task> allTasks = taskRepository.findByUserIdWithCategory(userId);
 
         // Basic counts
         stats.setTotalTasks((long) allTasks.size());
@@ -354,7 +354,7 @@ public class TaskService {
         log.debug("Fetching all incomplete tasks for user: {}", userId);
 
         List<Task> tasks =
-                taskRepository.findByUserIdAndStatusNotOrderByCreatedAtDesc(
+                taskRepository.findByUserIdAndStatusNotOrderByCreatedAtDescWithCategory(
                         userId, TaskStatus.COMPLETED);
 
         log.info("Found {} incomplete tasks for user {}", tasks.size(), userId);
