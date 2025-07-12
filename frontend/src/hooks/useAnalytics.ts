@@ -26,6 +26,7 @@ export function useRefreshAnalytics() {
   const queryClient = useQueryClient();
 
   return async () => {
+    await analyticsService.refreshCache();
     await queryClient.invalidateQueries({ queryKey: ["analytics"] });
   };
 }

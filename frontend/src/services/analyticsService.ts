@@ -66,4 +66,7 @@ export const analyticsService = {
     const response = await api.post("/analytics/compare", request);
     return response.data;
   },
+  refreshCache: async (): Promise<void> => {
+    await api.post("/analytics/refresh");
+  },
 };

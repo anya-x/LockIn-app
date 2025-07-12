@@ -158,4 +158,18 @@ public class DailyAnalyticsController {
         }
         return change > 0 ? "up" : "down";
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Void> refreshAnalytics(@AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("POST /api/analytics/refresh: User: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        calculationService.invalidateCache(userId, LocalDate.now());
+
+        log.info("Analytics cache invalidated for user {}", userId);
+
+        return ResponseEntity.ok().build();
+    }
 }
