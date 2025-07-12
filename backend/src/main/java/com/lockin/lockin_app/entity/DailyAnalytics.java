@@ -10,7 +10,19 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "daily_analytics",
-        indexes = {@Index(name = "idx_analytics_user_date", columnList = "user_id,date")})
+        indexes = {
+            @Index(name = "idx_analytics_user_date", columnList = "user_id, date"),
+            @Index(name = "idx_analytics_date", columnList = "date"),
+            @Index(name = "idx_analytics_user_id", columnList = "user_id"),
+            @Index(name = "idx_analytics_productivity", columnList = "productivityScore"),
+            @Index(name = "idx_analytics_burnout", columnList = "burnoutRiskScore"),
+            @Index(name = "idx_analytics_created_at", columnList = "createdAt")
+        },
+        uniqueConstraints = {
+            @UniqueConstraint(
+                    name = "uk_analytics_user_date",
+                    columnNames = {"user_id", "date"})
+        })
 @Getter
 @Setter
 @NoArgsConstructor

@@ -7,7 +7,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "focus_sessions")
+@Table(
+        name = "focus_sessions",
+        indexes = {
+            @Index(name = "idx_focus_sessions_user_started", columnList = "user_id, started_at"),
+            @Index(name = "idx_focus_sessions_started", columnList = "started_at"),
+            @Index(name = "idx_focus_sessions_task", columnList = "task_id")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
