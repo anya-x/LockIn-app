@@ -36,7 +36,8 @@ public class FocusSessionService {
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
         log.debug("Fetching sessions for user: {}", userId);
 
-        List<FocusSession> sessions = sessionRepository.findByUserIdOrderByStartedAtDesc(userId);
+        List<FocusSession> sessions =
+                sessionRepository.findByUserIdOrderByStartedAtDescWithRelations(userId);
 
         return sessions.stream()
                 .map(FocusSessionResponseDTO::fromEntity)

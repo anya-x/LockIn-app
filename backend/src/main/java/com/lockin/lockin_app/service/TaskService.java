@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -279,21 +280,19 @@ public class TaskService {
     public TaskStatisticsDTO getStatistics(Long userId) {
         TaskStatisticsDTO stats = new TaskStatisticsDTO();
 
-        List<Task> allTasks = taskRepository.findByUserIdWithCategory(userId);
-
-        // Basic counts
-        stats.setTotalTasks((long) allTasks.size());
-        stats.setTodoCount(allTasks.stream().filter(t -> t.getStatus() == TaskStatus.TODO).count());
+        // Use database COUNT queries instead of fetching all tasks
+        stats.setTotalTasks(taskRepository.countByUserId(userId));
+        stats.setTodoCount(taskRepository.countByUserIdAndStatus(userId, TaskStatus.TODO));
         stats.setInProgressCount(
-                allTasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count());
+                taskRepository.countByUserIdAndStatus(userId, TaskStatus.IN_PROGRESS));
         stats.setCompletedCount(
-                allTasks.stream().filter(t -> t.getStatus() == TaskStatus.COMPLETED).count());
+                taskRepository.countByUserIdAndStatus(userId, TaskStatus.COMPLETED));
 
         // Urgent/Important counts
-        stats.setUrgentCount(allTasks.stream().filter(Task::getIsUrgent).count());
-        stats.setImportantCount(allTasks.stream().filter(Task::getIsImportant).count());
+        stats.setUrgentCount(taskRepository.countByUserIdAndIsUrgent(userId, true));
+        stats.setImportantCount(taskRepository.countByUserIdAndIsImportant(userId, true));
         stats.setUrgentAndImportantCount(
-                allTasks.stream().filter(t -> t.getIsUrgent() && t.getIsImportant()).count());
+                taskRepository.countByUserIdAndIsUrgentAndIsImportant(userId, true, true));
 
         // Completion rate
         if (stats.getTotalTasks() > 0) {
@@ -303,28 +302,21 @@ public class TaskService {
             stats.setCompletionRate(0.0);
         }
 
-        // Tasks by category
-        Map<String, Long> byCategory =
-                allTasks.stream()
-                        .filter(t -> t.getCategory() != null)
-                        .collect(
-                                Collectors.groupingBy(
-                                        t -> t.getCategory().getName(), Collectors.counting()));
+        Map<String, Long> byCategory = new HashMap<>();
+        List<Object[]> categoryCounts = taskRepository.countTasksByCategory(userId);
+        for (Object[] row : categoryCounts) {
+            byCategory.put((String) row[0], (Long) row[1]);
+        }
         stats.setTasksByCategory(byCategory);
 
         // This week's stats
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
 
         stats.setTasksCreatedThisWeek(
-                allTasks.stream().filter(t -> t.getCreatedAt().isAfter(oneWeekAgo)).count());
+                taskRepository.countByUserIdAndCreatedAtAfter(userId, oneWeekAgo));
 
         stats.setTasksCompletedThisWeek(
-                allTasks.stream()
-                        .filter(
-                                t ->
-                                        t.getCompletedAt() != null
-                                                && t.getCompletedAt().isAfter(oneWeekAgo))
-                        .count());
+                taskRepository.countByUserIdAndCompletedAtAfter(userId, oneWeekAgo));
 
         return stats;
     }

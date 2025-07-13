@@ -18,7 +18,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,14 +42,20 @@ public class CategoryController {
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
         List<Category> categories = categoryService.getUserCategories(userId);
 
+        Map<Long, Long> taskCountsPerCategory = new HashMap<>();
+        List<Object[]> counts = categoryRepository.countTasksPerCategoryForUser(userId);
+        for (Object[] row : counts) {
+            taskCountsPerCategory.put((Long) row[0], (Long) row[1]);
+        }
+
         List<CategoryResponseDTO> response =
                 categories.stream()
                         .map(
                                 category ->
                                         CategoryResponseDTO.fromEntity(
                                                 category,
-                                                categoryRepository.countTasksByCategoryId(
-                                                        category.getId())))
+                                                taskCountsPerCategory.getOrDefault(
+                                                        category.getId(), 0L)))
                         .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
