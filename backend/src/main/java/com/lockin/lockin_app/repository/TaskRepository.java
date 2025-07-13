@@ -103,18 +103,42 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Long countByUserIdAndIsImportant(Long userId, Boolean isImportant);
 
-    Long countByUserIdAndIsUrgentAndIsImportant(Long userId, Boolean isUrgent, Boolean isImportant);
+    Long countByUserIdAndIsUrgentAndIsImportant(
+            Long userId, Boolean isUrgent, Boolean isImportant);
 
     @Query(
             "SELECT t.category.name, COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.category IS NOT NULL GROUP BY t.category.name")
     List<Object[]> countTasksByCategory(@Param("userId") Long userId);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.createdAt > :date")
-    Long countByUserIdAndCreatedAtAfter(
-            @Param("userId") Long userId, @Param("date") LocalDateTime date);
+    Long countByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("date") LocalDateTime date);
 
     @Query(
             "SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.completedAt IS NOT NULL AND t.completedAt > :date")
     Long countByUserIdAndCompletedAtAfter(
             @Param("userId") Long userId, @Param("date") LocalDateTime date);
+
+    @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND t.createdAt >= :startDate AND t.createdAt < :endDate")
+    List<Task> findByUserIdAndCreatedAtBetween(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND t.status = :status "
+                    + "AND t.updatedAt >= :startDate AND t.updatedAt < :endDate")
+    List<Task> findByUserIdAndStatusAndUpdatedAtBetween(
+            @Param("userId") Long userId,
+            @Param("status") TaskStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND t.status <> :status")
+    List<Task> findByUserIdAndStatusNotWithCategory(
+            @Param("userId") Long userId, @Param("status") TaskStatus status);
 }
