@@ -446,8 +446,8 @@ const AnalyticsPage: React.FC = () => {
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor="#4caf50" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#4caf50" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -473,7 +473,7 @@ const AnalyticsPage: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="burnoutRiskScore"
-                  stroke="#f44336"
+                  stroke="#4caf50"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#burnoutGradient)"
