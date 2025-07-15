@@ -326,6 +326,7 @@ A science based task management tool that's going to change how you view product
 - possibility to archive tasks
 - focus session timer on tab
 - ux/ui: redo timer page- too vertical rn
+- export better formatted csv
 
 ## Research References
 
