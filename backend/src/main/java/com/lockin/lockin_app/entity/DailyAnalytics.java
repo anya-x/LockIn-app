@@ -10,19 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "daily_analytics",
-        indexes = {
-            @Index(name = "idx_analytics_user_date", columnList = "user_id, date"),
-            @Index(name = "idx_analytics_date", columnList = "date"),
-            @Index(name = "idx_analytics_user_id", columnList = "user_id"),
-            @Index(name = "idx_analytics_productivity", columnList = "productivityScore"),
-            @Index(name = "idx_analytics_burnout", columnList = "burnoutRiskScore"),
-            @Index(name = "idx_analytics_created_at", columnList = "createdAt")
-        },
-        uniqueConstraints = {
-            @UniqueConstraint(
-                    name = "uk_analytics_user_date",
-                    columnNames = {"user_id", "date"})
-        })
+        indexes = {@Index(name = "idx_analytics_user_date", columnList = "user_id,date")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -53,6 +41,12 @@ public class DailyAnalytics {
     @Builder.Default private Integer focusMinutes = 0;
     @Builder.Default private Integer breakMinutes = 0;
     @Builder.Default private Integer interruptedSessions = 0;
+
+    // Time of day productivity (focus minutes)
+    @Builder.Default private Integer morningFocusMinutes = 0;
+    @Builder.Default private Integer afternoonFocusMinutes = 0;
+    @Builder.Default private Integer eveningFocusMinutes = 0;
+    @Builder.Default private Integer nightFocusMinutes = 0;
 
     // Eisenhower distributions
     @Builder.Default private Integer urgentImportantCount = 0;

@@ -27,6 +27,12 @@ public class DailyAnalyticsDTO {
     private Integer focusMinutes;
     private Integer breakMinutes;
 
+    // Time of day productivity
+    private Integer morningFocusMinutes;
+    private Integer afternoonFocusMinutes;
+    private Integer eveningFocusMinutes;
+    private Integer nightFocusMinutes;
+
     // Scores
     private Double productivityScore;
     private Double focusScore;
@@ -53,6 +59,10 @@ public class DailyAnalyticsDTO {
                 .pomodorosCompleted(analytics.getPomodorosCompleted())
                 .focusMinutes(analytics.getFocusMinutes())
                 .breakMinutes(analytics.getBreakMinutes())
+                .morningFocusMinutes(analytics.getMorningFocusMinutes())
+                .afternoonFocusMinutes(analytics.getAfternoonFocusMinutes())
+                .eveningFocusMinutes(analytics.getEveningFocusMinutes())
+                .nightFocusMinutes(analytics.getNightFocusMinutes())
                 .productivityScore(analytics.getProductivityScore())
                 .focusScore(analytics.getFocusScore())
                 .burnoutRiskScore(analytics.getBurnoutRiskScore())

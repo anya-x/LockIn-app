@@ -82,12 +82,9 @@ public class AnalyticsCalculationService {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        // Fetch only tasks created today (with JOIN FETCH to avoid N+1)
         List<Task> tasksCreatedToday =
-                taskRepository.findByUserIdAndCreatedAtBetween(
-                        user.getId(), startOfDay, endOfDay);
+                taskRepository.findByUserIdAndCreatedAtBetween(user.getId(), startOfDay, endOfDay);
 
-        // Fetch only tasks completed today (with JOIN FETCH to avoid N+1)
         List<Task> tasksCompletedToday =
                 taskRepository.findByUserIdAndStatusAndUpdatedAtBetween(
                         user.getId(), TaskStatus.COMPLETED, startOfDay, endOfDay);
@@ -136,10 +133,27 @@ public class AnalyticsCalculationService {
         int interrupted = 0;
         int lateNight = 0;
 
+        int morningFocus = 0;
+        int afternoonFocus = 0;
+        int eveningFocus = 0;
+        int nightFocus = 0;
+
         for (FocusSession session : sessions) {
             if (session.getCompleted()) {
                 completed++;
-                totalFocusMinutes += session.getWorkDuration();
+                int workDuration = session.getWorkDuration();
+                totalFocusMinutes += workDuration;
+
+                int hour = session.getStartedAt().getHour();
+                if (hour >= 6 && hour < 12) {
+                    morningFocus += workDuration;
+                } else if (hour >= 12 && hour < 18) {
+                    afternoonFocus += workDuration;
+                } else if (hour >= 18 && hour < 24) {
+                    eveningFocus += workDuration;
+                } else {
+                    nightFocus += workDuration;
+                }
 
                 if (session.getBreakMinutes() != null) {
                     totalBreakMinutes += session.getBreakMinutes();
@@ -158,6 +172,11 @@ public class AnalyticsCalculationService {
         analytics.setBreakMinutes(totalBreakMinutes);
         analytics.setInterruptedSessions(interrupted);
         analytics.setLateNightSessions(lateNight);
+
+        analytics.setMorningFocusMinutes(morningFocus);
+        analytics.setAfternoonFocusMinutes(afternoonFocus);
+        analytics.setEveningFocusMinutes(eveningFocus);
+        analytics.setNightFocusMinutes(nightFocus);
 
         int overwork = Math.max(0, totalFocusMinutes - MAX_HEALTHY_MINUTES);
         analytics.setOverworkMinutes(overwork);
