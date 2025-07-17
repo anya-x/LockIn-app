@@ -3,6 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.ComparisonDTO;
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.dto.DateRangeDTO;
+import com.lockin.lockin_app.dto.ProductivityInsightsDTO;
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.UserRepository;
@@ -171,5 +172,18 @@ public class DailyAnalyticsController {
         log.info("Analytics cache invalidated for user {}", userId);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/insights")
+    public ResponseEntity<ProductivityInsightsDTO> getProductivityInsights(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/analytics/insights: User: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        ProductivityInsightsDTO insights = calculationService.calculateProductivityInsights(userId);
+
+        return ResponseEntity.ok(insights);
     }
 }

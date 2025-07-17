@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
+import com.lockin.lockin_app.dto.ProductivityInsightsDTO;
 import com.lockin.lockin_app.entity.*;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
-import java.util.List;
+import java.util.*;
 
 /** Calculates daily analytics metrics Research-based algorithms for productivity scoring */
 @Slf4j
@@ -79,6 +80,7 @@ public class AnalyticsCalculationService {
 
     // counts tasks created and completed on the given date
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
+        ZoneId userZone = ZoneId.systemDefault();
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
@@ -120,6 +122,8 @@ public class AnalyticsCalculationService {
      * (sessions after 10 PM).
      */
     private void calculatePomodoroMetrics(DailyAnalytics analytics, User user, LocalDate date) {
+
+        ZoneId userZone = ZoneId.systemDefault();
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
@@ -425,5 +429,107 @@ public class AnalyticsCalculationService {
             allEntries = true)
     public void invalidateCache(Long userId, LocalDate date) {
         log.debug("Invalidating analytics cache for user {} on {}", userId, date);
+    }
+
+    /**
+     * Calculates productivity insights based on historical data
+     *
+     * <p>Analyzes last 30 days to determine: - Most productive day of week - Best time of day -
+     * Average session length - Completion rate trend
+     *
+     * @param userId user
+     * @return productivity insights
+     */
+    @Cacheable(value = "insights", key = "#userId")
+    public ProductivityInsightsDTO calculateProductivityInsights(Long userId) {
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(30);
+
+        Map<DayOfWeek, Double> dayScores = new HashMap<>();
+        Map<String, Integer> timeOfDayMinutes = new HashMap<>();
+        List<Integer> sessionLengths = new ArrayList<>();
+        List<Double> completionRates = new ArrayList<>();
+        double totalProductivity = 0;
+        int daysAnalyzed = 0;
+
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            DailyAnalyticsDTO analytics = calculateDailyAnalytics(userId, date);
+
+            if (analytics.getPomodorosCompleted() > 0 || analytics.getTasksCompleted() > 0) {
+                daysAnalyzed++;
+
+                DayOfWeek dayOfWeek = date.getDayOfWeek();
+                dayScores.merge(dayOfWeek, analytics.getProductivityScore(), (a, b) -> a + b);
+
+                timeOfDayMinutes.merge("morning", analytics.getMorningFocusMinutes(), Integer::sum);
+                timeOfDayMinutes.merge(
+                        "afternoon", analytics.getAfternoonFocusMinutes(), Integer::sum);
+                timeOfDayMinutes.merge("evening", analytics.getEveningFocusMinutes(), Integer::sum);
+                timeOfDayMinutes.merge("night", analytics.getNightFocusMinutes(), Integer::sum);
+
+                if (analytics.getPomodorosCompleted() > 0) {
+                    int avgSessionLength =
+                            analytics.getFocusMinutes() / analytics.getPomodorosCompleted();
+                    sessionLengths.add(avgSessionLength);
+                }
+
+                completionRates.add(analytics.getCompletionRate());
+                totalProductivity += analytics.getProductivityScore();
+            }
+        }
+
+        DayOfWeek mostProductiveDay =
+                dayScores.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse(DayOfWeek.MONDAY);
+
+        String bestTimeOfDay =
+                timeOfDayMinutes.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse("morning");
+
+        int averageSessionLength =
+                sessionLengths.isEmpty()
+                        ? 0
+                        : (int)
+                                sessionLengths.stream()
+                                        .mapToInt(Integer::intValue)
+                                        .average()
+                                        .orElse(0);
+
+        double completionRateTrend = calculateTrend(completionRates);
+        double avgProductivity = daysAnalyzed > 0 ? totalProductivity / daysAnalyzed : 0;
+
+        return ProductivityInsightsDTO.builder()
+                .mostProductiveDay(mostProductiveDay)
+                .bestTimeOfDay(bestTimeOfDay)
+                .averageSessionLength(averageSessionLength)
+                .completionRateTrend(Math.round(completionRateTrend * 100.0) / 100.0)
+                .averageProductivityScore(Math.round(avgProductivity * 100.0) / 100.0)
+                .totalDaysAnalyzed(daysAnalyzed)
+                .build();
+    }
+
+    private double calculateTrend(List<Double> values) {
+        if (values.isEmpty() || values.size() < 2) {
+            return 0.0;
+        }
+
+        int midpoint = values.size() / 2;
+        List<Double> firstHalf = values.subList(0, midpoint);
+        List<Double> secondHalf = values.subList(midpoint, values.size());
+
+        double firstAvg = firstHalf.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double secondAvg =
+                secondHalf.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+        return secondAvg - firstAvg;
     }
 }
