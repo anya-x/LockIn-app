@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Grid,
   Chip,
@@ -10,6 +9,9 @@ import {
   ListItemText,
   Divider,
   CircularProgress,
+  Button,
+  IconButton,
+  Snackbar,
 } from "@mui/material";
 import {
   TrendingUp,
@@ -17,6 +19,9 @@ import {
   TrendingFlat,
   EmojiEvents,
   Warning as WarningIcon,
+  Share as ShareIcon,
+  Download as DownloadIcon,
+  ContentCopy as CopyIcon,
 } from "@mui/icons-material";
 import api from "../../services/api";
 import { useQuery } from "@tanstack/react-query";
@@ -45,6 +50,9 @@ interface WeeklyReportData {
 }
 
 const WeeklyReport: React.FC = () => {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
   const { data: report, isLoading: loading } = useQuery({
     queryKey: ["analytics", "weekly-report"],
     queryFn: async () => {
@@ -55,6 +63,7 @@ const WeeklyReport: React.FC = () => {
     },
     staleTime: Infinity,
   });
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -66,6 +75,82 @@ const WeeklyReport: React.FC = () => {
   if (!report || !report.recommendations) {
     return null;
   }
+
+  const generateShareText = () => {
+    const weekStart = new Date(report.weekStart).toLocaleDateString();
+    const weekEnd = new Date(report.weekEnd).toLocaleDateString();
+    const focusTime = report.totalFocusMinutes
+      ? `${Math.floor(report.totalFocusMinutes / 60)}h ${
+          report.totalFocusMinutes % 60
+        }m`
+      : "0h 0m";
+
+    return `📊 My Weekly Productivity Report (${weekStart} - ${weekEnd})
+
+✅ Tasks Completed: ${report.totalTasksCompleted || 0}
+🍅 Pomodoros: ${report.totalPomodoros || 0}
+⏱️ Focus Time: ${focusTime}
+📈 Avg Productivity: ${report.averageProductivityScore?.toFixed(0) || 0}/100
+
+Trends:
+• Productivity: ${report.productivityTrend}
+• Focus Time: ${report.focusTrend}
+
+${
+  report.bestDay
+    ? `🏆 Best Day: ${new Date(
+        report.bestDay.date
+      ).toLocaleDateString()} (${report.bestDay.score.toFixed(0)}/100)`
+    : ""
+}
+
+Top Recommendations:
+${report.recommendations
+  .slice(0, 3)
+  .map((rec, i) => `${i + 1}. ${rec}`)
+  .join("\n")}
+
+#Productivity #Focus #LockIn`;
+  };
+
+  const handleCopyToClipboard = () => {
+    const text = generateShareText();
+    navigator.clipboard.writeText(text).then(() => {
+      setSnackbarMessage("Copied to clipboard!");
+      setSnackbarOpen(true);
+    });
+  };
+
+  const handleDownload = () => {
+    const text = generateShareText();
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `weekly-report-${report.weekStart}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setSnackbarMessage("Report downloaded!");
+    setSnackbarOpen(true);
+  };
+
+  const handleShare = async () => {
+    const text = generateShareText();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "My Weekly Productivity Report",
+          text: text,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      handleCopyToClipboard();
+    }
+  };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
@@ -90,14 +175,53 @@ const WeeklyReport: React.FC = () => {
   };
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Weekly Report
-      </Typography>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        {new Date(report.weekStart).toLocaleDateString()} -{" "}
-        {new Date(report.weekEnd).toLocaleDateString()}
-      </Typography>
+    <Box>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            {new Date(report.weekStart).toLocaleDateString()} -{" "}
+            {new Date(report.weekEnd).toLocaleDateString()}
+          </Typography>
+        </Box>
+        <Box display="flex" gap={1}>
+          <IconButton
+            onClick={handleCopyToClipboard}
+            color="primary"
+            title="Copy to clipboard"
+            size="small"
+          >
+            <CopyIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            onClick={handleDownload}
+            color="primary"
+            title="Download report"
+            size="small"
+          >
+            <DownloadIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            onClick={handleShare}
+            color="primary"
+            title="Share report"
+            size="small"
+          >
+            <ShareIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -220,7 +344,7 @@ const WeeklyReport: React.FC = () => {
           </List>
         </Grid>
       </Grid>
-    </Paper>
+    </Box>
   );
 };
 

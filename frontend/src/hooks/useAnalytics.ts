@@ -58,3 +58,11 @@ export function useComparisonAnalytics(
     staleTime: 3600000,
   });
 }
+
+export function useProductivityInsights() {
+  return useQuery({
+    queryKey: ["analytics", "insights"],
+    queryFn: () => analyticsService.getProductivityInsights(),
+    staleTime: 3600000,
+  });
+}
