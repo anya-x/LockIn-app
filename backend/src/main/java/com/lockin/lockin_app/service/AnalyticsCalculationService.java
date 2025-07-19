@@ -68,6 +68,7 @@ public class AnalyticsCalculationService {
 
         // calculate all metrics
         calculateTaskMetrics(analytics, user, date);
+        calculateConsecutiveWorkDays(analytics, user, date);
         calculatePomodoroMetrics(analytics, user, date);
         calculateEisenhowerDistribution(analytics, user, date);
         calculateScores(analytics);
@@ -427,5 +428,43 @@ public class AnalyticsCalculationService {
             allEntries = true)
     public void invalidateCache(Long userId, LocalDate date) {
         log.debug("Invalidating analytics cache for user {} on {}", userId, date);
+    }
+
+    /**
+     * Calculates consecutive work days by looking backwards at previous days
+     *
+     * <p>A "work day" is defined as: >30 minutes focus time OR >1 task completed
+     */
+    private void calculateConsecutiveWorkDays(DailyAnalytics analytics, User user, LocalDate date) {
+        boolean isProductiveDay =
+                analytics.getFocusMinutes() >= 30 || analytics.getTasksCompleted() >= 1;
+
+        if (!isProductiveDay) {
+            analytics.setConsecutiveWorkDays(0);
+            return;
+        }
+
+        int consecutiveDays = 1;
+        LocalDate checkDate = date.minusDays(1);
+
+        for (int i = 0; i < 30; i++) {
+            DailyAnalytics previousDay =
+                    dailyAnalyticsRepository.findByUserAndDate(user, checkDate).orElse(null);
+            if (previousDay == null) {
+                break;
+            }
+            boolean wasPreviousDayProductive =
+                    previousDay.getFocusMinutes() >= 30 || previousDay.getTasksCompleted() >= 1;
+            if (wasPreviousDayProductive) {
+                consecutiveDays++;
+                checkDate = checkDate.minusDays(1);
+            } else {
+                break;
+            }
+        }
+
+        analytics.setConsecutiveWorkDays(consecutiveDays);
+
+        log.debug("Consecutive work days for {}: {}", date, consecutiveDays);
     }
 }
