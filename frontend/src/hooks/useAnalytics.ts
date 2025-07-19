@@ -72,7 +72,7 @@ export interface ProductivityInsightsData {
 }
 
 export function useProductivityInsights() {
-  const { data: rangeData } = useAnalyticsRange(30);
+  const { data: rangeData } = useAnalyticsRange(30); // Last 30 days for insights
 
   return useQuery({
     queryKey: ["analytics", "insights", rangeData?.length],
@@ -87,6 +87,7 @@ export function useProductivityInsights() {
         };
       }
 
+      // Calculate most productive day of week
       const dayScores: { [key: string]: { total: number; count: number } } = {};
       const daysOfWeek = [
         "SUNDAY",
@@ -117,6 +118,7 @@ export function useProductivityInsights() {
         Object.keys(dayScores)[0] || "MONDAY"
       );
 
+      // Calculate best time of day
       const timeScores = {
         morning: 0,
         afternoon: 0,
@@ -137,6 +139,7 @@ export function useProductivityInsights() {
         "morning"
       );
 
+      // Calculate average session length
       const totalPomodoros = rangeData.reduce(
         (sum, day) => sum + day.pomodorosCompleted,
         0
@@ -148,6 +151,7 @@ export function useProductivityInsights() {
       const averageSessionLength =
         totalPomodoros > 0 ? Math.round(totalMinutes / totalPomodoros) : 0;
 
+      // Calculate completion rate trend (last 7 days vs previous 7 days)
       const recentDays = rangeData.slice(-7);
       const previousDays = rangeData.slice(-14, -7);
 
@@ -182,5 +186,59 @@ export function useStreak() {
     queryKey: ["analytics", "streak"],
     queryFn: () => analyticsService.getStreak(),
     staleTime: 60000,
+  });
+}
+
+export interface TaskVelocity {
+  current: number;
+  previous: number;
+  change: number;
+  trend: "up" | "down" | "stable";
+}
+
+export function useTaskVelocity() {
+  const { data: rangeData } = useAnalyticsRange(14);
+
+  return useQuery({
+    queryKey: ["analytics", "velocity", rangeData?.length],
+    queryFn: (): TaskVelocity => {
+      if (!rangeData || rangeData.length < 7) {
+        return {
+          current: 0,
+          previous: 0,
+          change: 0,
+          trend: "stable",
+        };
+      }
+
+      const recentDays = rangeData.slice(-7);
+      const previousDays = rangeData.slice(-14, -7);
+
+      const currentAvg =
+        recentDays.reduce((sum, day) => sum + day.tasksCompleted, 0) /
+        recentDays.length;
+      const previousAvg =
+        previousDays.length > 0
+          ? previousDays.reduce((sum, day) => sum + day.tasksCompleted, 0) /
+            previousDays.length
+          : 0;
+
+      const change =
+        previousAvg > 0 ? ((currentAvg - previousAvg) / previousAvg) * 100 : 0;
+
+      let trend: "up" | "down" | "stable" = "stable";
+      if (Math.abs(change) >= 5) {
+        trend = change > 0 ? "up" : "down";
+      }
+
+      return {
+        current: Number(currentAvg.toFixed(1)),
+        previous: Number(previousAvg.toFixed(1)),
+        change: Number(change.toFixed(1)),
+        trend,
+      };
+    },
+    enabled: !!rangeData && rangeData.length >= 7,
+    staleTime: 3600000,
   });
 }
