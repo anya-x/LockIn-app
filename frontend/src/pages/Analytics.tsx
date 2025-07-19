@@ -56,6 +56,7 @@ import {
   useRefreshAnalytics,
   useTodayAnalytics,
   useComparisonAnalytics,
+  useStreak,
 } from "../hooks/useAnalytics";
 
 type PeriodType = "week" | "month";
@@ -93,6 +94,8 @@ const AnalyticsPage: React.FC = () => {
 
   const { data: rangeData = [], isLoading: rangeLoading } =
     useAnalyticsRange(days);
+
+  const { data: streakData } = useStreak();
 
   const getDateRanges = () => {
     const today = new Date();
@@ -294,6 +297,54 @@ const AnalyticsPage: React.FC = () => {
         />
       )}
 
+      {/* Streak Badge */}
+      {streakData && streakData.currentStreak > 0 && (
+        <Paper
+          sx={{
+            p: 2,
+            mb: 3,
+            bgcolor: "success.lighter",
+            border: "2px solid",
+            borderColor: "success.main",
+          }}
+        >
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
+            gap={2}
+          >
+            <Box display="flex" alignItems="center" gap={2}>
+              <Typography variant="h2" color="success.dark">
+                🔥
+              </Typography>
+              <Box>
+                <Typography variant="h5" color="success.dark" fontWeight="bold">
+                  {streakData.currentStreak} Day Streak!
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Keep it going! Your longest: {streakData.longestStreak} days
+                </Typography>
+              </Box>
+            </Box>
+            {streakData.currentStreak >= 7 && (
+              <Chip
+                label={
+                  streakData.currentStreak >= 30
+                    ? "🏆 Legendary!"
+                    : streakData.currentStreak >= 14
+                    ? "⭐ Amazing!"
+                    : "💪 On Fire!"
+                }
+                color="success"
+                sx={{ fontWeight: "bold", fontSize: "0.9rem" }}
+              />
+            )}
+          </Box>
+        </Paper>
+      )}
+
       {/* Key Metrics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Tasks Completed */}
@@ -350,6 +401,14 @@ const AnalyticsPage: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {todayAnalytics.pomodorosCompleted} sessions today
+                {comparisonData && comparisonData.current.breakMinutes > 0 && (
+                  <>
+                    {" "}
+                    • {Math.floor(
+                      comparisonData.current.breakMinutes / 60
+                    )}h {comparisonData.current.breakMinutes % 60}m breaks
+                  </>
+                )}
               </Typography>
               {todayAnalytics.interruptedSessions > 0 && (
                 <Typography
@@ -367,6 +426,22 @@ const AnalyticsPage: React.FC = () => {
                   % completion)
                 </Typography>
               )}
+              {comparisonData &&
+                comparisonData.current.focusMinutes > 0 &&
+                comparisonData.current.breakMinutes > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="success.main"
+                    display="block"
+                  >
+                    Ratio{" "}
+                    {(
+                      comparisonData.current.focusMinutes /
+                      comparisonData.current.breakMinutes
+                    ).toFixed(1)}
+                    :1 (work:break)
+                  </Typography>
+                )}
               {comparisonData && (
                 <Box display="flex" alignItems="center" gap={1}>
                   {getTrendIcon(comparisonData.focusTrend)}
@@ -697,6 +772,177 @@ const AnalyticsPage: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           </Paper>
+
+          {/* Eisenhower Matrix */}
+          {todayAnalytics &&
+            todayAnalytics.urgentImportantCount +
+              todayAnalytics.notUrgentImportantCount +
+              todayAnalytics.urgentNotImportantCount +
+              todayAnalytics.notUrgentNotImportantCount >
+              0 && (
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Task Priority Distribution
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
+                  How you categorize your tasks by urgency and importance
+                </Typography>
+                <Grid container spacing={2}>
+                  {/* Urgent & Important (Do First) */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        border: "2px solid",
+                        borderColor: "error.main",
+                        bgcolor: "error.lighter",
+                      }}
+                    >
+                      <CardContent>
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={1}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            color="error.dark"
+                            fontWeight="bold"
+                          >
+                            🔥 Urgent & Important
+                          </Typography>
+                          <Chip
+                            label={todayAnalytics.urgentImportantCount}
+                            color="error"
+                            size="small"
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Do First - Critical tasks requiring immediate
+                          attention
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Not Urgent & Important (Schedule) */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        border: "2px solid",
+                        borderColor: "success.main",
+                        bgcolor: "success.lighter",
+                      }}
+                    >
+                      <CardContent>
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={1}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            color="success.dark"
+                            fontWeight="bold"
+                          >
+                            📅 Not Urgent & Important
+                          </Typography>
+                          <Chip
+                            label={todayAnalytics.notUrgentImportantCount}
+                            color="success"
+                            size="small"
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Schedule - Strategic work for long-term success
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Urgent & Not Important (Delegate) */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        border: "2px solid",
+                        borderColor: "warning.main",
+                        bgcolor: "warning.lighter",
+                      }}
+                    >
+                      <CardContent>
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={1}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            color="warning.dark"
+                            fontWeight="bold"
+                          >
+                            ⚡ Urgent & Not Important
+                          </Typography>
+                          <Chip
+                            label={todayAnalytics.urgentNotImportantCount}
+                            color="warning"
+                            size="small"
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Delegate - Time-sensitive but low-value tasks
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Not Urgent & Not Important (Eliminate) */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        border: "2px solid",
+                        borderColor: "grey.400",
+                        bgcolor: "grey.100",
+                      }}
+                    >
+                      <CardContent>
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={1}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                            fontWeight="bold"
+                          >
+                            ❌ Not Urgent & Not Important
+                          </Typography>
+                          <Chip
+                            label={todayAnalytics.notUrgentNotImportantCount}
+                            color="default"
+                            size="small"
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Eliminate - Distractions and time-wasters
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )}
         </>
       )}
 

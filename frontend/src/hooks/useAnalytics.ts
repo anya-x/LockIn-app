@@ -1,5 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { analyticsService, type Analytics } from "../services/analyticsService";
+import {
+  analyticsService,
+  type Analytics,
+  type StreakStats,
+} from "../services/analyticsService";
 
 export function useTodayAnalytics() {
   return useQuery({
@@ -83,7 +87,6 @@ export function useProductivityInsights() {
         };
       }
 
-      // calculate most productive day of week
       const dayScores: { [key: string]: { total: number; count: number } } = {};
       const daysOfWeek = [
         "SUNDAY",
@@ -114,7 +117,6 @@ export function useProductivityInsights() {
         Object.keys(dayScores)[0] || "MONDAY"
       );
 
-      // calculate best time of day
       const timeScores = {
         morning: 0,
         afternoon: 0,
@@ -135,7 +137,6 @@ export function useProductivityInsights() {
         "morning"
       );
 
-      // calculate average session length
       const totalPomodoros = rangeData.reduce(
         (sum, day) => sum + day.pomodorosCompleted,
         0
@@ -147,7 +148,6 @@ export function useProductivityInsights() {
       const averageSessionLength =
         totalPomodoros > 0 ? Math.round(totalMinutes / totalPomodoros) : 0;
 
-      // calculate completion rate trend (last 7 days vs previous 7 days)
       const recentDays = rangeData.slice(-7);
       const previousDays = rangeData.slice(-14, -7);
 
@@ -174,5 +174,13 @@ export function useProductivityInsights() {
     },
     enabled: !!rangeData && rangeData.length > 0,
     staleTime: 3600000,
+  });
+}
+
+export function useStreak() {
+  return useQuery({
+    queryKey: ["analytics", "streak"],
+    queryFn: () => analyticsService.getStreak(),
+    staleTime: 60000,
   });
 }

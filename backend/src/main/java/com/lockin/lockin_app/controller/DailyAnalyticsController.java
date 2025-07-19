@@ -7,6 +7,7 @@ import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.service.AnalyticsCalculationService;
+import com.lockin.lockin_app.service.StreakService;
 import com.lockin.lockin_app.service.UserService;
 import com.lockin.lockin_app.service.WeeklyReportService;
 
@@ -31,6 +32,7 @@ public class DailyAnalyticsController {
     private final UserService userService;
     private final WeeklyReportService weeklyReportService;
     private final UserRepository userRepository;
+    private final StreakService streakService;
 
     @GetMapping("/today")
     public ResponseEntity<DailyAnalyticsDTO> getTodayAnalytics(
@@ -172,5 +174,20 @@ public class DailyAnalyticsController {
 
         return ResponseEntity.ok().build();
     }
-    
+
+    @GetMapping("/streak")
+    public ResponseEntity<StreakService.StreakStats> getStreak(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/analytics/streak: User: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // Update streak based on today's activity
+        streakService.updateStreak(userId);
+
+        StreakService.StreakStats stats = streakService.getStreakStats(userId);
+
+        return ResponseEntity.ok(stats);
+    }
 }
