@@ -82,7 +82,7 @@ public class TaskService {
 
         if (request.getCategoryId() != null) {
             Category category =
-                    categoryService.getCategoryForUser(
+                    categoryService.getCategoryEntityForUser(
                             request.getCategoryId(), task.getUser().getId());
             task.setCategory(category);
         } else {

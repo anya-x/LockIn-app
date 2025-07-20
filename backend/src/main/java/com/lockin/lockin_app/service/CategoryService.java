@@ -176,4 +176,29 @@ public class CategoryService {
             throw new UnauthorizedException("You do not have permission to access this category");
         }
     }
+
+    /**
+     * Gets category entity for user
+     *
+     * @param categoryId category id
+     * @param userId user id
+     * @return category entity
+     * @throws ResourceNotFoundException if category not found
+     * @throws UnauthorizedException if user doesn't own the category
+     */
+    @Transactional(readOnly = true)
+    public Category getCategoryEntityForUser(Long categoryId, Long userId) {
+
+        log.debug("Getting category entity: {} for user: {}", categoryId, userId);
+
+        Category category =
+                categoryRepository
+                        .findById(categoryId)
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Category", "id", categoryId));
+
+        validateCategoryOwnership(category, userId);
+
+        return category;
+    }
 }
