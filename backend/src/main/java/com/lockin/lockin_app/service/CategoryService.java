@@ -1,5 +1,7 @@
 package com.lockin.lockin_app.service;
 
+import com.lockin.lockin_app.dto.CategoryRequestDTO;
+import com.lockin.lockin_app.dto.CategoryResponseDTO;
 import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
@@ -14,7 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,8 +31,22 @@ public class CategoryService {
     private final TaskRepository taskRepository;
 
     @Transactional(readOnly = true)
-    public List<Category> getUserCategories(Long userId) {
-        return categoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<CategoryResponseDTO> getUserCategories(Long userId) {
+        List<Category> categories = categoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+        Map<Long, Long> taskCountsPerCategory = new HashMap<>();
+        List<Object[]> counts = categoryRepository.countTasksPerCategoryForUser(userId);
+        for (Object[] row : counts) {
+            taskCountsPerCategory.put((Long) row[0], (Long) row[1]);
+        }
+
+        return categories.stream()
+                .map(
+                        category ->
+                                CategoryResponseDTO.fromEntity(
+                                        category,
+                                        taskCountsPerCategory.getOrDefault(category.getId(), 0L)))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -38,7 +57,7 @@ public class CategoryService {
      * @throws ResourceNotFoundException if duplicate name exists
      */
     @Transactional
-    public Category createCategory(Long userId, Category category) {
+    public CategoryResponseDTO createCategory(Long userId, CategoryRequestDTO request) {
         log.info("Creating category for user: {}", userId);
 
         User user =
@@ -46,17 +65,24 @@ public class CategoryService {
                         .findById(userId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        if (categoryRepository.existsByUserIdAndName(userId, category.getName())) {
+        if (categoryRepository.existsByUserIdAndName(userId, request.getName())) {
             throw new ResourceNotFoundException(
-                    "Category with name '" + category.getName() + "' already exists");
+                    "Category with name '" + request.getName() + "' already exists");
         }
 
+        Category category = new Category();
+        category.setName(request.getName());
+        category.setColor(request.getColor());
+        category.setIcon(request.getIcon());
         category.setUser(user);
+
         Category saved = categoryRepository.save(category);
 
         log.info("Created category: {}", saved.getId());
 
-        return saved;
+        Long taskCount = categoryRepository.countTasksByCategoryId(saved.getId());
+
+        return CategoryResponseDTO.fromEntity(saved, taskCount);
     }
 
     /**
@@ -65,12 +91,13 @@ public class CategoryService {
      * <p>If name is changed, validates new name is unique.
      *
      * @param categoryId category id to update
-     * @param updatedCategory
+     * @param request DTO containing updated fields
      * @param userId owner of category
-     * @return returns updated category
+     * @return returns updated category as DTO
      */
     @Transactional
-    public Category updateCategory(Long categoryId, Long userId, Category updatedCategory) {
+    public CategoryResponseDTO updateCategory(
+            Long categoryId, Long userId, CategoryRequestDTO request) {
         log.info("Updating category: {} for user: {}", categoryId, userId);
 
         Category category =
@@ -81,22 +108,23 @@ public class CategoryService {
 
         validateCategoryOwnership(category, userId);
 
-        // check for duplicate name only if name is being changed
-        if (!category.getName().equals(updatedCategory.getName())
-                && categoryRepository.existsByUserIdAndName(userId, updatedCategory.getName())) {
+        if (!category.getName().equals(request.getName())
+                && categoryRepository.existsByUserIdAndName(userId, request.getName())) {
             throw new ResourceNotFoundException(
-                    "Category with name '" + updatedCategory.getName() + "' already exists");
+                    "Category with name '" + request.getName() + "' already exists");
         }
 
-        category.setName(updatedCategory.getName());
-        category.setColor(updatedCategory.getColor());
-        category.setIcon(updatedCategory.getIcon());
+        category.setName(request.getName());
+        category.setColor(request.getColor());
+        category.setIcon(request.getIcon());
 
         Category saved = categoryRepository.save(category);
 
         log.info("Updated category: {}", saved.getId());
 
-        return saved;
+        Long taskCount = categoryRepository.countTasksByCategoryId(saved.getId());
+
+        return CategoryResponseDTO.fromEntity(saved, taskCount);
     }
 
     /** Deletes a category, associated tasks will have their category set to null */
@@ -121,7 +149,7 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public Category getCategoryForUser(Long categoryId, Long userId) {
+    public CategoryResponseDTO getCategoryForUser(Long categoryId, Long userId) {
         log.debug("Getting category: {} for user: {}", categoryId, userId);
 
         Category category =
@@ -132,7 +160,9 @@ public class CategoryService {
 
         validateCategoryOwnership(category, userId);
 
-        return category;
+        Long taskCount = categoryRepository.countTasksByCategoryId(categoryId);
+
+        return CategoryResponseDTO.fromEntity(category, taskCount);
     }
 
     /** validates category ownership */
