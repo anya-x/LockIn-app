@@ -5,6 +5,7 @@ import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
 import com.lockin.lockin_app.entity.Goal;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.GoalRepository;
@@ -12,6 +13,7 @@ import com.lockin.lockin_app.repository.GoalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class GoalService {
 
     private final GoalRepository goalRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Creates a new goal for the user
@@ -192,6 +195,13 @@ public class GoalService {
         if (goal.getProgressPercentage() >= 100.0 && !goal.getCompleted()) {
             goal.setCompleted(true);
             goal.setCompletedDate(LocalDate.now());
+
+            log.debug(
+                    "Publishing GoalCompletedEvent for goal {} and user {}",
+                    goal.getId(),
+                    goal.getUser().getId());
+            eventPublisher.publishEvent(
+                    new GoalCompletedEvent(this, goal.getUser().getId(), goal.getId()));
         }
     }
 
@@ -295,7 +305,6 @@ public class GoalService {
                 log.debug("Task completion outside date range for goal {}", goal.getId());
                 continue;
             }
-
 
             if (goal.getTargetTasks() != null && goal.getTargetTasks() > 0) {
 

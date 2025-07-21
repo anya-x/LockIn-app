@@ -2,17 +2,21 @@ package com.lockin.lockin_app.entity;
 
 import jakarta.persistence.*;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "badges")
+@Table(
+        name = "badges",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "badge_type"})})
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Badge {
 
     @Id
@@ -23,20 +27,15 @@ public class Badge {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "badge_type", nullable = false)
+    private BadgeType badgeType;
 
-    @Column(nullable = false)
-    private String description;
-
-    @Column(nullable = false)
-    private String icon;
-
-    @CreationTimestamp
-    @Column(name = "earned_at", nullable = false, updatable = false)
+    @Column(name = "earned_at", nullable = false)
     private LocalDateTime earnedAt;
 
-    @Column(name = "badge_type", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private BadgeType badgeType;
+    @PrePersist
+    protected void onCreate() {
+        earnedAt = LocalDateTime.now();
+    }
 }
