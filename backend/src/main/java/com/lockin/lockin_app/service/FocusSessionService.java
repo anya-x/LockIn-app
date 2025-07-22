@@ -43,8 +43,8 @@ public class FocusSessionService {
                 sessionRepository.findByUserIdOrderByStartedAtDescWithRelations(userId);
 
         return sessions.stream()
-                       .map(FocusSessionResponseDTO::fromEntity)
-                       .collect(Collectors.toList());
+                .map(FocusSessionResponseDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -137,16 +137,14 @@ public class FocusSessionService {
         session.setCompleted(true);
 
         FocusSession updated = sessionRepository.save(session);
-        FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
 
-        goalService.updateGoalsFromSession(userId, response);
-
-        log.debug("Publishing PomodoroCompletedEvent for session {} and user {}", sessionId, userId);
+        log.debug(
+                "Publishing PomodoroCompletedEvent for session {} and user {}", sessionId, userId);
         eventPublisher.publishEvent(new PomodoroCompletedEvent(this, userId, sessionId));
 
         log.info("Completed session: {}", updated.getId());
 
-        return response;
+        return FocusSessionResponseDTO.fromEntity(updated);
     }
 
     @Transactional
@@ -173,8 +171,6 @@ public class FocusSessionService {
         FocusSession updated = sessionRepository.save(session);
         FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
 
-        goalService.updateGoalsFromSession(userId, response);
-
         log.info("Updated session: {} with {} minutes", updated.getId(), actualMinutes);
 
         return FocusSessionResponseDTO.fromEntity(updated);
@@ -190,8 +186,8 @@ public class FocusSessionService {
                         userId, SessionType.WORK, startOfDay, endOfDay);
 
         return sessions.stream()
-                       .map(FocusSessionResponseDTO::fromEntity)
-                       .collect(Collectors.toList());
+                .map(FocusSessionResponseDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
