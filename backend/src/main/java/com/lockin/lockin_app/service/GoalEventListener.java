@@ -9,12 +9,11 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
-
 
 @Slf4j
 @Component
@@ -25,8 +24,7 @@ public class GoalEventListener {
     private final FocusSessionRepository focusSessionRepository;
     private final TaskRepository taskRepository;
 
-    @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onTaskCompleted(TaskCompletedEvent event) {
         log.debug(
                 "TaskCompletedEvent received for user {} and task {}",
@@ -47,16 +45,17 @@ public class GoalEventListener {
                                                 ? task.getCompletedAt()
                                                 : LocalDateTime.now();
                                 goalService.updateGoalsFromTaskCompletion(userId, completionTime);
-                                log.info("Updated goals after task {} completion for user {}", taskId, userId);
+                                log.info(
+                                        "Updated goals after task {} completion for user {}",
+                                        taskId,
+                                        userId);
                             });
         } catch (Exception e) {
             log.error("Failed to update goals for task completion: {}", e.getMessage(), e);
         }
     }
 
-
-    @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onPomodoroCompleted(PomodoroCompletedEvent event) {
         log.debug(
                 "PomodoroCompletedEvent received for user {} and session {}",
@@ -85,14 +84,11 @@ public class GoalEventListener {
         }
     }
 
-    @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onGoalCompleted(GoalCompletedEvent event) {
         log.info(
                 "GoalCompletedEvent received for user {} and goal {}",
                 event.getUserId(),
                 event.getGoalId());
-
-
     }
 }
