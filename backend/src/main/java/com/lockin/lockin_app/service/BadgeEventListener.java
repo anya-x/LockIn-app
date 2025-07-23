@@ -14,9 +14,10 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Component
@@ -30,19 +31,18 @@ public class BadgeEventListener {
     private final GoalRepository goalRepository;
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTaskCompleted(TaskCompletedEvent event) {
         log.debug("Task completed event received for user {}", event.getUserId());
 
         Long userId = event.getUserId();
-        long completedTasks =
-                taskRepository.countByUserIdAndStatus(userId, TaskStatus.COMPLETED);
+        long completedTasks = taskRepository.countByUserIdAndStatus(userId, TaskStatus.COMPLETED);
 
         checkAndAwardBadges(userId, completedTasks, BadgeCategory.TASK);
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onPomodoroCompleted(PomodoroCompletedEvent event) {
         log.debug("Pomodoro completed event received for user {}", event.getUserId());
 
@@ -53,7 +53,7 @@ public class BadgeEventListener {
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onGoalCompleted(GoalCompletedEvent event) {
         log.debug("Goal completed event received for user {}", event.getUserId());
 
@@ -71,12 +71,16 @@ public class BadgeEventListener {
      * @param category the badge category to check
      */
     private void checkAndAwardBadges(Long userId, long count, BadgeCategory category) {
-        BadgeType.getByCategory(category).forEach(badgeType -> {
-            if (count >= badgeType.getRequirement()
-                    && !badgeRepository.existsByUserIdAndBadgeType(userId, badgeType)) {
-                badgeService.awardBadge(userId, badgeType);
-                log.info("Awarded {} badge to user {}", badgeType.getName(), userId);
-            }
-        });
+        BadgeType.getByCategory(category)
+                .forEach(
+                        badgeType -> {
+                            if (count >= badgeType.getRequirement()
+                                    && !badgeRepository.existsByUserIdAndBadgeType(
+                                            userId, badgeType)) {
+                                badgeService.awardBadge(userId, badgeType);
+                                log.info(
+                                        "Awarded {} badge to user {}", badgeType.getName(), userId);
+                            }
+                        });
     }
 }
