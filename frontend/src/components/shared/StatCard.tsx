@@ -1,28 +1,39 @@
 import React from "react";
-import { Box, Paper, Typography, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 
 interface StatCardProps {
   label: string;
-  value: number;
-  color: string;
-  icon: React.ReactNode;
+  value: string | number;
+  icon?: React.ReactNode;
+  color?: string;
+  trend?: {
+    value: string;
+    positive: boolean;
+  };
+  subtitle?: string;
   loading?: boolean;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
   label,
   value,
-  color,
   icon,
+  color,
+  trend,
+  subtitle,
   loading = false,
 }) => {
   return (
-    <Paper
+    <Box
       sx={{
-        p: 2,
-        textAlign: "center",
-        position: "relative",
-        minHeight: 120,
+        p: 3,
+        borderRadius: 3,
+        backgroundColor: "#FFFFFF",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)",
+        transition: "box-shadow 0.2s ease",
+        "&:hover": {
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        },
       }}
     >
       {loading ? (
@@ -36,16 +47,52 @@ const StatCard: React.FC<StatCardProps> = ({
         </Box>
       ) : (
         <>
-          <Box mb={1}>{icon}</Box>
-          <Typography variant="h4" sx={{ color, fontWeight: "bold" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            {icon && (
+              <Box sx={{ color: color || "#667BC6", opacity: 0.9 }}>{icon}</Box>
+            )}
+            <Typography
+              variant="body2"
+              sx={{ color: "#5C6BC0", fontWeight: 500 }}
+            >
+              {label}
+            </Typography>
+          </Box>
+
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 600,
+              color: "#1A237E",
+              mb: trend || subtitle ? 1 : 0,
+            }}
+          >
             {value}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {label}
-          </Typography>
+
+          {trend && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: trend.positive ? "#66BB6A" : "#EF5350",
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+              }}
+            >
+              {trend.positive ? "↑" : "↓"} {trend.value}
+            </Typography>
+          )}
+
+          {subtitle && (
+            <Typography variant="caption" sx={{ color: "#9E9E9E" }}>
+              {subtitle}
+            </Typography>
+          )}
         </>
       )}
-    </Paper>
+    </Box>
   );
 };
 
