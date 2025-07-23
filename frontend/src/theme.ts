@@ -3,25 +3,62 @@ import { createTheme } from "@mui/material/styles";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#667BC6",
-      light: "#9FA8DA",
-      dark: "#4A5FA8",
-      contrastText: "#FFFFFF",
+      main: "#9CAF88",
+      light: "#C5D5B5",
+      dark: "#7A8F6F",
+      contrastText: "#2D3A2E",
     },
     secondary: {
-      main: "#7986CB",
-      light: "#AAB6FE",
-      dark: "#5C6BC0",
-      contrastText: "#FFFFFF",
+      main: "#B8C9A8",
+      light: "#D4E3C8",
+      dark: "#9AB187",
+      contrastText: "#2D3A2E",
     },
     background: {
-      default: "#F5F7FF",
+      default: "#F8FAF6",
       paper: "#FFFFFF",
     },
     text: {
-      primary: "#1A237E",
-      secondary: "#5C6BC0",
+      primary: "#2D3A2E",
+      secondary: "#5A6C5B",
     },
+    grey: {
+      50: "#F8F9F8",
+      100: "#F1F3F0",
+      200: "#E4E8E1",
+      300: "#CED6C9",
+      400: "#A3AE9E",
+      500: "#7A8576",
+      600: "#5A6C5B",
+      700: "#454F46",
+      800: "#2D3A2E",
+      900: "#1A231B",
+    },
+    success: {
+      main: "#88B878",
+      light: "#B5D4A8",
+      dark: "#6A9B5A",
+      contrastText: "#1A3A14",
+    },
+    warning: {
+      main: "#E8C468",
+      light: "#F3DFA0",
+      dark: "#D4AA3C",
+      contrastText: "#4A3A0F",
+    },
+    error: {
+      main: "#D89B9B",
+      light: "#EBC4C4",
+      dark: "#C47676",
+      contrastText: "#5A2424",
+    },
+    info: {
+      main: "#8AAFC9",
+      light: "#B5D0E0",
+      dark: "#6A91AD",
+      contrastText: "#1E3A4A",
+    },
+    divider: "rgba(90, 108, 91, 0.12)",
   },
 
   typography: {
@@ -33,41 +70,20 @@ const theme = createTheme({
       letterSpacing: "-0.025em",
       lineHeight: 1.2,
     },
-    h2: {
-      fontSize: "1.875rem",
-      fontWeight: 600,
-      letterSpacing: "-0.025em",
-    },
-    h3: {
-      fontSize: "1.5rem",
-      fontWeight: 600,
-      letterSpacing: "-0.02em",
-    },
-    h4: {
-      fontSize: "1.25rem",
-      fontWeight: 600,
-      letterSpacing: "-0.02em",
-    },
-    h5: {
-      fontSize: "1.125rem",
-      fontWeight: 600,
-    },
-    h6: {
-      fontSize: "1rem",
-      fontWeight: 600,
-    },
-    body1: {
-      fontSize: "0.9375rem",
-      lineHeight: 1.6,
-    },
-    body2: {
-      fontSize: "0.875rem",
-      lineHeight: 1.5,
-    },
-    button: {
-      textTransform: "none",
+    h2: { fontSize: "1.875rem", fontWeight: 600, letterSpacing: "-0.025em" },
+    h3: { fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em" },
+    h4: { fontSize: "1.25rem", fontWeight: 600, letterSpacing: "-0.02em" },
+    h5: { fontSize: "1.125rem", fontWeight: 600 },
+    h6: { fontSize: "1rem", fontWeight: 600 },
+    body1: { fontSize: "0.9375rem", lineHeight: 1.6 },
+    body2: { fontSize: "0.875rem", lineHeight: 1.5 },
+    caption: {
+      fontSize: "0.75rem",
       fontWeight: 500,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
     },
+    button: { textTransform: "none", fontWeight: 500 },
   },
 
   shape: {
@@ -76,9 +92,7 @@ const theme = createTheme({
 
   components: {
     MuiButton: {
-      defaultProps: {
-        disableElevation: true,
-      },
+      defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
           borderRadius: 10,
@@ -89,9 +103,7 @@ const theme = createTheme({
       },
     },
     MuiCard: {
-      defaultProps: {
-        elevation: 0,
-      },
+      defaultProps: { elevation: 0 },
       styleOverrides: {
         root: {
           borderRadius: 16,
