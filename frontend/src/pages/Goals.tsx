@@ -25,6 +25,7 @@ import GoalsDialog from "../components/goals/GoalsDialog";
 import { useGoals, useCreateGoal, useDeleteGoal } from "../hooks/useGoals";
 import { useTimer } from "../context/TimerContext";
 import { useQueryClient } from "@tanstack/react-query";
+import PageHeader from "../components/shared/PageHeader";
 
 const Goals: React.FC = () => {
   const {
@@ -117,26 +118,20 @@ const Goals: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Typography variant="h4" component="h1">
-          Goals
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Create Goal
-        </Button>
-      </Box>
+    <Box>
+      <PageHeader
+        title="Goals"
+        subtitle="Track your pomodoro goals and stay productive!"
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            Create Goal
+          </Button>
+        }
+      />
 
       <Tabs
         value={tabValue}
