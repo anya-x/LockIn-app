@@ -37,7 +37,6 @@ import CategoryList from "./Categories";
 import EisenhowerMatrix from "./Matrix";
 import FocusStatistics from "./Statistics";
 import PomodoroTimer from "./PomodoroTimer";
-import TaskLinkingDiagnostic from "../components/TaskLinkingDiagnosic";
 import Categories from "./Categories";
 import Matrix from "./Matrix";
 import Statistics from "./Statistics";
