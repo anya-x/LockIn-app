@@ -27,6 +27,7 @@ import {
   Analytics as AnalyticsIcon,
   Checklist as GoalsIcon,
   EmojiEvents as BadgesIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -36,6 +37,7 @@ import CategoryList from "./Categories";
 import EisenhowerMatrix from "./Matrix";
 import FocusStatistics from "./Statistics";
 import PomodoroTimer from "./PomodoroTimer";
+import TaskLinkingDiagnostic from "../components/TaskLinkingDiagnosic";
 import Categories from "./Categories";
 import Matrix from "./Matrix";
 import Statistics from "./Statistics";
@@ -43,6 +45,7 @@ import Tasks from "./Tasks";
 import Analytics from "./Analytics";
 import Goals from "./Goals";
 import Badges from "./Badges";
+import Settings from "./Settings";
 
 const drawerWidth = 240;
 
@@ -201,7 +204,8 @@ const Dashboard: React.FC = () => {
     | "timer"
     | "analytics"
     | "goals"
-    | "badges" => {
+    | "badges"
+    | "settings" => {
     const path = location.pathname;
     if (path === "/tasks") return "tasks";
     if (path === "/categories") return "categories";
@@ -211,6 +215,7 @@ const Dashboard: React.FC = () => {
     if (path === "/analytics") return "analytics";
     if (path === "/goals") return "goals";
     if (path === "/badges") return "badges";
+    if (path === "/settings") return "settings";
     return "tasks";
   };
 
@@ -231,6 +236,7 @@ const Dashboard: React.FC = () => {
         | "analytics"
         | "goals"
         | "badges"
+        | "settings"
     ) => {
       navigate(`/${view}`);
       if (isMobile) {
@@ -352,6 +358,17 @@ const Dashboard: React.FC = () => {
       <Divider />
       <List>
         <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleMenuItemClick("settings")}
+            selected={currentView === "settings"}
+          >
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
           <ListItemButton onClick={logout}>
             <ListItemIcon>
               <LogoutIcon />
@@ -381,6 +398,8 @@ const Dashboard: React.FC = () => {
         return <Goals />;
       case "badges":
         return <Badges />;
+      case "settings":
+        return <Settings />;
       default:
         return <Tasks />;
     }
