@@ -68,7 +68,7 @@ public class ClaudeAPIClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("x-api-key", anthropicConfig.getKey());
-            headers.set("anthropic-version", "2025-05-14");
+            headers.set("anthropic-version", "2023-06-01");
 
             // request body
             Map<String, Object> requestBody = new HashMap<>();
