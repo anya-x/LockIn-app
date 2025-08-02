@@ -12,7 +12,7 @@ public class ClaudeResponseDTO {
     private int outputTokens;
     private String model;
 
-    public double getEstimatedCostUSD() {
+    public double getEstimatedCost() {
         double inputCost = (inputTokens / 1_000_000.0) * 3.0;
         double outputCost = (outputTokens / 1_000_000.0) * 15.0;
         return inputCost + outputCost;

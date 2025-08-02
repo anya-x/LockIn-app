@@ -28,12 +28,9 @@ public class AITestController {
     }
 
     @GetMapping("/breakdown")
-    public TaskBreakdownResultDTO testBreakdown() {
-        Task task = new Task();
-        task.setTitle("Build authentication system");
-        task.setDescription("User login and registration");
-
-
-        return taskBreakdownService.breakdownTask(task);
+    public TaskBreakdownResultDTO testBreakdown(
+            @RequestParam String title,
+            @RequestParam(required = false) String description) {
+        return taskBreakdownService.breakdownTask(title, description);
     }
 }

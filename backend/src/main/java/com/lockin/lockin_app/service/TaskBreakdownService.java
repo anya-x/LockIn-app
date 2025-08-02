@@ -1,17 +1,16 @@
 package com.lockin.lockin_app.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.dto.SubtaskSuggestionDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
-import com.lockin.lockin_app.entity.Task;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -20,64 +19,71 @@ import java.util.List;
 public class TaskBreakdownService {
 
     private final ClaudeAPIClientService claudeAPIClientService;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public TaskBreakdownResultDTO breakdownTask(Task task) {
-        log.info("Breaking down task: {}", task.getTitle());
+    public TaskBreakdownResultDTO breakdownTask(String title, String description) {
+        log.info("Breaking down task: {}", title);
 
-        String systemPrompt = "You are a productivity assistant that helps break down tasks.";
+        String systemPrompt = """
+            You are an expert at breaking down complex tasks into smaller, actionable steps.
+            
+            When given a task, you should:
+            1. Break it into 3-7 concrete, actionable subtasks
+            2. Each subtask should be specific and achievable
+            3. Estimate time needed for each (in minutes)
+            4. Suggest priority (urgent/important/normal/low)
+            
+            Respond ONLY with a JSON array of subtasks, no other text:
+            [
+              {
+                "title": "Specific action to take",
+                "description": "Brief details about this step",
+                "estimatedMinutes": 30,
+                "priority": "urgent"
+              }
+            ]
+            
+            Priority levels: urgent, important, normal, low
+            Time estimates: Be realistic (15-120 minutes per subtask)
+            """;
 
         String userPrompt = String.format(
-                "Break down this task into subtasks:\n\n" +
-                        "Task: %s\n" +
-                        "Description: %s\n\n" +
-                        "Return 3-7 subtasks as a JSON array.",
-                task.getTitle(),
-                task.getDescription() != null ? task.getDescription() : "No description"
+                "Break down this task:\n\nTitle: %s\n\nDescription: %s\n\nProvide the breakdown as JSON.",
+                title,
+                description != null && !description.trim().isEmpty()
+                        ? description
+                        : "No additional context provided"
         );
 
         try {
             ClaudeResponseDTO response = claudeAPIClientService.sendMessage(systemPrompt, userPrompt);
 
-            String jsonText = response.getText();
+            String jsonText = response.getText().trim();
 
-            JsonNode subtasks = objectMapper.readTree(jsonText);
+            if (jsonText.startsWith("```json")) {
+                jsonText = jsonText.substring(7);
+            }
+            if (jsonText.startsWith("```")) {
+                jsonText = jsonText.substring(3); 
+            }
+            if (jsonText.endsWith("```")) {
+                jsonText = jsonText.substring(0, jsonText.length() - 3);
+            }
+            jsonText = jsonText.trim();
+            
+            List<SubtaskSuggestionDTO> subtasks = objectMapper.readValue(
+                    jsonText,
+                    new TypeReference<List<SubtaskSuggestionDTO>>() {}
+            );
 
-            TaskBreakdownResultDTO result = new TaskBreakdownResultDTO();
-            result.setOriginalTask(task);
-            result.setSubtasks(parseSubtasks(subtasks));
-            result.setTokensUsed(response.getTotalTokens());
-            result.setCostUSD(response.getEstimatedCostUSD());
-
-            log.info("Successfully broke down task into {} subtasks",
-                     result.getSubtasks().size());
-
-            return result;
+            return new TaskBreakdownResultDTO(
+                    subtasks,
+                    response.getEstimatedCost(),
+                    response.getTotalTokens()
+            );
 
         } catch (Exception e) {
-            log.error("Failed to break down task: {}", e.getMessage());
-            throw new RuntimeException("AI task breakdown failed: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to break down task: " + e.getMessage(), e);
         }
-    }
-
-    private List<SubtaskSuggestionDTO> parseSubtasks(JsonNode json) {
-        List<SubtaskSuggestionDTO> subtasks = new ArrayList<>();
-
-        if (json.isArray()) {
-            for (JsonNode node : json) {
-                SubtaskSuggestionDTO subtask = new SubtaskSuggestionDTO();
-                subtask.setTitle(node.get("title").asText());
-                subtask.setDescription(node.has("description") ?
-                                               node.get("description").asText() : null);
-                subtask.setEstimatedMinutes(node.has("estimatedMinutes") ?
-                                                    node.get("estimatedMinutes").asInt() : 30);
-                subtask.setPriority(node.has("priority") ?
-                                            node.get("priority").asText() : "MEDIUM");
-
-                subtasks.add(subtask);
-            }
-        }
-
-        return subtasks;
     }
 }
