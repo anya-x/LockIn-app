@@ -1,7 +1,8 @@
-package com.lockin.lockin_app.ai;
+package com.lockin.lockin_app.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.config.AnthropicConfig;
 import com.lockin.lockin_app.exception.ClaudeAPIException;
 
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -19,20 +21,21 @@ import java.util.Map;
 
 @Slf4j
 @Component
+@Service
 @RequiredArgsConstructor
-public class ClaudeAPIClient {
+public class ClaudeAPIClientService {
 
     private final AnthropicConfig anthropicConfig;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
-    public ClaudeResponse sendMessage(String systemPrompt, String userMessage) {
+    public ClaudeResponseDTO sendMessage(String systemPrompt, String userMessage) {
         return sendMessageWithRetry(systemPrompt, userMessage, 3);
     }
 
 
-    private ClaudeResponse sendMessageWithRetry(
+    private ClaudeResponseDTO sendMessageWithRetry(
             String systemPrompt, String userMessage, int maxRetries) {
 
         int attempt = 0;
@@ -48,7 +51,7 @@ public class ClaudeAPIClient {
 
                 if (attempt < maxRetries) {
                     try {
-                        Thread.sleep(1000 * attempt); // Basic exponential backoff
+                        Thread.sleep(1000 * attempt);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         throw new ClaudeAPIException("Retry interrupted", ie);
@@ -60,7 +63,7 @@ public class ClaudeAPIClient {
         throw new ClaudeAPIException(
                 "Claude API failed after " + maxRetries + " attempts", lastException);
     }
-    private ClaudeResponse sendMessageInternal(String systemPrompt, String userMessage) {
+    private ClaudeResponseDTO sendMessageInternal(String systemPrompt, String userMessage) {
         log.info("Calling Claude API");
 
         try {
@@ -104,7 +107,7 @@ public class ClaudeAPIClient {
     }
 
 
-    private ClaudeResponse parseResponse(String responseBody) {
+    private ClaudeResponseDTO parseResponse(String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
 
@@ -130,7 +133,7 @@ public class ClaudeAPIClient {
                     inputTokens,
                     outputTokens);
 
-            return new ClaudeResponse(text, inputTokens, outputTokens, root.get("model").asText());
+            return new ClaudeResponseDTO(text, inputTokens, outputTokens, root.get("model").asText());
 
         } catch (Exception e) {
             log.error("Failed to parse Claude API response", e);
