@@ -1,12 +1,12 @@
 package com.lockin.lockin_app.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.dto.SubtaskSuggestionDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.lockin.lockin_app.entity.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,69 +21,117 @@ public class TaskBreakdownService {
     private final ClaudeAPIClientService claudeAPIClientService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+
+    public TaskBreakdownResultDTO breakdownTask(Task task) {
+        log.info("Breaking down task entity: {}", task.getTitle());
+
+        if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Task title cannot be empty");
+        }
+
+        TaskBreakdownResultDTO result = breakdownTask(
+                task.getTitle(),
+                task.getDescription()
+        );
+        result.setOriginalTask(task);
+        return result;
+    }
+
     public TaskBreakdownResultDTO breakdownTask(String title, String description) {
         log.info("Breaking down task: {}", title);
 
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Task title cannot be empty");
+        }
+
         String systemPrompt = """
-            You are an expert at breaking down complex tasks into smaller, actionable steps.
-            
-            When given a task, you should:
-            1. Break it into 3-7 concrete, actionable subtasks
-            2. Each subtask should be specific and achievable
-            3. Estimate time needed for each (in minutes)
-            4. Suggest priority (urgent/important/normal/low)
-            
-            Respond ONLY with a JSON array of subtasks, no other text:
-            [
-              {
-                "title": "Specific action to take",
-                "description": "Brief details about this step",
-                "estimatedMinutes": 30,
-                "priority": "urgent"
-              }
-            ]
-            
-            Priority levels: urgent, important, normal, low
-            Time estimates: Be realistic (15-120 minutes per subtask)
+            You are a productivity assistant that breaks down tasks into actionable subtasks.
+            You MUST always respond with valid JSON object, even for vague tasks.
+            If the task is vague, make reasonable assumptions and create general subtasks.
+
+            Your response must include:
+            1. A brief reasoning explaining your breakdown approach
+            2. An array of 3-7 actionable subtasks
             """;
 
         String userPrompt = String.format(
-                "Break down this task:\n\nTitle: %s\n\nDescription: %s\n\nProvide the breakdown as JSON.",
+                """
+                Break down this task into 3-7 actionable subtasks.
+
+                Task Title: "%s"
+                Description: "%s"
+
+                RULES:
+                1. ALWAYS return valid JSON object (no other text)
+                2. If task is vague, make reasonable assumptions
+                3. Each subtask must start with action verb
+                4. Estimate realistic time (15-90 minutes per subtask)
+                5. Assign priority: HIGH (urgent), MEDIUM (important), or LOW (optional)
+
+                JSON Format (respond with ONLY this, no other text):
+                {
+                  "reasoning": "Brief explanation of your breakdown approach",
+                  "subtasks": [
+                    {
+                      "title": "Action verb + specific task",
+                      "description": "What and how to do it",
+                      "estimatedMinutes": 30,
+                      "priority": "MEDIUM"
+                    }
+                  ]
+                }
+
+                CRITICAL: Return ONLY the JSON object, absolutely no other text.
+                """,
                 title,
                 description != null && !description.trim().isEmpty()
                         ? description
-                        : "No additional context provided"
+                        : "No additional details provided"
         );
 
         try {
             ClaudeResponseDTO response = claudeAPIClientService.sendMessage(systemPrompt, userPrompt);
+            String jsonText = cleanJsonResponse(response.getText());
 
-            String jsonText = response.getText().trim();
+            JsonNode root = objectMapper.readTree(jsonText);
 
-            if (jsonText.startsWith("```json")) {
-                jsonText = jsonText.substring(7);
-            }
-            if (jsonText.startsWith("```")) {
-                jsonText = jsonText.substring(3); 
-            }
-            if (jsonText.endsWith("```")) {
-                jsonText = jsonText.substring(0, jsonText.length() - 3);
-            }
-            jsonText = jsonText.trim();
-            
+            String reasoning = root.has("reasoning")
+                    ? root.get("reasoning").asText()
+                    : "No reasoning provided";
+
             List<SubtaskSuggestionDTO> subtasks = objectMapper.readValue(
-                    jsonText,
+                    root.get("subtasks").toString(),
                     new TypeReference<List<SubtaskSuggestionDTO>>() {}
             );
 
+            log.info("Successfully broke down task into {} subtasks", subtasks.size());
+
             return new TaskBreakdownResultDTO(
+                    null,
                     subtasks,
+                    response.getTotalTokens(),
                     response.getEstimatedCost(),
-                    response.getTotalTokens()
+                    reasoning
             );
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to break down task: " + e.getMessage(), e);
+            log.error("Failed to break down task: {}", e.getMessage());
+            throw new RuntimeException("AI task breakdown failed: " + e.getMessage(), e);
         }
+    }
+
+    private String cleanJsonResponse(String response) {
+        String cleaned = response.trim();
+
+        if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.substring(7);
+        } else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.substring(3);
+        }
+        if (cleaned.endsWith("```")) {
+            cleaned = cleaned.substring(0, cleaned.length() - 3);
+        }
+
+        return cleaned.trim();
     }
 }

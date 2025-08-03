@@ -207,23 +207,23 @@ public class TaskService {
 
         matrix.setDoFirst(
                 taskRepository.findByQuadrant(userId, true, true).stream()
-                        .map(TaskResponseDTO::fromEntity)
-                        .collect(Collectors.toList()));
+                              .map(TaskResponseDTO::fromEntity)
+                              .collect(Collectors.toList()));
 
         matrix.setSchedule(
                 taskRepository.findByQuadrant(userId, false, true).stream()
-                        .map(TaskResponseDTO::fromEntity)
-                        .collect(Collectors.toList()));
+                              .map(TaskResponseDTO::fromEntity)
+                              .collect(Collectors.toList()));
 
         matrix.setDelegate(
                 taskRepository.findByQuadrant(userId, true, false).stream()
-                        .map(TaskResponseDTO::fromEntity)
-                        .collect(Collectors.toList()));
+                              .map(TaskResponseDTO::fromEntity)
+                              .collect(Collectors.toList()));
 
         matrix.setEliminate(
                 taskRepository.findByQuadrant(userId, false, false).stream()
-                        .map(TaskResponseDTO::fromEntity)
-                        .collect(Collectors.toList()));
+                              .map(TaskResponseDTO::fromEntity)
+                              .collect(Collectors.toList()));
         return matrix;
     }
 
@@ -355,6 +355,19 @@ public class TaskService {
         log.info("Found {} incomplete tasks for user {}", tasks.size(), userId);
 
         return tasks.stream().map(TaskResponseDTO::fromEntity).collect(Collectors.toList());
+    }
+
+
+    public Task getTaskEntity(Long taskId, Long userId) {
+        log.debug("Fetching task entity: {} for user: {}", taskId, userId);
+
+        Task task = taskRepository
+                .findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+
+        validateTaskOwnership(task, userId);
+
+        return task;
     }
 
     /**
