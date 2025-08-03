@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.lockin.lockin_app.entity.Task;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskBreakdownResultDTO {
+    @JsonIgnore
     private Task originalTask;
     private List<SubtaskSuggestionDTO> subtasks;
     private int tokensUsed;
