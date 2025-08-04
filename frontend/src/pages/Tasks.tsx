@@ -30,6 +30,7 @@ import {
   RadioButtonUnchecked,
   Schedule,
   TrendingUp,
+  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { debounce } from "lodash";
 import { taskService, type TaskStatistics } from "../services/taskService";
@@ -39,6 +40,7 @@ import StatCard from "../components/shared/StatCard";
 import PageHeader from "../components/shared/PageHeader";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
+import AITaskBreakdown from "../components/tasks/AITaskBreakdown";
 
 interface PaginatedResponse<T> {
   content: T[];
@@ -57,6 +59,10 @@ const Tasks: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  const [aiBreakdownOpen, setAiBreakdownOpen] = useState(false);
+  const [taskForBreakdown, setTaskForBreakdown] = useState<Task | undefined>(
+    undefined
+  );
   const [sortBy, setSortBy] = useState<"date" | "priority" | "status">("date");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -311,6 +317,35 @@ const Tasks: React.FC = () => {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setTaskToDelete(null);
+  };
+
+  const handleAIBreakdownClick = (task: Task) => {
+    setTaskForBreakdown(task);
+    setAiBreakdownOpen(true);
+  };
+
+  const handleAIBreakdownClose = () => {
+    setAiBreakdownOpen(false);
+    setTaskForBreakdown(undefined);
+  };
+
+  const handleCreateSubtasks = async (subtasks: TaskRequest[]) => {
+    try {
+      for (const subtask of subtasks) {
+        await taskService.createTask(subtask);
+      }
+      if (hasActiveFilters()) {
+        fetchFilteredTasks(currentPage);
+      } else {
+        fetchTasks();
+      }
+      fetchStatistics();
+
+      alert(`Successfully created ${subtasks.length} subtasks!`);
+    } catch (err: any) {
+      console.error("Failed to create subtasks:", err);
+      throw err;
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -622,6 +657,17 @@ const Tasks: React.FC = () => {
                   </Box>
                   <Box sx={{ display: "flex", gap: 0.5 }}>
                     <IconButton
+                      onClick={() => handleAIBreakdownClick(task)}
+                      size="small"
+                      sx={{
+                        color: "#9333EA",
+                        "&:hover": { backgroundColor: alpha("#9333EA", 0.1) },
+                      }}
+                      title="AI Breakdown"
+                    >
+                      <AutoAwesomeIcon />
+                    </IconButton>
+                    <IconButton
                       onClick={() => handleOpenModal(task)}
                       size="small"
                       sx={{
@@ -693,6 +739,15 @@ const Tasks: React.FC = () => {
         onSave={handleSaveTask}
         task={editingTask}
       />
+
+      {taskForBreakdown && (
+        <AITaskBreakdown
+          task={taskForBreakdown}
+          open={aiBreakdownOpen}
+          onClose={handleAIBreakdownClose}
+          onCreateSubtasks={handleCreateSubtasks}
+        />
+      )}
     </Box>
   );
 };

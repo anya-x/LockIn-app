@@ -1,0 +1,47 @@
+import api from "./api";
+import type { Task } from "../types/task";
+
+export interface SubtaskSuggestion {
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+}
+
+export interface TaskBreakdownResult {
+  originalTask: Task | null;
+  subtasks: SubtaskSuggestion[];
+  tokensUsed: number;
+  costUSD: number;
+  reasoning: string;
+}
+
+export interface TaskBreakdownRequest {
+  title: string;
+  description?: string;
+}
+
+export const aiService = {
+  breakdownTask: async (taskId: number): Promise<TaskBreakdownResult> => {
+    const response = await api.post<TaskBreakdownResult>(
+      `/ai/breakdown/${taskId}`
+    );
+    return response.data;
+  },
+
+  breakdownPreview: async (
+    title: string,
+    description?: string
+  ): Promise<TaskBreakdownResult> => {
+    const response = await api.post<TaskBreakdownResult>(
+      "/ai/breakdown-preview",
+      {
+        title,
+        description: description || "",
+      }
+    );
+    return response.data;
+  },
+};
+
+export default aiService;
