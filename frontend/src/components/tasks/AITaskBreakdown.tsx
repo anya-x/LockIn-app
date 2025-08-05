@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,9 +16,16 @@ import {
   Divider,
   alpha,
   useTheme,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  IconButton,
 } from "@mui/material";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AddTaskIcon from "@mui/icons-material/AddTask";
+import DeleteIcon from "@mui/icons-material/Delete";
 import type { Task, TaskRequest } from "../../types/task";
 import {
   aiService,
@@ -55,6 +62,15 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   const [result, setResult] = useState<TaskBreakdownResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editableSubtasks, setEditableSubtasks] = useState<SubtaskSuggestion[]>(
+    []
+  );
+
+  useEffect(() => {
+    if (result?.subtasks) {
+      setEditableSubtasks([...result.subtasks]);
+    }
+  }, [result]);
 
   const handleBreakdown = async () => {
     setLoading(true);
@@ -74,12 +90,27 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
     }
   };
 
+  const handleUpdateSubtask = (
+    index: number,
+    field: keyof SubtaskSuggestion,
+    value: any
+  ) => {
+    const updated = [...editableSubtasks];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditableSubtasks(updated);
+  };
+
+  const handleRemoveSubtask = (index: number) => {
+    const updated = editableSubtasks.filter((_, i) => i !== index);
+    setEditableSubtasks(updated);
+  };
+
   const handleCreateSubtasks = async () => {
-    if (!result) return;
+    if (editableSubtasks.length === 0) return;
 
     setCreating(true);
     try {
-      const subtaskRequests: TaskRequest[] = result.subtasks.map(
+      const subtaskRequests: TaskRequest[] = editableSubtasks.map(
         (subtask: SubtaskSuggestion) => ({
           title: subtask.title,
           description: subtask.description,
@@ -188,25 +219,37 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
               </Box>
             )}
 
-            <Typography
-              variant="subtitle2"
-              gutterBottom
-              sx={{ fontWeight: 600 }}
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              mb={1}
             >
-              Suggested Subtasks ({result.subtasks.length}):
-            </Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Review & Edit Subtasks ({editableSubtasks.length}):
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Total:{" "}
+                {editableSubtasks.reduce(
+                  (sum, st) => sum + st.estimatedMinutes,
+                  0
+                )}{" "}
+                minutes
+              </Typography>
+            </Box>
 
             <List sx={{ mt: 2 }}>
-              {result.subtasks.map((subtask, index) => (
+              {editableSubtasks.map((subtask, index) => (
                 <ListItem
                   key={index}
                   sx={{
                     border: "1px solid",
                     borderColor: "divider",
                     borderRadius: 1,
-                    mb: 1,
+                    mb: 2,
                     flexDirection: "column",
-                    alignItems: "flex-start",
+                    alignItems: "stretch",
+                    p: 2,
                     transition: "all 0.2s ease",
                     "&:hover": {
                       borderColor: theme.palette.primary.main,
@@ -214,45 +257,82 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
                     },
                   }}
                 >
-                  <Box display="flex" alignItems="center" width="100%" mb={1}>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 500 }}
-                        >
-                          {index + 1}. {subtask.title}
-                        </Typography>
+                  <Box display="flex" gap={1} mb={2}>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      sx={{ minWidth: 24 }}
+                    >
+                      {index + 1}.
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Task Title"
+                      value={subtask.title}
+                      onChange={(e) =>
+                        handleUpdateSubtask(index, "title", e.target.value)
                       }
-                    />
-                    <Chip
-                      label={subtask.priority}
                       size="small"
-                      color={getPriorityColor(subtask.priority)}
+                      variant="outlined"
                     />
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemoveSubtask(index)}
+                      title="Remove subtask"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
                   </Box>
 
-                  {subtask.description && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ pl: 2 }}
-                    >
-                      {subtask.description}
-                    </Typography>
-                  )}
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="Description"
+                    value={subtask.description}
+                    onChange={(e) =>
+                      handleUpdateSubtask(index, "description", e.target.value)
+                    }
+                    size="small"
+                    sx={{ mb: 2 }}
+                  />
 
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ pl: 2, mt: 0.5 }}
-                  >
-                    ⏱ Estimated: {subtask.estimatedMinutes} minutes
-                  </Typography>
+                  <Box display="flex" gap={2}>
+                    <TextField
+                      type="number"
+                      label="Estimated Minutes"
+                      value={subtask.estimatedMinutes}
+                      onChange={(e) =>
+                        handleUpdateSubtask(
+                          index,
+                          "estimatedMinutes",
+                          parseInt(e.target.value) || 0
+                        )
+                      }
+                      size="small"
+                      sx={{ width: 150 }}
+                      InputProps={{ inputProps: { min: 5, max: 480 } }}
+                    />
+
+                    <FormControl size="small" sx={{ width: 150 }}>
+                      <InputLabel>Priority</InputLabel>
+                      <Select
+                        value={subtask.priority}
+                        label="Priority"
+                        onChange={(e) =>
+                          handleUpdateSubtask(index, "priority", e.target.value)
+                        }
+                      >
+                        <MenuItem value="HIGH">🔴 High</MenuItem>
+                        <MenuItem value="MEDIUM">🟡 Medium</MenuItem>
+                        <MenuItem value="LOW">🟢 Low</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
                 </ListItem>
               ))}
             </List>
-
             <Box
               mt={2}
               pt={2}
@@ -301,11 +381,13 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
               creating ? <CircularProgress size={16} /> : <AddTaskIcon />
             }
             onClick={handleCreateSubtasks}
-            disabled={creating}
+            disabled={creating || editableSubtasks.length === 0}
           >
             {creating
               ? "Creating..."
-              : `Create ${result.subtasks.length} Subtasks`}
+              : `Create ${editableSubtasks.length} Subtask${
+                  editableSubtasks.length !== 1 ? "s" : ""
+                }`}
           </Button>
         )}
       </DialogActions>
