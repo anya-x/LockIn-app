@@ -21,6 +21,12 @@ export interface TaskBreakdownRequest {
   description?: string;
 }
 
+export interface EnhancementResult {
+  enhancedDescription: string;
+  tokensUsed: number;
+  costUSD: number;
+}
+
 export const aiService = {
   breakdownTask: async (taskId: number): Promise<TaskBreakdownResult> => {
     const response = await api.post<TaskBreakdownResult>(
@@ -38,6 +44,20 @@ export const aiService = {
       {
         title,
         description: description || "",
+      }
+    );
+    return response.data;
+  },
+
+  enhanceDescription: async (
+    title: string,
+    description: string
+  ): Promise<EnhancementResult> => {
+    const response = await api.post<EnhancementResult>(
+      "/ai/enhance-description",
+      {
+        title,
+        description,
       }
     );
     return response.data;
