@@ -1,9 +1,11 @@
 package com.lockin.lockin_app.controller;
 
+import com.lockin.lockin_app.dto.EnhancementResultDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.service.DescriptionEnhancementService;
 import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
 import com.lockin.lockin_app.service.TaskService;
@@ -16,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+
 @Slf4j
 @RestController
 @RequestMapping("/api/ai")
@@ -26,6 +29,8 @@ public class AIController {
     private final TaskService taskService;
     private final UserService userService;
     private final RateLimitService rateLimitService;
+    private final DescriptionEnhancementService descriptionEnhancementService;
+
 
     @PostMapping("/breakdown/{taskId}")
     public ResponseEntity<TaskBreakdownResultDTO> breakdownTask(
@@ -100,6 +105,39 @@ public class AIController {
         } catch (Exception e) {
             log.error("AI breakdown preview failed: {}", e.getMessage());
             throw new RuntimeException("AI task breakdown failed: " + e.getMessage(), e);
+        }
+    }
+
+    @PostMapping("/enhance-description")
+    public ResponseEntity<EnhancementResultDTO> enhanceDescription(
+            @Valid @RequestBody TaskBreakdownRequestDTO request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("AI description enhancement requested by user {} for task: {}",
+                 userDetails.getUsername(), request.getTitle());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        rateLimitService.checkRateLimit(userId);
+
+
+        try {
+            EnhancementResultDTO result =
+                    descriptionEnhancementService.enhanceDescription(
+                            request.getTitle(),
+                            request.getDescription(),
+                            userId
+                    );
+
+            log.info("AI description enhancement successful: {} tokens, ${} cost",
+                     result.getTokensUsed(),
+                     String.format("%.4f", result.getCostUSD()));
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("AI description enhancement failed: {}", e.getMessage());
+            throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
         }
     }
 }
