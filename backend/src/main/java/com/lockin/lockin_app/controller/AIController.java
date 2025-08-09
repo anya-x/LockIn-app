@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
 import com.lockin.lockin_app.service.TaskService;
 import com.lockin.lockin_app.service.UserService;
@@ -24,6 +25,7 @@ public class AIController {
     private final TaskBreakdownService taskBreakdownService;
     private final TaskService taskService;
     private final UserService userService;
+    private final RateLimitService rateLimitService;
 
     @PostMapping("/breakdown/{taskId}")
     public ResponseEntity<TaskBreakdownResultDTO> breakdownTask(
@@ -33,6 +35,8 @@ public class AIController {
         log.info("AI breakdown requested for task {} by user {}", taskId, userDetails.getUsername());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        rateLimitService.checkRateLimit(userId);
 
         Task task = taskService.getTaskEntity(taskId, userId);
 
@@ -67,6 +71,8 @@ public class AIController {
                  userDetails.getUsername(), request.getTitle());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        rateLimitService.checkRateLimit(userId);
 
         Task tempTask = new Task();
         tempTask.setTitle(request.getTitle());
