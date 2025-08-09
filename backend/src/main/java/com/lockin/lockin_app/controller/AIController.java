@@ -37,7 +37,11 @@ public class AIController {
         Task task = taskService.getTaskEntity(taskId, userId);
 
         try {
-            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(task);
+            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(
+                    task.getTitle(),
+                    task.getDescription(),
+                    userId
+            );
 
             log.info("AI breakdown successful: {} subtasks, ${} cost",
                      result.getSubtasks().size(),
@@ -72,7 +76,11 @@ public class AIController {
         tempTask.setUser(user);
 
         try {
-            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(tempTask);
+            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(
+                    request.getTitle(),
+                    request.getDescription(),
+                    userId
+            );
 
             log.info("AI breakdown preview successful: {} subtasks, ${} cost",
                      result.getSubtasks().size(),
