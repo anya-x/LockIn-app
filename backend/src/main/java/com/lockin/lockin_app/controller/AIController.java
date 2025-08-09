@@ -120,7 +120,6 @@ public class AIController {
 
         rateLimitService.checkRateLimit(userId);
 
-
         try {
             EnhancementResultDTO result =
                     descriptionEnhancementService.enhanceDescription(
@@ -135,6 +134,9 @@ public class AIController {
 
             return ResponseEntity.ok(result);
 
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid request: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("AI description enhancement failed: {}", e.getMessage());
             throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
