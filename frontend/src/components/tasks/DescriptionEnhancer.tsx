@@ -141,3 +141,4 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
     </Box>
   );
 };
+export default DescriptionEnhancer;
