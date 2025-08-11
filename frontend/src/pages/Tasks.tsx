@@ -41,6 +41,7 @@ import PageHeader from "../components/shared/PageHeader";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/tasks/AITaskBreakdown";
+import DailyBriefing from "../components/dashboard/DailyBriefing";
 
 interface PaginatedResponse<T> {
   content: T[];
@@ -506,7 +507,9 @@ const Tasks: React.FC = () => {
           ))}
         </Grid>
       </Box>
-
+      <Box mb={3}>
+        <DailyBriefing />
+      </Box>
       <TaskFilters
         filters={filters}
         categories={categories}
