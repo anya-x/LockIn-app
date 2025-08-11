@@ -1,7 +1,5 @@
 package com.lockin.lockin_app.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lockin.lockin_app.dto.BriefingResultDTO;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.entity.AIUsage;
@@ -13,13 +11,11 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,33 +26,10 @@ public class DailyBriefingService {
     private final TaskRepository taskRepository;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
 
-
+    @Cacheable(value = "dailyBriefings", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public BriefingResultDTO generateDailyBriefing(Long userId) {
         log.info("Generating daily briefing for user: {}", userId);
-
-        User user = userRepository.findById(userId)
-                                  .orElseThrow(() -> new RuntimeException("User not found"));
-
-        LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        AIUsage cachedBriefing = aiUsageRepository.findTodaysBriefing(user, "BRIEFING", startOfDay);
-
-        if (cachedBriefing != null && cachedBriefing.getResponseDetails() != null) {
-            log.info("Returning cached briefing for user: {}", userId);
-            try {
-                BriefingResultDTO cached = objectMapper.readValue(
-                        cachedBriefing.getResponseDetails(),
-                        BriefingResultDTO.class
-                );
-                log.info("Cache hit! Saved API call for daily briefing");
-                return cached;
-            } catch (JsonProcessingException e) {
-                log.warn("Failed to parse cached briefing, regenerating: {}", e.getMessage());
-            }
-        }
-
-        log.info("No cached briefing found, generating new one for user: {}", userId);
 
         List<Task> q1UrgentImportant = taskRepository.findByQuadrantExcludingStatus(
                 userId, true, true, TaskStatus.COMPLETED);
@@ -87,27 +60,23 @@ public class DailyBriefingService {
         );
 
         String systemPrompt = """
-            You are a productivity coach providing a daily task briefing.
-            Analyze the user's tasks and provide:
-            1. A brief motivational summary (2-3 sentences)
-            2. Top 3 priority recommendations for today
-            3. Time management insight
-
-            Be encouraging but realistic. Keep it concise and actionable.
+            You are a warm, supportive productivity companion. Speak directly to the user in a personal, conversational tone.
+            Keep your briefing short and genuine - like a friend checking in.
+            Focus on what matters most TODAY.
             """;
 
         String userPrompt = String.format(
                 """
-                Here are my tasks for today, grouped by priority:
+                Good morning! Here's what I have on my plate today:
 
                 %s
 
-                Provide a brief daily briefing with:
-                1. Motivational summary (2-3 sentences)
-                2. Top 3 tasks I should focus on today
-                3. One time management tip
+                Give me a quick daily briefing:
+                - What's my focus for today? (Pick the top 3 things)
+                - A short, genuine pep talk (1-2 sentences - keep it real)
+                - One practical tip to tackle this list
 
-                Keep it concise and actionable. Format as plain text.
+                Keep it casual and concise. Write like you're talking to me, not reading from a script.
                 """,
                 taskSummary
         );
@@ -142,19 +111,15 @@ public class DailyBriefingService {
                     response.getEstimatedCost()
             );
 
+            User user = userRepository.findById(userId)
+                                      .orElseThrow(() -> new RuntimeException("User not found"));
+
             AIUsage usage = new AIUsage();
             usage.setUser(user);
             usage.setFeatureType("BRIEFING");
             usage.setTokensUsed(response.getTotalTokens());
             usage.setCostUSD(response.getEstimatedCost());
             usage.setRequestDetails(String.format("{\"taskCount\":%d}", totalActiveTasks));
-
-            try {
-                String cachedResponse = objectMapper.writeValueAsString(result);
-                usage.setResponseDetails(cachedResponse);
-            } catch (JsonProcessingException e) {
-                log.warn("Failed to cache briefing result: {}", e.getMessage());
-            }
 
             aiUsageRepository.save(usage);
 
