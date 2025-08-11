@@ -140,7 +140,7 @@ public class AIController {
             throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
         }
     }
-    
+
     @GetMapping("/daily-briefing")
     public ResponseEntity<BriefingResultDTO> getDailyBriefing(
             @AuthenticationPrincipal UserDetails userDetails) {
