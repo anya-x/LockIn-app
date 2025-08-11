@@ -56,6 +56,17 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query(
             "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND t.status <> :excludedStatus "
+                    + "AND t.isUrgent = :isUrgent AND t.isImportant = :isImportant "
+                    + "ORDER BY t.dueDate ASC")
+    List<Task> findByQuadrantExcludingStatus(
+            @Param("userId") Long userId,
+            @Param("isUrgent") Boolean isUrgent,
+            @Param("isImportant") Boolean isImportant,
+            @Param("excludedStatus") TaskStatus excludedStatus);
+
+    @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
                     + "AND (LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) "
                     + "OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) "
                     + "ORDER BY t.createdAt DESC")

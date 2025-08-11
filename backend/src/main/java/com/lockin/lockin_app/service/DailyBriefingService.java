@@ -1,8 +1,10 @@
 package com.lockin.lockin_app.service;
 
+import com.lockin.lockin_app.dto.BriefingResultDTO;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.entity.AIUsage;
 import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
@@ -24,17 +26,24 @@ public class DailyBriefingService {
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
 
-    public BriefingResult generateDailyBriefing(Long userId) {
+
+    public BriefingResultDTO generateDailyBriefing(Long userId) {
         log.info("Generating daily briefing for user: {}", userId);
 
-        // Get all active tasks for the user
-        List<Task> tasks = taskRepository.findByUserId(userId);
-        List<Task> activeTasks = tasks.stream()
-                                      .filter(task -> !"COMPLETED".equals(task.getStatus()))
-                                      .toList();
+        List<Task> q1UrgentImportant = taskRepository.findByQuadrantExcludingStatus(
+                userId, true, true, TaskStatus.COMPLETED);
+        List<Task> q2ImportantNotUrgent = taskRepository.findByQuadrantExcludingStatus(
+                userId, false, true, TaskStatus.COMPLETED);
+        List<Task> q3UrgentNotImportant = taskRepository.findByQuadrantExcludingStatus(
+                userId, true, false, TaskStatus.COMPLETED);
+        List<Task> q4NeitherUrgentNorImportant = taskRepository.findByQuadrantExcludingStatus(
+                userId, false, false, TaskStatus.COMPLETED);
 
-        if (activeTasks.isEmpty()) {
-            return new BriefingResult(
+        int totalActiveTasks = q1UrgentImportant.size() + q2ImportantNotUrgent.size() +
+                q3UrgentNotImportant.size() + q4NeitherUrgentNorImportant.size();
+
+        if (totalActiveTasks == 0) {
+            return new BriefingResultDTO(
                     "You have no active tasks. Great job staying on top of things!",
                     0, 0, 0, 0,
                     List.of(),
@@ -42,23 +51,6 @@ public class DailyBriefingService {
             );
         }
 
-        List<Task> q1UrgentImportant = activeTasks.stream()
-                                                   .filter(t -> t.isUrgent() && t.isImportant())
-                                                   .toList();
-
-        List<Task> q2ImportantNotUrgent = activeTasks.stream()
-                                                     .filter(t -> !t.isUrgent() && t.isImportant())
-                                                     .toList();
-
-        List<Task> q3UrgentNotImportant = activeTasks.stream()
-                                                     .filter(t -> t.isUrgent() && !t.isImportant())
-                                                     .toList();
-
-        List<Task> q4NeitherUrgentNorImportant = activeTasks.stream()
-                                                            .filter(t -> !t.isUrgent() && !t.isImportant())
-                                                            .toList();
-
-        // Build task summary for AI
         String taskSummary = buildTaskSummary(
                 q1UrgentImportant,
                 q2ImportantNotUrgent,
@@ -66,7 +58,6 @@ public class DailyBriefingService {
                 q4NeitherUrgentNorImportant
         );
 
-        // Generate AI summary
         String systemPrompt = """
             You are a productivity coach providing a daily task briefing.
             Analyze the user's tasks and provide:
@@ -102,7 +93,6 @@ public class DailyBriefingService {
                                                           .map(Task::getTitle)
                                                           .toList();
 
-            // If less than 3 in Q1, add from Q2
             if (topPriorities.size() < 3) {
                 List<String> additional = q2ImportantNotUrgent.stream()
                                                               .limit(3 - topPriorities.size())
@@ -121,16 +111,16 @@ public class DailyBriefingService {
             usage.setFeatureType("BRIEFING");
             usage.setTokensUsed(response.getTotalTokens());
             usage.setCostUSD(response.getEstimatedCost());
-            usage.setRequestDetails(String.format("{\"taskCount\":%d}", activeTasks.size()));
+            usage.setRequestDetails(String.format("{\"taskCount\":%d}", totalActiveTasks));
 
             aiUsageRepository.save(usage);
 
             log.info("Daily briefing generated: {} tasks, {} tokens, ${} cost",
-                     activeTasks.size(),
+                     totalActiveTasks,
                      response.getTotalTokens(),
                      String.format("%.4f", response.getEstimatedCost()));
 
-            return new BriefingResult(
+            return new BriefingResultDTO(
                     briefing,
                     q1UrgentImportant.size(),
                     q2ImportantNotUrgent.size(),
@@ -147,9 +137,6 @@ public class DailyBriefingService {
         }
     }
 
-    /**
-     * Build a text summary of tasks grouped by quadrant.
-     */
     private String buildTaskSummary(
             List<Task> q1, List<Task> q2, List<Task> q3, List<Task> q4) {
 
@@ -180,15 +167,4 @@ public class DailyBriefingService {
 
         return summary.toString();
     }
-
-    public record BriefingResult(
-            String summary,
-            int urgentImportantCount,
-            int importantCount,
-            int urgentCount,
-            int otherCount,
-            List<String> topPriorities,
-            int tokensUsed,
-            double costUSD
-    ) {}
 }
