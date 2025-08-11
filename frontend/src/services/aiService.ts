@@ -27,6 +27,17 @@ export interface EnhancementResult {
   costUSD: number;
 }
 
+export interface BriefingResult {
+  summary: string;
+  urgentImportantCount: number;
+  importantCount: number;
+  urgentCount: number;
+  otherCount: number;
+  topPriorities: string[];
+  tokensUsed: number;
+  costUSD: number;
+}
+
 export const aiService = {
   breakdownTask: async (taskId: number): Promise<TaskBreakdownResult> => {
     const response = await api.post<TaskBreakdownResult>(
@@ -60,6 +71,11 @@ export const aiService = {
         description,
       }
     );
+    return response.data;
+  },
+
+  getDailyBriefing: async (): Promise<BriefingResult> => {
+    const response = await api.get<BriefingResult>("/ai/daily-briefing");
     return response.data;
   },
 };
