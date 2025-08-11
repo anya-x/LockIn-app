@@ -1,15 +1,12 @@
 package com.lockin.lockin_app.controller;
 
+import com.lockin.lockin_app.dto.BriefingResultDTO;
 import com.lockin.lockin_app.dto.EnhancementResultDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
-import com.lockin.lockin_app.service.DescriptionEnhancementService;
-import com.lockin.lockin_app.service.RateLimitService;
-import com.lockin.lockin_app.service.TaskBreakdownService;
-import com.lockin.lockin_app.service.TaskService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +27,7 @@ public class AIController {
     private final UserService userService;
     private final RateLimitService rateLimitService;
     private final DescriptionEnhancementService descriptionEnhancementService;
+    private final DailyBriefingService dailyBriefingService;
 
 
     @PostMapping("/breakdown/{taskId}")
@@ -140,6 +138,31 @@ public class AIController {
         } catch (Exception e) {
             log.error("AI description enhancement failed: {}", e.getMessage());
             throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
+        }
+    }
+    
+    @GetMapping("/daily-briefing")
+    public ResponseEntity<BriefingResultDTO> getDailyBriefing(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("Daily briefing requested by user: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        rateLimitService.checkRateLimit(userId);
+
+        try {
+            BriefingResultDTO result =
+                    dailyBriefingService.generateDailyBriefing(userId);
+
+            log.info("Daily briefing generated: {} tokens, ${} cost",
+                     result.getTokensUsed(),
+                     String.format("%.4f", result.getCostUSD()));
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("Daily briefing generation failed: {}", e.getMessage());
+            throw new RuntimeException("Daily briefing generation failed: " + e.getMessage(), e);
         }
     }
 }
