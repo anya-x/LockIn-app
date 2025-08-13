@@ -6,6 +6,7 @@ import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,25 +25,26 @@ public class RateLimitService {
         User user = userRepository.findById(userId)
                                   .orElseThrow(() -> new RuntimeException("User not found"));
 
-        LocalDateTime since = LocalDateTime.now().minusHours(1);
+        LocalDateTime since = LocalDateTime.now().minusHours(24);
         long requestCount = aiUsageRepository.countRecentRequests(user, since);
 
-        log.debug("User {} has made {} AI requests recently", userId, requestCount);
+        log.debug("User {} has made {} AI requests in the last 24 hours", userId, requestCount);
 
         if (requestCount >= MAX_REQUESTS_PER_DAY) {
-            log.warn("Rate limit exceeded for user {}: {} requests", userId, requestCount);
+            log.warn("Rate limit exceeded for user {}: {} requests in 24 hours", userId, requestCount);
             throw new RateLimitExceededException(
-                    String.format("Rate limit exceeded. You can only make %d AI requests per day. Please try again later.",
+                    String.format("Rate limit exceeded. You can make %d AI requests per day. Please try again tomorrow.",
                                   MAX_REQUESTS_PER_DAY)
             );
         }
     }
 
+    @Cacheable(value = "rateLimitCounters", key = "#userId")
     public int getRemainingRequests(Long userId) {
         User user = userRepository.findById(userId)
                                   .orElseThrow(() -> new RuntimeException("User not found"));
 
-        LocalDateTime since = LocalDateTime.now().minusHours(1);
+        LocalDateTime since = LocalDateTime.now().minusHours(24);
         long requestCount = aiUsageRepository.countRecentRequests(user, since);
 
         return Math.max(0, MAX_REQUESTS_PER_DAY - (int) requestCount);

@@ -25,7 +25,6 @@ public class AIController {
     private final TaskBreakdownService taskBreakdownService;
     private final TaskService taskService;
     private final UserService userService;
-    private final RateLimitService rateLimitService;
     private final DescriptionEnhancementService descriptionEnhancementService;
     private final DailyBriefingService dailyBriefingService;
 
@@ -38,9 +37,6 @@ public class AIController {
         log.info("AI breakdown requested for task {} by user {}", taskId, userDetails.getUsername());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
-
-        rateLimitService.checkRateLimit(userId);
-
         Task task = taskService.getTaskEntity(taskId, userId);
 
         try {
@@ -74,9 +70,6 @@ public class AIController {
                  userDetails.getUsername(), request.getTitle());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
-
-        rateLimitService.checkRateLimit(userId);
-
         Task tempTask = new Task();
         tempTask.setTitle(request.getTitle());
         tempTask.setDescription(request.getDescription());
@@ -116,8 +109,6 @@ public class AIController {
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
 
-        rateLimitService.checkRateLimit(userId);
-
         try {
             EnhancementResultDTO result =
                     descriptionEnhancementService.enhanceDescription(
@@ -147,8 +138,6 @@ public class AIController {
         log.info("Daily briefing requested by user: {}", userDetails.getUsername());
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
-
-        rateLimitService.checkRateLimit(userId);
 
         try {
             BriefingResultDTO result =

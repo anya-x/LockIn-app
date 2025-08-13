@@ -42,7 +42,16 @@ public class CacheConfig {
                                           .maximumSize(500)
                                           .expireAfterWrite(1, TimeUnit.HOURS)
                                           .recordStats()
+                                          .build()),
+
+
+                new CaffeineCache("rateLimitCounters",
+                                  Caffeine.newBuilder()
+                                          .maximumSize(1000)
+                                          .expireAfterWrite(5, TimeUnit.MINUTES)
+                                          .recordStats()
                                           .build())
+
         ));
 
         return cacheManager;

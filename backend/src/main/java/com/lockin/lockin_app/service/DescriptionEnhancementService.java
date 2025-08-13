@@ -20,10 +20,13 @@ public class DescriptionEnhancementService {
     private final ClaudeAPIClientService claudeAPIClientService;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
+    private final RateLimitService rateLimitService;
 
     @Cacheable(value = "enhancedDescriptions", key = "#title + '_' + (#description != null ? #description : '')")
     public EnhancementResultDTO enhanceDescription(String title, String description, Long userId) {
         log.info("Enhancing description for task: {} (user: {})", title, userId);
+
+        rateLimitService.checkRateLimit(userId);
 
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Task title cannot be empty");
