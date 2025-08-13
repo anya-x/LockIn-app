@@ -17,6 +17,7 @@ import {
   Chip,
   alpha,
 } from "@mui/material";
+import { getSessionTypeColor } from "../utils/colorMaps";
 import {
   Menu as MenuIcon,
   Assignment as TaskIcon,
@@ -98,19 +99,6 @@ const TimerChip: React.FC<{
 
     if (!sessionStartedAt || currentView === "timer") return null;
 
-    const getChipColor = () => {
-      switch (sessionType) {
-        case "WORK":
-          return profileColor;
-        case "SHORT_BREAK":
-          return "#2e7d32";
-        case "LONG_BREAK":
-          return "#7b1fa2";
-        default:
-          return "primary";
-      }
-    };
-
     return (
       <Chip
         icon={<TimerIcon />}
@@ -120,7 +108,7 @@ const TimerChip: React.FC<{
           cursor: "pointer",
           fontWeight: 600,
           fontSize: "0.9rem",
-          bgcolor: getChipColor(),
+          bgcolor: getSessionTypeColor(sessionType, profileColor),
           color: "white",
           "&:hover": {
             opacity: 0.9,
@@ -148,19 +136,6 @@ const SidebarTimerIndicator: React.FC<{
 }> = React.memo(({ isRunning, sessionType, profileColor }) => {
   if (!isRunning) return null;
 
-  const getChipColor = () => {
-    switch (sessionType) {
-      case "WORK":
-        return profileColor;
-      case "SHORT_BREAK":
-        return "#2e7d32";
-      case "LONG_BREAK":
-        return "#7b1fa2";
-      default:
-        return "primary";
-    }
-  };
-
   return (
     <Chip
       label="•"
@@ -168,7 +143,7 @@ const SidebarTimerIndicator: React.FC<{
       sx={{
         fontSize: "0.7rem",
         height: 20,
-        bgcolor: getChipColor(),
+        bgcolor: getSessionTypeColor(sessionType, profileColor),
         color: "white",
         fontWeight: 600,
         minWidth: 24,
