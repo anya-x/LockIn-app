@@ -5,7 +5,9 @@ export interface SubtaskSuggestion {
   title: string;
   description: string;
   estimatedMinutes: number;
-  priority: "HIGH" | "MEDIUM" | "LOW";
+
+  isUrgent: boolean;
+  isImportant: boolean;
 }
 
 export interface TaskBreakdownResult {

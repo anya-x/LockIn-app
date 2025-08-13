@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -39,6 +41,7 @@ public class TaskBreakdownService {
         TaskBreakdownResultDTO result = breakdownTask(
                 task.getTitle(),
                 task.getDescription(),
+                task.getDueDate(),
                 task.getUser().getId()
         );
         result.setOriginalTask(task);
@@ -47,14 +50,16 @@ public class TaskBreakdownService {
     }
 
     @Cacheable(value = "taskBreakdowns", key = "#title + '_' + (#description != null ? #description : '')")
-    public TaskBreakdownResultDTO breakdownTask(String title, String description, Long userId) {
-        log.info("Breaking down task: {} for user: {}", title, userId);
+    public TaskBreakdownResultDTO breakdownTask(String title, String description, LocalDateTime dueDate, Long userId) {
+        log.info("Breaking down task: {} (due: {}) for user: {}", title, dueDate, userId);
 
         rateLimitService.checkRateLimit(userId);
 
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Task title cannot be empty");
         }
+
+        String deadlineContext = formatDeadlineContext(dueDate);
 
         String systemPrompt = """
             You are a productivity assistant that breaks down tasks into actionable subtasks.
@@ -63,22 +68,55 @@ public class TaskBreakdownService {
 
             Your response must include:
             1. A brief reasoning explaining your breakdown approach
-            2. An array of 3-7 actionable subtasks
+            2. An array of 3-7 actionable subtasks classified using the Eisenhower Matrix
             """;
 
         String userPrompt = String.format(
                 """
-                Break down this task into 3-7 actionable subtasks.
+                Break down this task into 3-7 actionable subtasks using the Eisenhower Matrix.
 
                 Task Title: "%s"
                 Description: "%s"
+                Deadline: %s
 
                 RULES:
                 1. ALWAYS return valid JSON object (no other text)
                 2. If task is vague, make reasonable assumptions
                 3. Each subtask must start with action verb
                 4. Estimate realistic time (15-90 minutes per subtask)
-                5. Assign priority: HIGH (urgent), MEDIUM (important), or LOW (optional)
+                5. Classify using Eisenhower Matrix - consider BOTH deadline AND task nature:
+
+                   isUrgent: true if ANY of these apply:
+                   • Time-sensitive by nature (bug fixes, critical issues, blocking others)
+                   • Deadline approaching (due within 1-2 days)
+                   • Has consequences if delayed (production issues, dependencies)
+
+                   isImportant: true if ANY of these apply:
+                   • Contributes to goals/objectives (strategic, high-value)
+                   • Core work vs busywork (meaningful impact)
+                   • Aligns with project priorities
+
+                6. URGENCY EXAMPLES by task type (deadline is just ONE factor):
+
+                   CONTENT-DRIVEN urgency (urgent regardless of deadline):
+                   • "Fix production bug" → URGENT (blocks users)
+                   • "Review PR blocking deployment" → URGENT (blocks others)
+                   • "Respond to client emergency" → URGENT (external dependency)
+
+                   DEADLINE-DRIVEN urgency (depends on timeline):
+                   • "Organize photos" due tomorrow → NOT urgent (can reschedule)
+                   • "Submit tax return" due tomorrow → URGENT (penalty if late)
+                   • "Prepare presentation" due in 2 hours → URGENT (imminent)
+
+                   NEITHER urgent (even with deadline):
+                   • "Clean downloads folder" → Never urgent
+                   • "Read optional article" → Never urgent
+
+                   Eisenhower Quadrants:
+                   • Urgent + Important (Do First): Critical deadlines, crises, blocking work
+                   • Important only (Schedule): Planning, learning, strategic work
+                   • Urgent only (Delegate): Interruptions, some emails
+                   • Neither (Eliminate): Busywork, time-wasters
 
                 JSON Format (respond with ONLY this, no other text):
                 {
@@ -88,7 +126,8 @@ public class TaskBreakdownService {
                       "title": "Action verb + specific task",
                       "description": "What and how to do it",
                       "estimatedMinutes": 30,
-                      "priority": "MEDIUM"
+                      "isUrgent": false,
+                      "isImportant": true
                     }
                   ]
                 }
@@ -98,7 +137,8 @@ public class TaskBreakdownService {
                 title,
                 description != null && !description.trim().isEmpty()
                         ? description
-                        : "No additional details provided"
+                        : "No additional details provided",
+                deadlineContext
         );
 
         try {
@@ -161,5 +201,31 @@ public class TaskBreakdownService {
         }
 
         return cleaned.trim();
+    }
+
+    private String formatDeadlineContext(LocalDateTime dueDate) {
+        if (dueDate == null) {
+            return "No deadline set";
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        long hoursUntilDue = ChronoUnit.HOURS.between(now, dueDate);
+        long daysUntilDue = ChronoUnit.DAYS.between(now, dueDate);
+
+        if (hoursUntilDue < 0) {
+            return "OVERDUE by " + Math.abs(daysUntilDue) + " days";
+        } else if (hoursUntilDue < 6) {
+            return "Due in " + hoursUntilDue + " hours (imminent)";
+        } else if (hoursUntilDue < 24) {
+            return "Due in " + hoursUntilDue + " hours (today)";
+        } else if (daysUntilDue == 1) {
+            return "Due tomorrow (" + hoursUntilDue + " hours)";
+        } else if (daysUntilDue < 7) {
+            return "Due in " + daysUntilDue + " days (this week)";
+        } else if (daysUntilDue < 14) {
+            return "Due in " + daysUntilDue + " days (next week)";
+        } else {
+            return "Due in " + daysUntilDue + " days (" + (daysUntilDue / 7) + " weeks out)";
+        }
     }
 }
