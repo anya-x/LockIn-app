@@ -1,0 +1,19 @@
+package com.lockin.lockin_app.features.ai.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import java.util.List;
+
+@AllArgsConstructor
+@Data
+public class BriefingResultDTO {
+    String summary;
+    int urgentImportantCount;
+    int importantCount;
+    int urgentCount;
+    int otherCount;
+    List<String> topPriorities;
+    int tokensUsed;
+    double costUSD;
+}
