@@ -27,6 +27,8 @@ import {
   useDeleteCategory,
   useUpdateCategory,
 } from "../hooks/useCategories";
+import EmptyState from "../components/shared/EmptyState";
+import { useAsyncOperation } from "../hooks/useAsyncOperation.ts";
 
 const Categories: React.FC = () => {
   const { data: categories = [], isLoading: loading } = useCategories();
@@ -40,6 +42,15 @@ const Categories: React.FC = () => {
     name: "",
     color: "#1976d2",
     icon: "📁",
+  });
+
+  const { execute: executeSave } = useAsyncOperation({
+    onSuccess: () => handleCloseModal(),
+    onError: (error) => alert(`Failed to save category: ${error}`),
+  });
+
+  const { execute: executeDelete } = useAsyncOperation({
+    onError: (error) => alert(`Failed to delete category: ${error}`),
   });
 
   const handleOpenModal = (category?: Category) => {
@@ -67,7 +78,7 @@ const Categories: React.FC = () => {
   };
 
   const handleSave = async () => {
-    try {
+    await executeSave(async () => {
       if (editingCategory) {
         await updateMutation.mutateAsync({
           id: editingCategory.id!,
@@ -76,21 +87,14 @@ const Categories: React.FC = () => {
       } else {
         await createMutation.mutateAsync(formData);
       }
-      handleCloseModal();
-    } catch (error) {
-      console.error("Failed to save category:", error);
-      alert("Failed to save category");
-    }
+    });
   };
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this category? Tasks will not be deleted.")) return;
 
-    try {
+    await executeDelete(async () => {
       await deleteMutation.mutateAsync(id);
-    } catch (error) {
-      console.error("Failed to delete category:", error);
-      alert("Failed to delete category");
-    }
+    });
   };
   const CategorySkeleton = () => (
     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -163,9 +167,10 @@ const Categories: React.FC = () => {
       <Grid container spacing={2}>
         {categories.length === 0 ? (
           <Grid size={{ xs: 12 }}>
-            <Typography color="text.secondary">
-              No categories yet. Create your first category!
-            </Typography>
+            <EmptyState
+              title="No categories yet"
+              description="Create your first category!"
+            />
           </Grid>
         ) : (
           categories.map((category) => (

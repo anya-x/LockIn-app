@@ -49,8 +49,8 @@ import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
 import ProductivityInsights from "../components/analytics/ProductivityInsights";
 import ProductivityHeatmap from "../components/analytics/ProductivityHeatmap";
-// import CustomTooltip from "../components/analytics/CustomTooltip";
 import { exportToCSV } from "../utils/exportToCSV";
+import { formatTime } from "../utils/timeFormatting";
 import { useTimer } from "../context/TimerContext";
 import {
   useAnalyticsRange,
@@ -397,9 +397,7 @@ const AnalyticsPage: React.FC = () => {
               </Box>
               <Typography variant="h3">
                 {comparisonData
-                  ? `${Math.floor(comparisonData.current.focusMinutes / 60)}h ${
-                      comparisonData.current.focusMinutes % 60
-                    }m`
+                  ? formatTime(comparisonData.current.focusMinutes)
                   : "0h 0m"}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -407,9 +405,7 @@ const AnalyticsPage: React.FC = () => {
                 {comparisonData && comparisonData.current.breakMinutes > 0 && (
                   <>
                     {" "}
-                    • {Math.floor(
-                      comparisonData.current.breakMinutes / 60
-                    )}h {comparisonData.current.breakMinutes % 60}m breaks
+                    • {formatTime(comparisonData.current.breakMinutes)} breaks
                   </>
                 )}
               </Typography>
