@@ -50,6 +50,23 @@ public class CacheConfig {
                                           .maximumSize(1000)
                                           .expireAfterWrite(5, TimeUnit.MINUTES)
                                           .recordStats()
+                                          .build()),
+
+                // daily analytics: 1 hour TTL, 1000 entries
+                new CaffeineCache("dailyAnalytics",
+                                  Caffeine.newBuilder()
+                                          .maximumSize(1000)
+                                          .expireAfterWrite(1, TimeUnit.HOURS)
+                                          .recordStats()
+                                          .build()),
+
+
+                // period analytics (for comparisons): 30 minute TTL, 500 entries
+                new CaffeineCache("periodAnalytics",
+                                  Caffeine.newBuilder()
+                                          .maximumSize(500)
+                                          .expireAfterWrite(30, TimeUnit.MINUTES)
+                                          .recordStats()
                                           .build())
 
         ));
