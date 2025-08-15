@@ -4,10 +4,10 @@ import com.lockin.lockin_app.features.goals.dto.GoalRequestDTO;
 import com.lockin.lockin_app.features.goals.dto.GoalResponseDTO;
 import com.lockin.lockin_app.features.goals.service.GoalService;
 import com.lockin.lockin_app.features.users.service.UserService;
+import com.lockin.lockin_app.shared.controller.BaseController;
 
 import jakarta.validation.Valid;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
@@ -21,11 +21,14 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/goals")
-@RequiredArgsConstructor
-public class GoalController {
+public class GoalController extends BaseController {
 
     private final GoalService goalService;
-    private final UserService userService;
+
+    public GoalController(UserService userService, GoalService goalService) {
+        super(userService);
+        this.goalService = goalService;
+    }
 
     /**
      * Gets all goals of a user
@@ -36,9 +39,9 @@ public class GoalController {
     public ResponseEntity<List<GoalResponseDTO>> getAllGoals(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/goals: User: {}", userDetails.getUsername());
+        log.debug("GET /api/goals: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         List<GoalResponseDTO> goals = goalService.getUserGoals(userId);
 
@@ -49,9 +52,9 @@ public class GoalController {
     public ResponseEntity<GoalResponseDTO> getGoal(
             @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/goals/{} : User: {}", id, userDetails.getUsername());
+        log.debug("GET /api/goals/{} : User: {}", id, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         GoalResponseDTO goal = goalService.getGoal(id, userId);
 
         return ResponseEntity.ok(goal);
@@ -68,9 +71,9 @@ public class GoalController {
             @Valid @RequestBody GoalRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/goals : User: {}", userDetails.getUsername());
+        log.debug("POST /api/goals : User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         GoalResponseDTO created = goalService.createGoal(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -82,9 +85,9 @@ public class GoalController {
             @Valid @RequestBody GoalRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("PUT /api/goals/{} : User: {}", id, userDetails.getUsername());
+        log.debug("PUT /api/goals/{} : User: {}", id, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         GoalResponseDTO updated = goalService.updateGoal(id, userId, request);
 
         return ResponseEntity.ok(updated);
@@ -94,9 +97,9 @@ public class GoalController {
     public ResponseEntity<Void> deleteGoal(
             @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("DELETE /api/goals/{} : User: {}", id, userDetails.getUsername());
+        log.debug("DELETE /api/goals/{} : User: {}", id, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         goalService.deleteGoal(id, userId);
 
         return ResponseEntity.noContent().build();

@@ -6,9 +6,10 @@ import com.lockin.lockin_app.features.auth.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.features.auth.service.AuthService;
 
+import com.lockin.lockin_app.features.users.service.UserService;
+import com.lockin.lockin_app.shared.controller.BaseController;
 import jakarta.validation.Valid;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
@@ -22,10 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
-public class AuthController {
+public class AuthController extends BaseController {
 
     private final AuthService authService;
+
+    public AuthController(UserService userService, AuthService authService) {
+        super(userService);
+        this.authService = authService;
+    }
 
     /**
      * Registers a new user account: creates user with encoded password and generates JWT token for

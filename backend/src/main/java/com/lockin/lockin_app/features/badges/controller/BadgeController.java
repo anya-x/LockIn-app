@@ -3,8 +3,8 @@ package com.lockin.lockin_app.features.badges.controller;
 import com.lockin.lockin_app.features.badges.dto.BadgeDTO;
 import com.lockin.lockin_app.features.badges.service.BadgeService;
 import com.lockin.lockin_app.features.users.service.UserService;
+import com.lockin.lockin_app.shared.controller.BaseController;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
@@ -20,11 +20,14 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/badges")
-@RequiredArgsConstructor
-public class BadgeController {
+public class BadgeController extends BaseController {
 
     private final BadgeService badgeService;
-    private final UserService userService;
+
+    public BadgeController(UserService userService, BadgeService badgeService) {
+        super(userService);
+        this.badgeService = badgeService;
+    }
 
     /**
      * Get all badges for the authenticated user
@@ -36,7 +39,7 @@ public class BadgeController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "false") boolean earnedOnly) {
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         log.debug("Fetching badges for user {}, earnedOnly={}", userId, earnedOnly);
 
         List<BadgeDTO> badges;
