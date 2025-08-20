@@ -12,26 +12,50 @@ import {
   ListItem,
   ListItemText,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import TodayIcon from "@mui/icons-material/Today";
 import aiService, { type BriefingResult } from "../../services/aiService";
+import { useRateLimit } from "../../hooks/useRateLimit.ts";
+import RateLimitIndicator from "../ai/RateLimitIndicator";
 
 export const DailyBriefing: React.FC = () => {
   const [briefing, setBriefing] = useState<BriefingResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const rateLimit = useRateLimit();
 
   const loadBriefing = async () => {
+    if (rateLimit.isAtLimit) {
+      setError(
+        "You've reached your daily AI request limit. Please try again tomorrow."
+      );
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
       const result = await aiService.getDailyBriefing();
       setBriefing(result);
+
+      await rateLimit.refetch();
     } catch (err: any) {
       console.error("Failed to load briefing:", err);
-      setError(err.response?.data?.message || "Failed to load daily briefing");
+
+      if (err.response?.status === 429) {
+        setError(
+          err.response?.data?.message ||
+            "Rate limit exceeded. Please try again later."
+        );
+        await rateLimit.refetch();
+      } else {
+        setError(
+          err.response?.data?.message || "Failed to load daily briefing"
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -51,20 +75,34 @@ export const DailyBriefing: React.FC = () => {
         avatar={<TodayIcon color="primary" />}
         title="Daily Briefing"
         action={
-          <Button
-            size="small"
-            startIcon={
-              isLoading ? <CircularProgress size={16} /> : <RefreshIcon />
+          <Tooltip
+            title={
+              rateLimit.isAtLimit
+                ? "Daily AI request limit reached"
+                : `${rateLimit.remaining} AI requests remaining`
             }
-            onClick={handleRefresh}
-            disabled={isLoading}
-            sx={{ textTransform: "none" }}
+            arrow
           >
-            Refresh
-          </Button>
+            <span>
+              <Button
+                size="small"
+                startIcon={
+                  isLoading ? <CircularProgress size={16} /> : <RefreshIcon />
+                }
+                onClick={handleRefresh}
+                disabled={isLoading || rateLimit.isAtLimit}
+                sx={{ textTransform: "none" }}
+              >
+                Refresh
+              </Button>
+            </span>
+          </Tooltip>
         }
       />
       <CardContent>
+        <Box sx={{ mb: 2 }}>
+          <RateLimitIndicator status={rateLimit} variant="compact" />
+        </Box>
         {isLoading && !briefing && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />

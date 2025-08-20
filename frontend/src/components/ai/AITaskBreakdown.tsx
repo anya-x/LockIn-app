@@ -8,8 +8,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
-  Chip,
   CircularProgress,
   Alert,
   Box,
@@ -31,6 +29,8 @@ import {
   type TaskBreakdownResult,
   type SubtaskSuggestion,
 } from "../../services/aiService";
+import { useRateLimit } from "../../hooks/useRateLimit.ts";
+import RateLimitIndicator from "../ai/RateLimitIndicator";
 
 interface AITaskBreakdownProps {
   task: Task;
@@ -64,6 +64,7 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   const [editableSubtasks, setEditableSubtasks] = useState<SubtaskSuggestion[]>(
     []
   );
+  const rateLimit = useRateLimit();
 
   useEffect(() => {
     if (result?.subtasks) {
@@ -72,18 +73,35 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   }, [result]);
 
   const handleBreakdown = async () => {
+    if (rateLimit.isAtLimit) {
+      setError(
+        "You've reached your daily AI request limit. Please try again tomorrow."
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const breakdownResult = await aiService.breakdownTask(task.id);
       setResult(breakdownResult);
+      await rateLimit.refetch();
     } catch (err: any) {
       console.error("AI breakdown failed:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to generate task breakdown. Please try again."
-      );
+
+      if (err.response?.status === 429) {
+        setError(
+          err.response?.data?.message ||
+            "Rate limit exceeded. Please try again later."
+        );
+        await rateLimit.refetch();
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Failed to generate task breakdown. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -158,6 +176,10 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
               {task.description}
             </Typography>
           )}
+        </Box>
+
+        <Box mb={3}>
+          <RateLimitIndicator status={rateLimit} variant="detailed" />
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -386,6 +408,7 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
               variant="contained"
               startIcon={<AutoAwesomeIcon />}
               onClick={handleBreakdown}
+              disabled={rateLimit.isAtLimit}
               sx={{ mt: 2 }}
             >
               Generate Breakdown

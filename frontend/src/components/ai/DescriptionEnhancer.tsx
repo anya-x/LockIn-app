@@ -5,11 +5,13 @@ import {
   CircularProgress,
   Paper,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import aiService from "../../services/aiService";
+import { useRateLimit } from "../../hooks/useRateLimit.ts";
 
 interface DescriptionEnhancerProps {
   title: string;
@@ -25,10 +27,18 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enhancedPreview, setEnhancedPreview] = useState<string | null>(null);
+  const rateLimit = useRateLimit();
 
   const handleEnhance = async () => {
     if (!description || description.trim().length < 3) {
       setError("Please provide at least 3 characters to enhance");
+      return;
+    }
+
+    if (rateLimit.isAtLimit) {
+      setError(
+        "You've reached your daily AI request limit. Please try again tomorrow."
+      );
       return;
     }
 
@@ -40,6 +50,8 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
 
       setEnhancedPreview(result.enhancedDescription);
 
+      await rateLimit.refetch();
+
       console.log(
         `Enhanced description (${
           result.tokensUsed
@@ -47,7 +59,18 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
       );
     } catch (err: any) {
       console.error("Enhancement failed:", err);
-      setError(err.response?.data?.message || "Failed to enhance description");
+
+      if (err.response?.status === 429) {
+        setError(
+          err.response?.data?.message ||
+            "Rate limit exceeded. Please try again later."
+        );
+        await rateLimit.refetch();
+      } else {
+        setError(
+          err.response?.data?.message || "Failed to enhance description"
+        );
+      }
     } finally {
       setIsEnhancing(false);
     }
@@ -70,20 +93,40 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
     <Box sx={{ mt: 1 }}>
       {!enhancedPreview ? (
         <>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={
-              isEnhancing ? <CircularProgress size={16} /> : <AutoFixHighIcon />
+          <Tooltip
+            title={
+              rateLimit.isAtLimit
+                ? "Daily AI request limit reached"
+                : `${rateLimit.remaining} AI requests remaining today`
             }
-            onClick={handleEnhance}
-            disabled={
-              isEnhancing || !description || description.trim().length < 3
-            }
-            sx={{ textTransform: "none" }}
+            arrow
           >
-            {isEnhancing ? "Enhancing..." : "Enhance with AI"}
-          </Button>
+            <span>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
+                  isEnhancing ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    <AutoFixHighIcon />
+                  )
+                }
+                onClick={handleEnhance}
+                disabled={
+                  isEnhancing ||
+                  !description ||
+                  description.trim().length < 3 ||
+                  rateLimit.isAtLimit
+                }
+                sx={{ textTransform: "none" }}
+              >
+                {isEnhancing
+                  ? "Enhancing..."
+                  : `Enhance with AI (${rateLimit.remaining}/${rateLimit.limit})`}
+              </Button>
+            </span>
+          </Tooltip>
 
           {error && (
             <Typography

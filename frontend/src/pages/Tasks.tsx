@@ -40,8 +40,8 @@ import StatCard from "../components/shared/StatCard";
 import PageHeader from "../components/shared/PageHeader";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
-import AITaskBreakdown from "../components/tasks/AITaskBreakdown";
-import DailyBriefing from "../components/dashboard/DailyBriefing";
+import AITaskBreakdown from "../components/ai/AITaskBreakdown";
+import DailyBriefing from "../components/ai/DailyBriefing";
 import EmptyState from "../components/shared/EmptyState";
 import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
 

@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import type { Task } from "../../types/task";
 import CategorySelector from "../categories/CategorySelector";
-import DescriptionEnhancer from "./DescriptionEnhancer";
+import DescriptionEnhancer from "../ai/DescriptionEnhancer";
 
 interface TaskFormModalProps {
   open: boolean;
