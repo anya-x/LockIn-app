@@ -28,25 +28,25 @@ public class GlobalExceptionHandler {
 
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult()
-                .getAllErrors()
-                .forEach(
-                        error -> {
-                            String fieldName = ((FieldError) error).getField();
-                            String errorMessage = error.getDefaultMessage();
-                            fieldErrors.put(fieldName, errorMessage);
-                        });
+          .getAllErrors()
+          .forEach(
+                  error -> {
+                      String fieldName = ((FieldError) error).getField();
+                      String errorMessage = error.getDefaultMessage();
+                      fieldErrors.put(fieldName, errorMessage);
+                  });
 
         log.warn("Validation failed: {}", fieldErrors);
 
         ErrorResponseDTO errorResponse =
                 ErrorResponseDTO.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.BAD_REQUEST.value())
-                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                        .message("Validation failed for one or more fields")
-                        .path(extractPath(request))
-                        .fieldErrors(fieldErrors)
-                        .build();
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                                .message("Validation failed for one or more fields")
+                                .path(extractPath(request))
+                                .fieldErrors(fieldErrors)
+                                .build();
 
         return ResponseEntity.badRequest().body(errorResponse);
     }
@@ -59,12 +59,12 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponse =
                 ErrorResponseDTO.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.NOT_FOUND.value())
-                        .error(HttpStatus.NOT_FOUND.getReasonPhrase())
-                        .message(ex.getMessage())
-                        .path(extractPath(request))
-                        .build();
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.NOT_FOUND.value())
+                                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                                .message(ex.getMessage())
+                                .path(extractPath(request))
+                                .build();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -77,12 +77,12 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponse =
                 ErrorResponseDTO.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.FORBIDDEN.value())
-                        .error(HttpStatus.FORBIDDEN.getReasonPhrase())
-                        .message(ex.getMessage())
-                        .path(extractPath(request))
-                        .build();
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.FORBIDDEN.value())
+                                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
+                                .message(ex.getMessage())
+                                .path(extractPath(request))
+                                .build();
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
@@ -95,12 +95,12 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponse =
                 ErrorResponseDTO.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.UNAUTHORIZED.value())
-                        .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                        .message("Invalid email or password")
-                        .path(extractPath(request))
-                        .build();
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.UNAUTHORIZED.value())
+                                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
+                                .message("Invalid email or password")
+                                .path(extractPath(request))
+                                .build();
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
@@ -113,12 +113,12 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponse =
                 ErrorResponseDTO.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                        .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                        .message("An unexpected error occurred. Please try again later.")
-                        .path(extractPath(request))
-                        .build();
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                                .message("An unexpected error occurred. Please try again later.")
+                                .path(extractPath(request))
+                                .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
@@ -131,14 +131,32 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponse =
                 ErrorResponseDTO.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.BAD_REQUEST.value())
-                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                        .message(ex.getMessage())
-                        .path(extractPath(request))
-                        .build();
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                                .message(ex.getMessage())
+                                .path(extractPath(request))
+                                .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponseDTO> handleRateLimitExceeded(
+            RateLimitExceededException ex, WebRequest request) {
+
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                                .error("Too Many Requests")
+                                .message(ex.getMessage())
+                                .path(extractPath(request))
+                                .build();
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
     }
 
     private String extractPath(WebRequest request) {
