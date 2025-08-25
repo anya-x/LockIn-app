@@ -11,7 +11,8 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import aiService from "../../services/aiService";
-import { useRateLimit } from "../../hooks/useRateLimit.ts";
+import { useRateLimit } from "../../hooks/useRateLimit";
+import { useAIPreferences } from "../../context/AIPreferencesContext";
 
 interface DescriptionEnhancerProps {
   title: string;
@@ -28,6 +29,7 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [enhancedPreview, setEnhancedPreview] = useState<string | null>(null);
   const rateLimit = useRateLimit();
+  const { aiEnabled } = useAIPreferences();
 
   const handleEnhance = async () => {
     if (!description || description.trim().length < 3) {
@@ -49,7 +51,6 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
       const result = await aiService.enhanceDescription(title, description);
 
       setEnhancedPreview(result.enhancedDescription);
-
       await rateLimit.refetch();
 
       console.log(
@@ -95,7 +96,9 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
         <>
           <Tooltip
             title={
-              rateLimit.isAtLimit
+              !aiEnabled
+                ? "AI features are disabled - Enable in Settings"
+                : rateLimit.isAtLimit
                 ? "Daily AI request limit reached"
                 : `${rateLimit.remaining} AI requests remaining today`
             }
@@ -114,6 +117,7 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
                 }
                 onClick={handleEnhance}
                 disabled={
+                  !aiEnabled ||
                   isEnhancing ||
                   !description ||
                   description.trim().length < 3 ||

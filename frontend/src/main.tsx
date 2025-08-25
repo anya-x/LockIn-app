@@ -5,6 +5,7 @@ import "./index.css";
 import { AuthProvider } from "./context/AuthContext.tsx";
 import { TimerProvider } from "./context/TimerContext.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
+import { AIPreferencesProvider } from "./context/AIPreferencesContext.tsx";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -24,11 +25,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <TimerProvider>
-            <App />
-          </TimerProvider>
-        </AuthProvider>
+        <AIPreferencesProvider>
+          <AuthProvider>
+            <TimerProvider>
+              <App />
+            </TimerProvider>
+          </AuthProvider>
+        </AIPreferencesProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </ThemeProvider>
     </QueryClientProvider>

@@ -17,12 +17,17 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import TodayIcon from "@mui/icons-material/Today";
+import SettingsIcon from "@mui/icons-material/Settings";
 import aiService, { type BriefingResult } from "../../services/aiService";
 import { useRateLimit } from "../../hooks/useRateLimit";
+import { useAIPreferences } from "../../context/AIPreferencesContext";
 import RateLimitIndicator from "../ai/RateLimitIndicator";
+import { useNavigate } from "react-router-dom";
 
 export const DailyBriefing: React.FC = () => {
   const rateLimit = useRateLimit();
+  const { aiEnabled } = useAIPreferences();
+  const navigate = useNavigate();
 
   const {
     data: briefing,
@@ -61,7 +66,9 @@ export const DailyBriefing: React.FC = () => {
         action={
           <Tooltip
             title={
-              rateLimit.isAtLimit
+              !aiEnabled
+                ? "AI features are disabled - Enable in Settings"
+                : rateLimit.isAtLimit
                 ? "Daily AI request limit reached"
                 : `${rateLimit.remaining} AI requests remaining`
             }
@@ -74,7 +81,7 @@ export const DailyBriefing: React.FC = () => {
                   isLoading ? <CircularProgress size={16} /> : <RefreshIcon />
                 }
                 onClick={handleRefresh}
-                disabled={isLoading || rateLimit.isAtLimit}
+                disabled={!aiEnabled || isLoading || rateLimit.isAtLimit}
                 sx={{ textTransform: "none" }}
               >
                 Refresh
@@ -101,13 +108,36 @@ export const DailyBriefing: React.FC = () => {
 
         {!briefing && !isLoading && !error && (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <TodayIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Click "Refresh" to generate your AI-powered daily briefing
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Get a summary of your tasks and priorities for today
-            </Typography>
+            {!aiEnabled ? (
+              <>
+                <SettingsIcon
+                  sx={{ fontSize: 48, color: "text.disabled", mb: 2 }}
+                />
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  AI features are currently disabled
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<SettingsIcon />}
+                  onClick={() => navigate("/settings")}
+                  sx={{ textTransform: "none", mt: 2 }}
+                >
+                  Enable in Settings
+                </Button>
+              </>
+            ) : (
+              <>
+                <TodayIcon
+                  sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+                />
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Click "Refresh" to generate your AI-powered daily briefing
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Get a summary of your tasks and priorities for today
+                </Typography>
+              </>
+            )}
           </Box>
         )}
 
