@@ -61,10 +61,6 @@ export const DailyBriefing: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadBriefing();
-  }, []);
-
   const handleRefresh = () => {
     loadBriefing();
   };

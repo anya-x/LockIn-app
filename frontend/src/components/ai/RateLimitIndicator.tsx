@@ -63,7 +63,7 @@ const RateLimitIndicator: React.FC<RateLimitIndicatorProps> = ({
               color: getColor(),
             }}
           >
-            {status.remaining}/{status.limit} AI requests
+            {status.remaining} AI requests left
           </Typography>
         </Box>
       </Tooltip>
