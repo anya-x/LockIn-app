@@ -39,7 +39,6 @@ public class RateLimitService {
         }
     }
 
-    @Cacheable(value = "rateLimitCounters", key = "#userId")
     public int getRemainingRequests(Long userId) {
         User user = userRepository.findById(userId)
                                   .orElseThrow(() -> new RuntimeException("User not found"));
