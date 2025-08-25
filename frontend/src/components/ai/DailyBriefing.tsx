@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Button,
@@ -17,53 +18,40 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 import TodayIcon from "@mui/icons-material/Today";
 import aiService, { type BriefingResult } from "../../services/aiService";
-import { useRateLimit } from "../../hooks/useRateLimit.ts";
+import { useRateLimit } from "../../hooks/useRateLimit";
 import RateLimitIndicator from "../ai/RateLimitIndicator";
 
 export const DailyBriefing: React.FC = () => {
-  const [briefing, setBriefing] = useState<BriefingResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const rateLimit = useRateLimit();
 
-  const loadBriefing = async () => {
-    if (rateLimit.isAtLimit) {
-      setError(
-        "You've reached your daily AI request limit. Please try again tomorrow."
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  const {
+    data: briefing,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ["daily-briefing"],
+    queryFn: async () => {
       const result = await aiService.getDailyBriefing();
-      setBriefing(result);
-
-      await rateLimit.refetch();
-    } catch (err: any) {
-      console.error("Failed to load briefing:", err);
-
-      if (err.response?.status === 429) {
-        setError(
-          err.response?.data?.message ||
-            "Rate limit exceeded. Please try again later."
-        );
-        await rateLimit.refetch();
-      } else {
-        setError(
-          err.response?.data?.message || "Failed to load daily briefing"
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      rateLimit.refetch();
+      return result;
+    },
+    staleTime: 24 * 60 * 60 * 1000,
+    retry: false,
+  });
 
   const handleRefresh = () => {
-    loadBriefing();
+    refetch();
   };
+
+  const error = queryError
+    ? (queryError as any).response?.status === 429
+      ? (queryError as any).response?.data?.message ||
+        "Rate limit exceeded. Please try again later."
+      : (queryError as any).response?.data?.message ||
+        (queryError as Error).message ||
+        "Failed to load daily briefing"
+    : null;
 
   return (
     <Card elevation={3}>
@@ -109,6 +97,18 @@ export const DailyBriefing: React.FC = () => {
           <Typography color="error" variant="body2">
             {error}
           </Typography>
+        )}
+
+        {!briefing && !isLoading && !error && (
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <TodayIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Click "Refresh" to generate your AI-powered daily briefing
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Get a summary of your tasks and priorities for today
+            </Typography>
+          </Box>
         )}
 
         {briefing && (
