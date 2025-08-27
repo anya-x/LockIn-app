@@ -40,7 +40,6 @@ public class GoogleCalendarController extends BaseController {
         this.calendarService = calendarService;
     }
 
-
     @GetMapping("/connect")
     public ResponseEntity<?> connectCalendar(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -74,7 +73,6 @@ public class GoogleCalendarController extends BaseController {
                                  .body(Map.of("error", "Failed to generate authorization URL"));
         }
     }
-
 
     @GetMapping("/oauth/callback")
     public RedirectView oauthCallback(

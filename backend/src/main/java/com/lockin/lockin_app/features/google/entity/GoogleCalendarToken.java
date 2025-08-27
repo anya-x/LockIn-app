@@ -2,15 +2,14 @@ package com.lockin.lockin_app.features.google.entity;
 
 import com.lockin.lockin_app.features.users.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "google_calendar_tokens")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class GoogleCalendarToken {
