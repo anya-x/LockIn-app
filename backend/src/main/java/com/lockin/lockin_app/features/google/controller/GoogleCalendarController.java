@@ -74,7 +74,7 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-    @GetMapping("/oauth/callback")
+    @GetMapping("/oauth/callback/")
     public RedirectView oauthCallback(
             @RequestParam String code,
             @RequestParam(required = false) String state,
