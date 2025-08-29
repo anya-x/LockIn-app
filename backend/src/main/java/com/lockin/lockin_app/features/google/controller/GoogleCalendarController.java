@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.features.google.controller;
 
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
+import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class GoogleCalendarController extends BaseController {
 
     private final GoogleCalendarService calendarService;
+    private final GoogleOAuthService oauthService;
 
     @Value("${google.oauth.client-id}")
     private String clientId;
@@ -35,9 +37,11 @@ public class GoogleCalendarController extends BaseController {
 
     public GoogleCalendarController(
             UserService userService,
-            GoogleCalendarService calendarService) {
+            GoogleCalendarService calendarService,
+            GoogleOAuthService oauthService) {
         super(userService);
         this.calendarService = calendarService;
+        this.oauthService = oauthService;
     }
 
     @GetMapping("/connect")
@@ -74,21 +78,40 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
+
     @GetMapping("/oauth/callback/")
     public RedirectView oauthCallback(
             @RequestParam String code,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String error) {
 
-        log.info("GET /api/calendar/oauth/callback: Code present: {}", code != null);
+        log.info("OAuth callback received");
 
         if (error != null) {
-            log.error("OAuth error received: {}", error);
+            log.error("OAuth error: {}", error);
             return new RedirectView("http://localhost:5173/settings?error=" + error);
         }
 
-        return new RedirectView("http://localhost:5173/settings?success=true");
+        try {
+            String decodedState = new String(Base64.getDecoder().decode(state));
+            String[] parts = decodedState.split(":");
+            String userEmail = parts[0];
+
+            log.info("Extracted user email from state: {}", userEmail);
+
+            Long userId = userService.getUserIdFromEmail(userEmail);
+
+            oauthService.exchangeCodeForTokens(code, userId);
+
+            log.info("OAuth flow completed successfully for user {}", userId);
+            return new RedirectView("http://localhost:5173/settings?connected=true");
+
+        } catch (Exception e) {
+            log.error("OAuth callback failed", e);
+            return new RedirectView("http://localhost:5173/settings?error=token_exchange_failed");
+        }
     }
+
 
     private String generateStateToken(String username) {
         return Base64.getEncoder().encodeToString(
