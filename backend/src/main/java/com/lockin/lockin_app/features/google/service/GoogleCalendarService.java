@@ -3,7 +3,10 @@ package com.lockin.lockin_app.features.google.service;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
+import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventDateTime;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
@@ -13,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -26,11 +31,52 @@ public class GoogleCalendarService {
     public String createEventFromTask(Task task, User user) {
         log.info("Creating calendar event for task: {}", task.getTitle());
 
-        return "not-implemented";
+        try {
+            Calendar calendar = buildCalendarClient(user);
+
+            Event event = new Event()
+                    .setSummary(task.getTitle())
+                    .setDescription(task.getDescription());
+
+            if (task.getDueDate() != null) {
+                DateTime startDateTime = new DateTime(
+                        task.getDueDate().toInstant(ZoneOffset.UTC).toEpochMilli()
+                );
+
+                DateTime endDateTime = new DateTime(
+                        task.getDueDate().plusHours(1).toInstant(ZoneOffset.UTC).toEpochMilli()
+                );
+
+                EventDateTime start = new EventDateTime().setDateTime(startDateTime);
+                EventDateTime end = new EventDateTime().setDateTime(endDateTime);
+
+                event.setStart(start);
+                event.setEnd(end);
+            }
+
+            event.setExtendedProperties(
+                    new Event.ExtendedProperties()
+                            .setPrivate(Map.of(
+                                    "lockinTaskId", task.getId().toString(),
+                                    "source", "lockin"
+                            ))
+            );
+
+            event = calendar.events()
+                            .insert("primary", event)
+                            .execute();
+
+            log.info("Calendar event created: {}", event.getId());
+
+            return event.getId();
+
+        } catch (Exception e) {
+            log.error("Failed to create calendar event", e);
+            throw new RuntimeException("Failed to create calendar event: " + e.getMessage(), e);
+        }
     }
 
     public Calendar buildCalendarClient(User user) throws Exception {
-
         GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
                                                          .orElseThrow(() -> new RuntimeException("User has not connected Google Calendar"));
 
