@@ -7,19 +7,32 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.Events;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneOffset;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Service for interacting with Google Calendar API.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,16 +52,27 @@ public class GoogleCalendarService {
                     .setDescription(task.getDescription());
 
             if (task.getDueDate() != null) {
-                DateTime startDateTime = new DateTime(
-                        task.getDueDate().toInstant(ZoneOffset.UTC).toEpochMilli()
-                );
+                ZoneId zoneId = ZoneId.systemDefault();
+                String timeZoneStr = zoneId.getId();
 
-                DateTime endDateTime = new DateTime(
-                        task.getDueDate().plusHours(1).toInstant(ZoneOffset.UTC).toEpochMilli()
-                );
+                long startMillis = task.getDueDate()
+                                       .atZone(zoneId)
+                                       .toInstant()
+                                       .toEpochMilli();
 
-                EventDateTime start = new EventDateTime().setDateTime(startDateTime);
-                EventDateTime end = new EventDateTime().setDateTime(endDateTime);
+                long endMillis = task.getDueDate()
+                                     .plusHours(1)
+                                     .atZone(zoneId)
+                                     .toInstant()
+                                     .toEpochMilli();
+
+                EventDateTime start = new EventDateTime()
+                        .setDateTime(new DateTime(startMillis))
+                        .setTimeZone(timeZoneStr);
+
+                EventDateTime end = new EventDateTime()
+                        .setDateTime(new DateTime(endMillis))
+                        .setTimeZone(timeZoneStr);
 
                 event.setStart(start);
                 event.setEnd(end);
