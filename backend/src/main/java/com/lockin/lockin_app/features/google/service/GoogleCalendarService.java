@@ -17,6 +17,7 @@ import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -179,10 +180,13 @@ public class GoogleCalendarService {
                 }
 
                 Task task = createTaskFromEvent(event, user);
-                taskRepository.save(task);
-                created++;
-
-                log.info("Created task from calendar event: {}", event.getSummary());
+                try {
+                    taskRepository.save(task);
+                    created++;
+                    log.info("Created task from calendar event: {}", event.getSummary());
+                } catch (DataIntegrityViolationException e) {
+                    log.debug("Event {} already has a task (caught by constraint), skipping", event.getId());
+                }
             }
 
             log.info("Created {} tasks from calendar events", created);
