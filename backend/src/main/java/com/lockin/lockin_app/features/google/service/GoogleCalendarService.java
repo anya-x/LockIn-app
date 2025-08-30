@@ -30,9 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Service for interacting with Google Calendar API.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
