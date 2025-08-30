@@ -11,22 +11,15 @@ import com.google.api.services.calendar.model.Events;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
-import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
-import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -132,5 +125,30 @@ public class GoogleCalendarService {
         return tokenRepository.findByUser(user)
                               .map(GoogleCalendarToken::getIsActive)
                               .orElse(false);
+    }
+
+    public List<Event> fetchRecentEvents(User user, int maxResults) {
+        log.info("Fetching up to {} events for user {}", maxResults, user.getId());
+
+        try {
+            Calendar calendar = buildCalendarClient(user);
+
+            Events events = calendar.events()
+                                    .list("primary")
+                                    .setMaxResults(maxResults)
+                                    .setOrderBy("startTime")
+                                    .setSingleEvents(true)
+                                    .execute();
+
+            List<Event> items = events.getItems();
+
+            log.info("Fetched {} events from calendar", items != null ? items.size() : 0);
+
+            return items != null ? items : Collections.emptyList();
+
+        } catch (Exception e) {
+            log.error("Failed to fetch calendar events", e);
+            throw new RuntimeException("Failed to fetch calendar events: " + e.getMessage(), e);
+        }
     }
 }

@@ -70,7 +70,7 @@ public class TaskService {
             try {
                 if (googleCalendarService.isCalendarConnected(user)) {
                     String eventId = googleCalendarService.createEventFromTask(saved, user);
-                    
+
                     saved.setGoogleEventId(eventId);
                     saved = taskRepository.save(saved);
 
