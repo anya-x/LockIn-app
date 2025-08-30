@@ -152,4 +152,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                     + "AND t.status <> :status")
     List<Task> findByUserIdAndStatusNotWithCategory(
             @Param("userId") Long userId, @Param("status") TaskStatus status);
+
+    boolean existsByGoogleEventId(String googleEventId);
 }

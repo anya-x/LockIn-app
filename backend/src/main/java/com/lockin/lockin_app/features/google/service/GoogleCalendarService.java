@@ -11,17 +11,23 @@ import com.google.api.services.calendar.model.Events;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 
 @Slf4j
 @Service
@@ -30,6 +36,7 @@ public class GoogleCalendarService {
 
     private final GoogleCalendarTokenRepository tokenRepository;
     private final TokenEncryptionService encryptionService;
+    private final TaskRepository taskRepository;
 
     public String createEventFromTask(Task task, User user) {
         log.info("Creating calendar event for task: {}", task.getTitle());
@@ -150,5 +157,68 @@ public class GoogleCalendarService {
             log.error("Failed to fetch calendar events", e);
             throw new RuntimeException("Failed to fetch calendar events: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public int syncCalendarToTasks(User user) {
+        log.info("Syncing calendar events to tasks for user {}", user.getId());
+
+        try {
+            List<Event> events = fetchRecentEvents(user, 100);
+            int created = 0;
+
+            for (Event event : events) {
+                if (isLockinEvent(event)) {
+                    log.debug("Skipping Lockin-created event: {}", event.getId());
+                    continue;
+                }
+
+                if (taskRepository.existsByGoogleEventId(event.getId())) {
+                    log.debug("Task already exists for event: {}", event.getId());
+                    continue;
+                }
+
+                Task task = createTaskFromEvent(event, user);
+                taskRepository.save(task);
+                created++;
+
+                log.info("Created task from calendar event: {}", event.getSummary());
+            }
+
+            log.info("Created {} tasks from calendar events", created);
+            return created;
+
+        } catch (Exception e) {
+            log.error("Failed to sync calendar to tasks", e);
+            throw new RuntimeException("Calendar sync failed: " + e.getMessage(), e);
+        }
+    }
+
+    private boolean isLockinEvent(Event event) {
+        if (event.getExtendedProperties() == null) return false;
+        Map<String, String> privateProps = event.getExtendedProperties().getPrivate();
+        return privateProps != null && "lockin".equals(privateProps.get("source"));
+    }
+
+    private Task createTaskFromEvent(Event event, User user) {
+        Task task = new Task();
+        task.setUser(user);
+        task.setTitle(event.getSummary() != null ? event.getSummary() : "Untitled Event");
+        task.setDescription(event.getDescription());
+        task.setGoogleEventId(event.getId());
+
+        if (event.getStart() != null && event.getStart().getDateTime() != null) {
+            long millis = event.getStart().getDateTime().getValue();
+            task.setDueDate(LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(millis),
+                    ZoneId.systemDefault()
+            ));
+        }
+
+        task.setStatus(TaskStatus.TODO);
+        task.setIsUrgent(false);
+        task.setIsImportant(false);
+
+        return task;
     }
 }
