@@ -3,13 +3,16 @@ package com.lockin.lockin_app.features.google.controller;
 import com.lockin.lockin_app.config.GoogleOAuthConfig;
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -111,5 +114,69 @@ public class GoogleCalendarController extends BaseController {
         return Base64.getEncoder().encodeToString(
                 (username + ":" + System.currentTimeMillis()).getBytes()
         );
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<?> getStatus(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            User user = userService.getUserById(userId);
+
+            Map<String, Object> status = calendarService.getConnectionStatus(user);
+
+            return ResponseEntity.ok(status);
+
+        } catch (Exception e) {
+            log.error("Failed to get calendar status", e);
+            return ResponseEntity.ok(Map.of(
+                    "connected", false,
+                    "error", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/sync-now")
+    public ResponseEntity<?> syncNow(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            User user = userService.getUserById(userId);
+
+            int created = calendarService.syncCalendarToTasks(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "tasksCreated", created
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to sync calendar", e);
+            return ResponseEntity.internalServerError()
+                                 .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/disconnect")
+    public ResponseEntity<?> disconnect(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            User user = userService.getUserById(userId);
+
+            calendarService.disconnectCalendar(user);
+
+            log.info("User {} disconnected Google Calendar", userId);
+
+            return ResponseEntity.ok(Map.of("disconnected", true));
+
+        } catch (Exception e) {
+            log.error("Failed to disconnect calendar", e);
+            return ResponseEntity.internalServerError()
+                                 .body(Map.of("error", e.getMessage()));
+        }
     }
 }
