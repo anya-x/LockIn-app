@@ -23,6 +23,7 @@ import { useAppTheme } from "../context/ThemeContext";
 import { useAIPreferences } from "../context/AIPreferencesContext";
 import type { ThemeColor } from "../themes/themeConfig";
 import PageHeader from "../components/shared/PageHeader";
+import CalendarSettings from "../components/calendar/CalendarSettings";
 
 const Settings: React.FC = () => {
   const theme = useTheme();
@@ -238,22 +239,19 @@ const Settings: React.FC = () => {
                   AI Features
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Enable AI-powered task breakdown, description enhancement, and daily briefing
+                  Enable AI-powered task breakdown, description enhancement, and
+                  daily briefing
                 </Typography>
               </Box>
             </Box>
             <FormControlLabel
-              control={
-                <Switch
-                  checked={aiEnabled}
-                  onChange={toggleAI}
-                />
-              }
+              control={<Switch checked={aiEnabled} onChange={toggleAI} />}
               label=""
             />
           </Box>
         </CardContent>
       </Card>
+      <CalendarSettings />
     </Box>
   );
 };
