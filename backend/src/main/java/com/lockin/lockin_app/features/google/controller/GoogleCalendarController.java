@@ -6,16 +6,13 @@ import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.Base64;
@@ -42,11 +39,10 @@ public class GoogleCalendarController extends BaseController {
     }
 
     @GetMapping("/connect")
-    public ResponseEntity<?> connectCalendar(
+    public ResponseEntity<Map<String, String>> connectCalendar(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.info("User {} initiating Google Calendar connection",
-                 getCurrentUserEmail(userDetails));
+        log.debug("GET /api/calendar/connect : User: {}", getCurrentUserEmail(userDetails));
 
         try {
             String authUrl = String.format(
@@ -64,8 +60,6 @@ public class GoogleCalendarController extends BaseController {
                     generateStateToken(getCurrentUserEmail(userDetails))
             );
 
-            log.info("Generated auth URL for user");
-
             return ResponseEntity.ok(Map.of("authorizationUrl", authUrl));
 
         } catch (Exception e) {
@@ -75,14 +69,13 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-
-    @GetMapping("/oauth/callback/")
+    @GetMapping("/oauth/callback")
     public RedirectView oauthCallback(
             @RequestParam String code,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String error) {
 
-        log.info("OAuth callback received");
+        log.debug("GET /api/calendar/oauth/callback/");
 
         if (error != null) {
             log.error("OAuth error: {}", error);
@@ -94,13 +87,11 @@ public class GoogleCalendarController extends BaseController {
             String[] parts = decodedState.split(":");
             String userEmail = parts[0];
 
-            log.info("Extracted user email from state: {}", userEmail);
-
             Long userId = userService.getUserIdFromEmail(userEmail);
 
             oauthService.exchangeCodeForTokens(code, userId);
 
-            log.info("OAuth flow completed successfully for user {}", userId);
+            log.info("OAuth flow completed for user {}", userId);
             return new RedirectView("http://localhost:5173/settings?connected=true");
 
         } catch (Exception e) {
@@ -109,7 +100,6 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-
     private String generateStateToken(String username) {
         return Base64.getEncoder().encodeToString(
                 (username + ":" + System.currentTimeMillis()).getBytes()
@@ -117,11 +107,13 @@ public class GoogleCalendarController extends BaseController {
     }
 
     @GetMapping("/status")
-    public ResponseEntity<?> getStatus(
+    public ResponseEntity<Map<String, Object>> getStatus(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("GET /api/calendar/status : User: {}", getCurrentUserEmail(userDetails));
+
         try {
-            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            Long userId = getCurrentUserId(userDetails);
             User user = userService.getUserById(userId);
 
             Map<String, Object> status = calendarService.getConnectionStatus(user);
@@ -138,18 +130,22 @@ public class GoogleCalendarController extends BaseController {
     }
 
     @PostMapping("/sync-now")
-    public ResponseEntity<?> syncNow(
+    public ResponseEntity<Map<String, Object>> syncNow(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("POST /api/calendar/sync-now : User: {}", getCurrentUserEmail(userDetails));
+
         try {
-            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            Long userId = getCurrentUserId(userDetails);
             User user = userService.getUserById(userId);
 
-            int created = calendarService.syncCalendarToTasks(user);
+            int imported = calendarService.syncCalendarToTasks(user);
+            int exported = calendarService.syncTasksToGoogle(user);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "tasksCreated", created
+                    "tasksImported", imported,
+                    "tasksExported", exported
             ));
 
         } catch (Exception e) {
@@ -159,12 +155,38 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-    @DeleteMapping("/disconnect")
-    public ResponseEntity<?> disconnect(
+    @PostMapping("/push-to-google")
+    public ResponseEntity<Map<String, Object>> pushToGoogle(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("POST /api/calendar/push-to-google : User: {}", getCurrentUserEmail(userDetails));
+
         try {
-            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            Long userId = getCurrentUserId(userDetails);
+            User user = userService.getUserById(userId);
+
+            int exported = calendarService.syncTasksToGoogle(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "tasksExported", exported
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to push tasks to Google", e);
+            return ResponseEntity.internalServerError()
+                                 .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/disconnect")
+    public ResponseEntity<Map<String, Object>> disconnect(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("DELETE /api/calendar/disconnect : User: {}", getCurrentUserEmail(userDetails));
+
+        try {
+            Long userId = getCurrentUserId(userDetails);
             User user = userService.getUserById(userId);
 
             calendarService.disconnectCalendar(user);

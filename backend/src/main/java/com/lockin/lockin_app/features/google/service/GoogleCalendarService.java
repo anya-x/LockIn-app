@@ -8,6 +8,8 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
+import com.google.api.services.tasks.model.TaskList;
+import com.google.api.services.tasks.model.TaskLists;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
@@ -25,7 +27,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -138,9 +144,16 @@ public class GoogleCalendarService {
         try {
             Calendar calendar = buildCalendarClient(user);
 
+            DateTime now = new DateTime(System.currentTimeMillis());
+            DateTime thirtyDaysFromNow = new DateTime(
+                    System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000)
+            );
+
             Events events = calendar.events()
                                     .list("primary")
                                     .setMaxResults(maxResults)
+                                    .setTimeMin(now)
+                                    .setTimeMax(thirtyDaysFromNow)
                                     .setOrderBy("startTime")
                                     .setSingleEvents(true)
                                     .execute();
@@ -157,15 +170,159 @@ public class GoogleCalendarService {
         }
     }
 
+
+    public com.google.api.services.tasks.Tasks buildTasksClient(User user) throws Exception {
+        GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
+                                                         .orElseThrow(() -> new RuntimeException("User has not connected Google Calendar"));
+
+        if (!tokenEntity.getIsActive()) {
+            throw new RuntimeException("Calendar connection is inactive");
+        }
+
+        if (tokenEntity.getTokenExpiresAt().isBefore(ZonedDateTime.now())) {
+            log.warn("Access token expired for user {}", user.getId());
+            throw new RuntimeException("Access token expired - please reconnect calendar");
+        }
+
+        String accessToken = encryptionService.decrypt(tokenEntity.getEncryptedAccessToken());
+
+        @SuppressWarnings("deprecation")
+        GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
+
+        com.google.api.services.tasks.Tasks tasks = new com.google.api.services.tasks.Tasks.Builder(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                credential
+        )
+                .setApplicationName("Lockin Task Manager")
+                .build();
+
+        log.info("Built Tasks API client for user {}", user.getId());
+        return tasks;
+    }
+
     @Transactional
     public int syncCalendarToTasks(User user) {
-        log.info("Syncing calendar events to tasks for user {}", user.getId());
+        log.info("Syncing Google Tasks to Lockin for user {}", user.getId());
+
+        try {
+            com.google.api.services.tasks.Tasks tasksClient = buildTasksClient(user);
+            int created = 0;
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime thirtyDaysFromNow = now.plusDays(30);
+
+            TaskLists taskLists = tasksClient.tasklists().list().execute();
+
+            if (taskLists.getItems() == null) {
+                log.info("No task lists found");
+                return 0;
+            }
+
+            for (TaskList taskList : taskLists.getItems()) {
+                log.info("Processing task list: {}", taskList.getTitle());
+
+                com.google.api.services.tasks.model.Tasks googleTasks = tasksClient.tasks()
+                                                                                   .list(taskList.getId())
+                                                                                   .setShowCompleted(false)
+                                                                                   .setShowHidden(false)
+                                                                                   .execute();
+
+                if (googleTasks.getItems() == null) {
+                    continue;
+                }
+
+                for (com.google.api.services.tasks.model.Task googleTask : googleTasks.getItems()) {
+                    if (googleTask.getDue() == null) {
+                        log.debug("Skipping task without due date: {}", googleTask.getTitle());
+                        continue;
+                    }
+
+                    try {
+                        long millis = DateTime.parseRfc3339(googleTask.getDue().toString()).getValue();
+                        LocalDateTime dueDate = LocalDateTime.ofInstant(
+                                Instant.ofEpochMilli(millis),
+                                ZoneId.systemDefault()
+                        );
+
+                        if (dueDate.isBefore(now)) {
+                            log.debug("Skipping past task: {}", googleTask.getTitle());
+                            continue;
+                        }
+
+                        if (dueDate.isAfter(thirtyDaysFromNow)) {
+                            log.debug("Skipping task too far in future: {}", googleTask.getTitle());
+                            continue;
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse due date for task: {}", googleTask.getTitle());
+                        continue;
+                    }
+
+                    if (taskRepository.existsByGoogleEventId(googleTask.getId())) {
+                        log.debug("Task already exists: {}", googleTask.getTitle());
+                        continue;
+                    }
+
+                    Task task = createTaskFromGoogleTask(googleTask, user);
+                    try {
+                        taskRepository.save(task);
+                        created++;
+                        log.info("Created task from Google Task: {}", googleTask.getTitle());
+                    } catch (DataIntegrityViolationException e) {
+                        log.debug("Task {} already exists (caught by constraint)", googleTask.getId());
+                    }
+                }
+            }
+
+            log.info("Imported {} tasks from Google Tasks", created);
+            return created;
+
+        } catch (Exception e) {
+            log.error("Failed to sync Google Tasks", e);
+            throw new RuntimeException("Google Tasks sync failed: " + e.getMessage(), e);
+        }
+    }
+
+    private Task createTaskFromGoogleTask(com.google.api.services.tasks.model.Task googleTask, User user) {
+        Task task = new Task();
+        task.setUser(user);
+        task.setTitle(googleTask.getTitle() != null ? googleTask.getTitle() : "Untitled Task");
+        task.setDescription(googleTask.getNotes());
+        task.setGoogleEventId(googleTask.getId());
+
+        if (googleTask.getDue() != null) {
+            try {
+                long millis = DateTime.parseRfc3339(googleTask.getDue().toString()).getValue();
+                task.setDueDate(LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(millis),
+                        ZoneId.systemDefault()
+                ));
+            } catch (Exception e) {
+                log.warn("Failed to parse due date: {}", googleTask.getDue());
+            }
+        }
+
+        task.setStatus(TaskStatus.TODO);
+        task.setIsUrgent(false);
+        task.setIsImportant(false);
+
+        return task;
+    }
+
+    @SuppressWarnings("unused")
+    private int importEventsAsTasks(User user) {
+        log.info("Importing calendar events as tasks for user {}", user.getId());
 
         try {
             List<Event> events = fetchRecentEvents(user, 100);
             int created = 0;
 
             for (Event event : events) {
+                if (event.getStart() == null || event.getStart().getDateTime() == null) {
+                    log.debug("Skipping all-day event: {}", event.getSummary());
+                    continue;
+                }
+
                 if (isLockinEvent(event)) {
                     log.debug("Skipping Lockin-created event: {}", event.getId());
                     continue;
@@ -226,14 +383,14 @@ public class GoogleCalendarService {
     public Map<String, Object> getConnectionStatus(User user) {
         Map<String, Object> status = new HashMap<>();
 
-        Optional<GoogleCalendarToken> optionalToken = tokenRepository.findByUser(user);
+        Optional<GoogleCalendarToken> tokenOpt = tokenRepository.findByUser(user);
 
-        if (optionalToken.isEmpty()) {
+        if (tokenOpt.isEmpty()) {
             status.put("connected", false);
             return status;
         }
 
-        GoogleCalendarToken token = optionalToken.get();
+        GoogleCalendarToken token = tokenOpt.get();
         status.put("connected", token.getIsActive());
         status.put("connectedAt", token.getConnectedAt());
         status.put("lastSyncAt", token.getLastSyncAt());
@@ -247,6 +404,69 @@ public class GoogleCalendarService {
         }
 
         return status;
+    }
+
+    @Transactional
+    public int syncTasksToGoogle(User user) {
+        log.info("Syncing Lockin tasks to Google Tasks for user {}", user.getId());
+
+        try {
+            com.google.api.services.tasks.Tasks tasksClient = buildTasksClient(user);
+            int created = 0;
+            LocalDateTime sixtyDaysFromNow = LocalDateTime.now().plusDays(60);
+
+            List<Task> tasksToSync = taskRepository.findTasksToSyncToGoogle(
+                    user.getId(),
+                    sixtyDaysFromNow
+            );
+
+            if (tasksToSync.isEmpty()) {
+                log.info("No tasks to sync to Google");
+                return 0;
+            }
+
+            TaskLists taskLists = tasksClient.tasklists().list().execute();
+            String taskListId = "@default";
+            if (taskLists.getItems() != null && !taskLists.getItems().isEmpty()) {
+                taskListId = taskLists.getItems().get(0).getId();
+            }
+
+            for (Task task : tasksToSync) {
+                try {
+                    com.google.api.services.tasks.model.Task googleTask = createGoogleTaskFromLockin(task);
+                    com.google.api.services.tasks.model.Task createdTask = tasksClient.tasks()
+                                                                                      .insert(taskListId, googleTask)
+                                                                                      .execute();
+
+                    task.setGoogleEventId(createdTask.getId());
+                    taskRepository.save(task);
+                    created++;
+                    log.info("Created Google Task from Lockin task: {}", task.getTitle());
+                } catch (Exception e) {
+                    log.warn("Failed to create Google Task for task {}: {}", task.getId(), e.getMessage());
+                }
+            }
+
+            log.info("Exported {} tasks to Google Tasks", created);
+            return created;
+
+        } catch (Exception e) {
+            log.error("Failed to sync tasks to Google", e);
+            throw new RuntimeException("Google Tasks sync failed: " + e.getMessage(), e);
+        }
+    }
+
+    private com.google.api.services.tasks.model.Task createGoogleTaskFromLockin(Task task) {
+        com.google.api.services.tasks.model.Task googleTask = new com.google.api.services.tasks.model.Task();
+        googleTask.setTitle(task.getTitle());
+        googleTask.setNotes(task.getDescription());
+
+        if (task.getDueDate() != null) {
+            long millis = task.getDueDate().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            googleTask.setDue(new DateTime(millis).toStringRfc3339());
+        }
+
+        return googleTask;
     }
 
     @Transactional

@@ -129,7 +129,13 @@
             <version>v3-rev20250404-2.0.0</version>
         </dependency>
 
-        <!-- For token encryption -->
+        <!-- https://mvnrepository.com/artifact/com.google.apis/google-api-services-tasks -->
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-tasks</artifactId>
+            <version>v1-rev20250415-2.0.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.jasypt</groupId>
             <artifactId>jasypt</artifactId>

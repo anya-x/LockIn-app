@@ -152,6 +152,15 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                     + "AND t.status <> :status")
     List<Task> findByUserIdAndStatusNotWithCategory(
             @Param("userId") Long userId, @Param("status") TaskStatus status);
-
+            
     boolean existsByGoogleEventId(String googleEventId);
+
+    @Query(
+            "SELECT t FROM Task t WHERE t.user.id = :userId "
+                    + "AND t.status <> 'DONE' "
+                    + "AND t.googleEventId IS NULL "
+                    + "AND (t.dueDate IS NULL OR t.dueDate <= :maxDueDate)")
+    List<Task> findTasksToSyncToGoogle(
+            @Param("userId") Long userId,
+            @Param("maxDueDate") LocalDateTime maxDueDate);
 }
