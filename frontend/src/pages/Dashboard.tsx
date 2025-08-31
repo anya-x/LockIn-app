@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useEffect, useState } from "react";
 import {
   Box,
   Drawer,
@@ -16,6 +16,8 @@ import {
   useMediaQuery,
   Chip,
   alpha,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { getSessionTypeColor } from "../utils/colorMaps";
 import {
@@ -43,6 +45,10 @@ import Analytics from "./Analytics";
 import Goals from "./Goals";
 import Badges from "./Badges";
 import Settings from "./Settings";
+import NotificationCenter from "../components/notifications/NotificationCenter";
+import { websocketService } from "../services/websocketService";
+import { browserNotificationService } from "../services/browserNotificationService";
+import type { Notification } from "../services/notificationService";
 
 const drawerWidth = 240;
 
@@ -166,6 +172,32 @@ const Dashboard: React.FC = () => {
   const { logout, user } = useAuth();
 
   const { timer, selectedProfile } = useTimer();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  useEffect(() => {
+    if (user?.email) {
+      browserNotificationService.requestPermission();
+
+      websocketService.connect(user.email, (notification: unknown) => {
+        const notif = notification as Notification;
+
+        if (browserNotificationService.isSupported()) {
+          browserNotificationService.showNotification(notif.title, {
+            body: notif.message,
+            tag: String(notif.id),
+          });
+        }
+
+        setSnackbarMessage(notif.title);
+        setSnackbarOpen(true);
+      });
+
+      return () => {
+        websocketService.disconnect();
+      };
+    }
+  }, [user?.email]);
 
   const getCurrentView = ():
     | "tasks"
@@ -522,15 +554,19 @@ const Dashboard: React.FC = () => {
         <MenuIcon />
       </IconButton>
 
-      {timer.sessionStartedAt && currentView !== "timer" && (
-        <Box
-          sx={{
-            position: "fixed",
-            top: { xs: 16, md: 24 },
-            right: { xs: 16, md: 24 },
-            zIndex: 1100,
-          }}
-        >
+      {/* Fixed top-right area for timer and notifications */}
+      <Box
+        sx={{
+          position: "fixed",
+          top: { xs: 16, md: 24 },
+          right: { xs: 16, md: 24 },
+          zIndex: 1100,
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+        }}
+      >
+        {timer.sessionStartedAt && currentView !== "timer" && (
           <TimerChip
             isRunning={timer.isRunning}
             sessionType={timer.sessionType}
@@ -541,8 +577,17 @@ const Dashboard: React.FC = () => {
             onNavigate={handleTimerNavigate}
             currentView={currentView}
           />
+        )}
+        <Box
+          sx={{
+            bgcolor: theme.palette.background.paper,
+            borderRadius: "50%",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          }}
+        >
+          <NotificationCenter />
         </Box>
-      )}
+      </Box>
 
       <Box
         component="main"
@@ -555,6 +600,23 @@ const Dashboard: React.FC = () => {
       >
         {renderContent}
       </Box>
+
+      {/* Notification snackbar for real-time alerts */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="info"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

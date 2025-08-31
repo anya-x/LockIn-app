@@ -1,4 +1,4 @@
-import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
+import { Client, type IMessage, type StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 export type NotificationHandler = (notification: unknown) => void;
