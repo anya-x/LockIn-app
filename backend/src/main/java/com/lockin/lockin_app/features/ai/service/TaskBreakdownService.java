@@ -10,6 +10,7 @@ import com.lockin.lockin_app.features.ai.entity.AIUsage;
 import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.ai.repository.AIUsageRepository;
+import com.lockin.lockin_app.features.notifications.service.NotificationService;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class TaskBreakdownService {
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
     private final RateLimitService rateLimitService;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TaskBreakdownResultDTO breakdownTask(Task task) {
@@ -179,6 +181,19 @@ public class TaskBreakdownService {
             aiUsageRepository.save(usage);
 
             log.info("Saved AI usage: {} tokens, ${}", usage.getTokensUsed(), usage.getCostUSD());
+
+            try {
+                notificationService.createNotification(
+                        user,
+                        "AI_BREAKDOWN",
+                        "Task Breakdown Complete",
+                        String.format("AI generated %d subtasks for '%s'",
+                                      subtasks.size(), title),
+                        "/tasks"
+                );
+            } catch (Exception e) {
+                log.warn("Failed to send breakdown notification: {}", e.getMessage());
+            }
 
             return result;
 
