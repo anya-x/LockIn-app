@@ -45,6 +45,9 @@ public class AnalyticsCalculationService {
      */
     @Transactional
     public DailyAnalyticsDTO calculateDailyAnalytics(Long userId, LocalDate date) {
+        long startTime = System.currentTimeMillis();
+        log.debug("🕐 Starting analytics calculation for user {} on {}", userId, date);
+
         User user =
                 userRepository
                         .findById(userId)
@@ -71,12 +74,25 @@ public class AnalyticsCalculationService {
 
         DailyAnalytics saved = dailyAnalyticsRepository.save(analytics);
 
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        log.info("✅ Analytics calculated in {}ms (user={}, date={})", duration, userId, date);
+
+        // Performance monitoring: Log slow queries for investigation
+        if (duration > 200) {
+            log.warn("⚠️  Slow analytics calculation: {}ms (threshold: 200ms)", duration);
+        }
+
         return DailyAnalyticsDTO.fromEntity(saved);
     }
 
     // counts tasks created and completed on the given date
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
+        long methodStart = System.currentTimeMillis();
+
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
+        log.debug("📊 Loaded {} tasks for user {} in {}ms",
+                allTasks.size(), user.getId(), System.currentTimeMillis() - methodStart);
 
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
@@ -107,6 +123,9 @@ public class AnalyticsCalculationService {
 
         double completionRate = created > 0 ? (completed / (double) created) * 100 : 0.0;
         analytics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
+
+        log.debug("📈 Task metrics calculated in {}ms (created={}, completed={})",
+                System.currentTimeMillis() - methodStart, created, completed);
     }
 
     /**
@@ -116,11 +135,16 @@ public class AnalyticsCalculationService {
      * (sessions after 10 PM).
      */
     private void calculatePomodoroMetrics(DailyAnalytics analytics, User user, LocalDate date) {
+        long methodStart = System.currentTimeMillis();
+
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
         List<FocusSession> sessions =
                 focusSessionRepository.findByUserAndStartedAtBetween(user, startOfDay, endOfDay);
+
+        log.debug("🎯 Loaded {} focus sessions for user {} in {}ms",
+                sessions.size(), user.getId(), System.currentTimeMillis() - methodStart);
 
         int completed = 0;
         int totalFocusMinutes = 0;
@@ -153,6 +177,9 @@ public class AnalyticsCalculationService {
 
         int overwork = Math.max(0, totalFocusMinutes - MAX_HEALTHY_MINUTES);
         analytics.setOverworkMinutes(overwork);
+
+        log.debug("⏱️  Pomodoro metrics calculated in {}ms (completed={}, focus={}min)",
+                System.currentTimeMillis() - methodStart, completed, totalFocusMinutes);
     }
 
     // counts current tasks by Eisenhower matrix quadrant
