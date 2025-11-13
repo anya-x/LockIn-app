@@ -1,5 +1,12 @@
 package com.lockin.lockin_app.service;
 
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.calendar.Calendar;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.lockin.lockin_app.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.GoogleCalendarTokenRepository;
@@ -8,11 +15,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 /**
  * Service for interacting with Google Calendar API.
  *
- * WIP: Basic structure
- * TODO: Implement Calendar API client creation
+ * WIP: Implementing Calendar API client
  * TODO: Implement event creation
  * TODO: Implement event sync
  * TODO: Handle token refresh
@@ -26,19 +34,57 @@ public class GoogleCalendarService {
     private final TokenEncryptionService encryptionService;
 
     /**
+     * Build Google Calendar API client using user's stored tokens.
+     *
+     * @param user User with calendar connection
+     * @return Authenticated Calendar client
+     */
+    private Calendar buildCalendarClient(User user) {
+        try {
+            // Get user's tokens from database
+            GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("User has not connected calendar"));
+
+            // Decrypt access token
+            String accessToken = encryptionService.decrypt(tokenEntity.getEncryptedAccessToken());
+
+            // Build credentials with access token
+            GoogleCredentials credentials = GoogleCredentials.create(
+                new AccessToken(accessToken, Date.from(tokenEntity.getTokenExpiresAt().toInstant()))
+            );
+
+            HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+            // Build Calendar client
+            return new Calendar.Builder(
+                GoogleNetHttpTransport.newTrustedTransport(),
+                GsonFactory.getDefaultInstance(),
+                requestInitializer
+            )
+                .setApplicationName("LockIn Task Manager")
+                .build();
+
+        } catch (Exception e) {
+            log.error("Failed to build Calendar client for user {}", user.getEmail(), e);
+            throw new RuntimeException("Failed to build Calendar client", e);
+        }
+    }
+
+    /**
      * Create a Calendar event from a task.
      *
-     * WIP: Need to implement
+     * WIP: Need to implement event creation
      */
     public void createEventFromTask(User user, String title, String description) {
         log.info("Creating calendar event for user {}: {}", user.getEmail(), title);
 
-        // TODO: Get user's tokens
-        // TODO: Build Calendar API client
+        // Get Calendar client
+        Calendar calendar = buildCalendarClient(user);
+
         // TODO: Create event with proper timezone
         // TODO: Store event ID for sync
 
-        throw new UnsupportedOperationException("Not implemented yet");
+        throw new UnsupportedOperationException("Event creation not implemented yet");
     }
 
     /**
