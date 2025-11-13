@@ -70,4 +70,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             Pageable pageable);
 
     List<Task> findByUserIdAndStatusNotOrderByCreatedAtDesc(Long userId, TaskStatus taskStatus);
+
+    // WIP: Attempting to fix N+1 with JOIN FETCH
+    // Idea: Eagerly load everything to avoid multiple queries
+    // This might not be the right approach... testing
+    @Query("SELECT DISTINCT t FROM Task t " +
+           "LEFT JOIN FETCH t.user " +
+           "LEFT JOIN FETCH t.category " +
+           "WHERE t.user.id = :userId")
+    List<Task> findByUserIdWithRelations(@Param("userId") Long userId);
 }
