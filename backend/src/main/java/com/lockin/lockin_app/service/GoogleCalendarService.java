@@ -42,6 +42,8 @@ public class GoogleCalendarService {
     /**
      * Build Google Calendar API client using user's stored tokens.
      *
+     * WIP: Attempting to add automatic token refresh
+     *
      * @param user User with calendar connection
      * @return Authenticated Calendar client
      */
@@ -50,6 +52,15 @@ public class GoogleCalendarService {
             // Get user's tokens from database
             GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("User has not connected calendar"));
+
+            // Check if token is expired and needs refresh
+            // BUG: This doesn't actually work! Token refresh is more complex than this
+            if (tokenEntity.getTokenExpiresAt().isBefore(ZonedDateTime.now())) {
+                log.warn("Access token expired for user {}, attempting refresh...", user.getEmail());
+                // TODO: Implement token refresh
+                // For now, just throw exception - user needs to reconnect
+                throw new RuntimeException("Access token expired - please reconnect calendar");
+            }
 
             // Decrypt access token
             String accessToken = encryptionService.decrypt(tokenEntity.getEncryptedAccessToken());
@@ -74,6 +85,25 @@ public class GoogleCalendarService {
             log.error("Failed to build Calendar client for user {}", user.getEmail(), e);
             throw new RuntimeException("Failed to build Calendar client", e);
         }
+    }
+
+    /**
+     * Attempt to refresh access token using refresh token.
+     *
+     * WIP: This is proving to be more complex than expected!
+     * Google's OAuth refresh flow has weird edge cases.
+     */
+    private void refreshAccessToken(User user) {
+        // TODO: Implement this
+        // Need to:
+        // 1. Get refresh token from database
+        // 2. POST to Google OAuth token endpoint
+        // 3. Get new access token
+        // 4. Update database with new token and expiry
+        // 5. Handle cases where refresh token is invalid/revoked
+        //
+        // This is WAY more complex than I thought...
+        throw new UnsupportedOperationException("Token refresh not implemented yet");
     }
 
     /**
