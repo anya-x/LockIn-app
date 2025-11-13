@@ -148,8 +148,8 @@ public class GoogleCalendarController {
             tokenRequest.put("code", code);
             tokenRequest.put("client_id", clientId);
             tokenRequest.put("client_secret", clientSecret);
-            // BUG: Adding trailing slash here - Google is VERY strict about redirect URI matching!
-            tokenRequest.put("redirect_uri", redirectUri + "/");
+            // FIXED: Must match EXACTLY what was sent in authorization URL
+            tokenRequest.put("redirect_uri", redirectUri);
             tokenRequest.put("grant_type", "authorization_code");
 
             log.info("Exchanging code for tokens...");
