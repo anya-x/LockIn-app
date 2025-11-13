@@ -195,22 +195,28 @@ public class TaskService {
         log.info("Updated task: {}", updated.getId());
 
         // Sync to calendar if connected and task has due date
-        // BUG: Not checking if event already exists! Will create duplicates!
+        // ATTEMPTED FIX: Check if event already exists before creating
         User user = task.getUser();
         if (calendarService.isCalendarConnected(user) && updated.getDueDate() != null) {
             try {
-                log.info("Syncing updated task to calendar: {}", updated.getId());
+                // Only create new event if task doesn't have one yet
+                if (updated.getGoogleEventId() == null || updated.getGoogleEventId().isEmpty()) {
+                    log.info("Creating calendar event for updated task: {}", updated.getId());
 
-                String eventId = calendarService.createEventFromTask(
-                    user,
-                    updated.getTitle(),
-                    updated.getDescription(),
-                    updated.getDueDate(),
-                    30
-                );
+                    String eventId = calendarService.createEventFromTask(
+                        user,
+                        updated.getTitle(),
+                        updated.getDescription(),
+                        updated.getDueDate(),
+                        30
+                    );
 
-                updated.setGoogleEventId(eventId);
-                taskRepository.save(updated);
+                    updated.setGoogleEventId(eventId);
+                    taskRepository.save(updated);
+                } else {
+                    log.debug("Task {} already has calendar event {}, skipping creation",
+                        updated.getId(), updated.getGoogleEventId());
+                }
 
             } catch (Exception e) {
                 log.error("Failed to sync task update to calendar", e);
