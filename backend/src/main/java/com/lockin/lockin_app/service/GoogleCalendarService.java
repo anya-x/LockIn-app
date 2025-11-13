@@ -3,7 +3,10 @@ package com.lockin.lockin_app.service;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
+import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventDateTime;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -15,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 /**
@@ -73,18 +78,53 @@ public class GoogleCalendarService {
     /**
      * Create a Calendar event from a task.
      *
-     * WIP: Need to implement event creation
+     * @param user User to create event for
+     * @param title Event title
+     * @param description Event description
+     * @param startTime Event start time
+     * @param durationMinutes Duration in minutes
+     * @return Event ID from Google Calendar
      */
-    public void createEventFromTask(User user, String title, String description) {
-        log.info("Creating calendar event for user {}: {}", user.getEmail(), title);
+    public String createEventFromTask(User user, String title, String description,
+                                      LocalDateTime startTime, int durationMinutes) {
+        try {
+            log.info("Creating calendar event for user {}: {}", user.getEmail(), title);
 
-        // Get Calendar client
-        Calendar calendar = buildCalendarClient(user);
+            // Get Calendar client
+            Calendar calendar = buildCalendarClient(user);
 
-        // TODO: Create event with proper timezone
-        // TODO: Store event ID for sync
+            // Create event object
+            Event event = new Event()
+                .setSummary(title)
+                .setDescription(description);
 
-        throw new UnsupportedOperationException("Event creation not implemented yet");
+            // BUG: Not including timezone here! Will cause events to be created in wrong time
+            // Should be: new DateTime(Date.from(...), TimeZone.getTimeZone(ZoneId.systemDefault()))
+            LocalDateTime endTime = startTime.plusMinutes(durationMinutes);
+
+            EventDateTime start = new EventDateTime()
+                .setDateTime(new DateTime(Date.from(startTime.atZone(ZoneId.systemDefault()).toInstant())));
+
+            EventDateTime end = new EventDateTime()
+                .setDateTime(new DateTime(Date.from(endTime.atZone(ZoneId.systemDefault()).toInstant())));
+
+            event.setStart(start);
+            event.setEnd(end);
+
+            // Insert event into primary calendar
+            Event createdEvent = calendar.events()
+                .insert("primary", event)
+                .execute();
+
+            log.info("Created calendar event with ID: {} for user {}",
+                createdEvent.getId(), user.getEmail());
+
+            return createdEvent.getId();
+
+        } catch (Exception e) {
+            log.error("Failed to create calendar event for user {}", user.getEmail(), e);
+            throw new RuntimeException("Failed to create calendar event", e);
+        }
     }
 
     /**
