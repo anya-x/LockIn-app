@@ -25,6 +25,8 @@ import {
   Bar,
   PieChart,
   Pie,
+  AreaChart,
+  Area,
   Cell,
   XAxis,
   YAxis,
@@ -327,6 +329,59 @@ const AnalyticsPage: React.FC = () => {
                 />
               </LineChart>
             </ResponsiveContainer>
+          </Paper>
+
+          {/* Focus Time Area Chart */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Focus Time Distribution (7 Days)
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={rangeData}>
+                <defs>
+                  <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2196f3" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#2196f3" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) =>
+                    new Date(date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  }
+                />
+                <YAxis
+                  label={{
+                    value: "Minutes",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <Tooltip
+                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="focusMinutes"
+                  stroke="#2196f3"
+                  fillOpacity={1}
+                  fill="url(#colorFocus)"
+                  name="Focus Minutes"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 2, display: "block" }}
+            >
+              Total focused work time per day
+            </Typography>
           </Paper>
 
           {/* Focus Time and Tasks */}
