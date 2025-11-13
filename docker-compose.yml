@@ -1,24 +1,80 @@
 version: "3.8"
 
 services:
-  database:
-    image: postgres:17-alpine
+  postgres:
+    image: postgres:15-alpine
     container_name: lockin-postgres
     environment:
-      POSTGRES_PASSWORD: password123
       POSTGRES_DB: lockin_db
       POSTGRES_USER: lockin_user
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    networks:
+      - lockin-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lockin_user -d lockin_db"]
+      test: ["CMD-SHELL", "pg_isready -U lockin_user"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: lockin-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - lockin-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lockin-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/lockin_db
+      SPRING_DATASOURCE_USERNAME: lockin_user
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-dev_password}
+      SPRING_DATA_REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_min_256_bits_change_in_production}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lockin-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lockin-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - lockin-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  lockin-network:
+    driver: bridge
