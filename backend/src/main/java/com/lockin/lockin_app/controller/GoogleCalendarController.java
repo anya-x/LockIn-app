@@ -55,6 +55,8 @@ public class GoogleCalendarController {
 
     // TODO: Move this to a proper session store or Redis
     // For now just using in-memory map (will break with multiple instances!)
+    // Security note: State tokens should expire after 10 minutes
+    // Currently they live forever (memory leak risk!)
     private final Map<String, String> stateTokens = new HashMap<>();
 
     /**
@@ -187,14 +189,19 @@ public class GoogleCalendarController {
             return new RedirectView("http://localhost:5173/settings?error=" + error);
         }
 
-        // Verify state token
-        if (state == null || !stateTokens.containsKey(state)) {
-            log.error("Invalid or missing state token");
+        // Verify state token (CSRF protection)
+        if (state == null || state.isEmpty()) {
+            log.error("Missing state token - possible CSRF attack");
+            return new RedirectView("http://localhost:5173/settings?error=missing_state");
+        }
+
+        if (!stateTokens.containsKey(state)) {
+            log.error("Invalid state token (not found) - possibly expired or already used");
             return new RedirectView("http://localhost:5173/settings?error=invalid_state");
         }
 
         String username = stateTokens.remove(state);
-        log.info("State verified for user: {}", username);
+        log.info("State token verified and removed for user: {}", username);
 
         try {
             // Exchange authorization code for tokens
