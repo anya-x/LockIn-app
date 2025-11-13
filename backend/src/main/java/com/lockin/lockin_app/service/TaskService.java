@@ -15,11 +15,13 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -126,9 +128,12 @@ public class TaskService {
      * <p>Automatically sets completedAt timestamp when status changes to COMPLETED. Clears
      * completedAt if status changes away from COMPLETED.
      *
+     * <p>Evicts analytics cache since task completion affects daily stats
+     *
      * @throws ResourceNotFoundException if task doesn't exist
      * @throws UnauthorizedException if user doesn't own task
      */
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     @Transactional
     public TaskResponseDTO updateTask(Long taskId, Long userId, TaskRequestDTO request) {
         log.info("Updating task: {} for user: {}", taskId, userId);

@@ -15,9 +15,11 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -102,9 +104,12 @@ public class FocusSessionService {
      * <p>Records actual minutes worked and completion timestamp, prevents completing an
      * already-completed session.
      *
+     * <p>Evicts analytics cache since session affects daily stats
+     *
      * @param actualMinutes actual time worked
      * @throws ResourceNotFoundException if session already completed or minutes negative
      */
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     @Transactional
     public FocusSessionResponseDTO completeSession(
             Long sessionId, Long userId, Integer actualMinutes) {
