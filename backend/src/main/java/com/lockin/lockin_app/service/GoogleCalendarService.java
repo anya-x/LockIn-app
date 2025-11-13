@@ -138,8 +138,12 @@ public class GoogleCalendarService {
 
             // Create event object
             Event event = new Event()
-                .setSummary(title)
-                .setDescription(description);
+                .setSummary(title);
+
+            // Only set description if provided (avoid "null" string in calendar)
+            if (description != null && !description.trim().isEmpty()) {
+                event.setDescription(description);
+            }
 
             // FIXED: Include timezone to prevent wrong times!
             LocalDateTime endTime = startTime.plusMinutes(durationMinutes);
