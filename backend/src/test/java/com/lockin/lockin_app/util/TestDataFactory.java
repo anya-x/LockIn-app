@@ -57,14 +57,15 @@ public class TestDataFactory {
         session.setId(1L);
         session.setUser(user);
         session.setSessionType(SessionType.WORK);
-        session.setPlannedDuration(25);  // 25-minute Pomodoro
-        session.setStartTime(LocalDateTime.now());
+        session.setPlannedMinutes(25);  // 25-minute Pomodoro
+        session.setStartedAt(LocalDateTime.now());
+        session.setCompleted(false);
         return session;
     }
 
-    public static FocusSession createTestFocusSession(User user, int duration) {
+    public static FocusSession createTestFocusSession(User user, int minutes) {
         FocusSession session = createTestFocusSession(user);
-        session.setPlannedDuration(duration);
+        session.setPlannedMinutes(minutes);
         return session;
     }
 
@@ -84,7 +85,11 @@ public class TestDataFactory {
         goal.setUser(user);
         goal.setTitle(title);
         goal.setDescription("Test goal description");
-        goal.setTargetDate(LocalDateTime.now().plusDays(30));
+        goal.setStartDate(java.time.LocalDate.now());
+        goal.setEndDate(java.time.LocalDate.now().plusDays(30));
+        goal.setType(Goal.GoalType.WEEKLY);
+        goal.setTargetTasks(10);
+        goal.setCurrentTasks(0);
         goal.setCreatedAt(LocalDateTime.now());
         return goal;
     }
