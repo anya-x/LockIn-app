@@ -494,6 +494,102 @@ const AnalyticsPage: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
           </Paper>
+
+          {/* Burnout Risk Trend */}
+          {rangeData.some((d) => d.burnoutRiskScore > 0) && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Burnout Risk Trend
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Based on late night work, consecutive days, and productivity
+                decline
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={rangeData}>
+                  <defs>
+                    <linearGradient
+                      id="colorBurnout"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(date) =>
+                      new Date(date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
+                  />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip
+                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                  />
+                  <Legend />
+                  {/* Danger zones */}
+                  <Area
+                    type="monotone"
+                    dataKey="burnoutRiskScore"
+                    stroke="#f44336"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorBurnout)"
+                    name="Burnout Risk"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+
+              {/* Risk level indicators */}
+              <Box sx={{ display: "flex", gap: 2, mt: 2, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      bgcolor: "#4caf50",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <Typography variant="caption">Low (0-30)</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      bgcolor: "#ff9800",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <Typography variant="caption">Medium (31-60)</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      bgcolor: "#f44336",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <Typography variant="caption">High (61-100)</Typography>
+                </Box>
+              </Box>
+
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Based on Maslach Burnout Inventory research - tracks exhaustion
+                indicators
+              </Alert>
+            </Paper>
+          )}
         </>
       )}
 
