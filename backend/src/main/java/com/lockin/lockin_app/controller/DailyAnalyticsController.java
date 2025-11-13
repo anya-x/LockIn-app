@@ -1,10 +1,12 @@
 package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
+import com.lockin.lockin_app.dto.PeriodComparisonDTO;
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.service.AnalyticsCalculationService;
+import com.lockin.lockin_app.service.ComparisonService;
 import com.lockin.lockin_app.service.UserService;
 import com.lockin.lockin_app.service.WeeklyReportService;
 
@@ -26,6 +28,7 @@ import java.util.List;
 public class DailyAnalyticsController {
 
     private final AnalyticsCalculationService calculationService;
+    private final ComparisonService comparisonService;
     private final UserService userService;
     private final WeeklyReportService weeklyReportService;
     private final UserRepository userRepository;
@@ -96,5 +99,62 @@ public class DailyAnalyticsController {
         }
 
         return ResponseEntity.ok(report);
+    }
+
+    /**
+     * Compare two time periods
+     *
+     * Frontend specifies both date ranges explicitly.
+     * This allows flexible comparisons like:
+     * - This week vs last week
+     * - This month vs last month
+     * - Custom date ranges
+     *
+     * Example: GET /api/analytics/compare
+     *   ?currentStart=2024-11-06&currentEnd=2024-11-12
+     *   &previousStart=2024-10-30&previousEnd=2024-11-05
+     *
+     * @param currentStart start of current period (inclusive)
+     * @param currentEnd end of current period (inclusive)
+     * @param previousStart start of previous period (inclusive)
+     * @param previousEnd end of previous period (inclusive)
+     * @return comparison with percentage changes
+     */
+    @GetMapping("/compare")
+    public ResponseEntity<PeriodComparisonDTO> comparePeriods(
+            @RequestParam String currentStart,
+            @RequestParam String currentEnd,
+            @RequestParam String previousStart,
+            @RequestParam String previousEnd,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("GET /api/analytics/compare: User: {}, current({} to {}), previous({} to {})",
+                userDetails.getUsername(), currentStart, currentEnd, previousStart, previousEnd);
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // Parse dates
+        LocalDate currentStartDate = LocalDate.parse(currentStart);
+        LocalDate currentEndDate = LocalDate.parse(currentEnd);
+        LocalDate previousStartDate = LocalDate.parse(previousStart);
+        LocalDate previousEndDate = LocalDate.parse(previousEnd);
+
+        // Validate date ranges
+        if (currentStartDate.isAfter(currentEndDate)) {
+            log.warn("Invalid current period: start {} after end {}", currentStart, currentEnd);
+            return ResponseEntity.badRequest().build();
+        }
+        if (previousStartDate.isAfter(previousEndDate)) {
+            log.warn("Invalid previous period: start {} after end {}", previousStart, previousEnd);
+            return ResponseEntity.badRequest().build();
+        }
+
+        PeriodComparisonDTO comparison = comparisonService.comparePeriods(
+                userId,
+                currentStartDate, currentEndDate,
+                previousStartDate, previousEndDate
+        );
+
+        return ResponseEntity.ok(comparison);
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -70,4 +71,24 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             Pageable pageable);
 
     List<Task> findByUserIdAndStatusNotOrderByCreatedAtDesc(Long userId, TaskStatus taskStatus);
+
+    /**
+     * Find tasks created within a specific date range for analytics
+     *
+     * This solves the over-fetching problem by filtering in SQL instead of Java.
+     * Much more efficient than loading all tasks and filtering in memory.
+     *
+     * @param userId the user's ID
+     * @param start start of date range (inclusive)
+     * @param end end of date range (exclusive)
+     * @return tasks created within the date range
+     */
+    @Query("SELECT t FROM Task t WHERE t.user.id = :userId " +
+           "AND t.createdAt >= :start AND t.createdAt < :end " +
+           "ORDER BY t.createdAt DESC")
+    List<Task> findByUserIdAndCreatedBetween(
+        @Param("userId") Long userId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
 }
