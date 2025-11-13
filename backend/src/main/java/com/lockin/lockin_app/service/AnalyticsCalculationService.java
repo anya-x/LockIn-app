@@ -10,6 +10,7 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,10 +40,14 @@ public class AnalyticsCalculationService {
      * work-break balance - Burnout risk: Overwork, late night sessions, interruption rate - Focus:
      * Optimal range 240min, diminishing returns after 360min
      *
+     * <p>Cached to avoid recalculating same day multiple times
+     * TODO: add cache eviction when tasks/sessions are completed
+     *
      * @param userId user to calculate analytics for
      * @param date specific date to analyze
      * @return daily analytics with scores and metrics
      */
+    @Cacheable(value = "dailyAnalytics", key = "#userId + '_' + #date")
     @Transactional
     public DailyAnalyticsDTO calculateDailyAnalytics(Long userId, LocalDate date) {
         long startTime = System.currentTimeMillis();
