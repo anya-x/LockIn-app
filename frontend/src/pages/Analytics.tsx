@@ -38,6 +38,7 @@ import {
 } from "recharts";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
+import Achievements from "../components/analytics/Achievements";
 import { useTimer } from "../context/TimerContext";
 import {
   useAnalyticsRange,
@@ -653,6 +654,9 @@ const AnalyticsPage: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Achievements */}
+      <Achievements />
 
       {/* Weekly Report */}
       <WeeklyReport />
