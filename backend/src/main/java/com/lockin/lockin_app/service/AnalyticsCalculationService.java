@@ -90,12 +90,12 @@ public class AnalyticsCalculationService {
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
         long methodStart = System.currentTimeMillis();
 
-        // TODO: PERFORMANCE ISSUE - N+1 Query Problem
-        // This loads ALL tasks for the user, then filters in Java
-        // For a user with 1000 tasks, we load all 1000, then only use ~10 for this date
-        // Better approach: Add date range filtering to the repository query
-        // Impact: ~10x slower than it should be
-        List<Task> allTasks = taskRepository.findByUserId(user.getId());
+        // WIP: Trying JOIN FETCH to optimize loading
+        // Hypothesis: Eager loading relationships will reduce queries
+        // UPDATE: This doesn't actually solve the problem!
+        // We're still loading ALL tasks, just with their relationships
+        // The real issue is filtering by date in Java, not lazy loading
+        List<Task> allTasks = taskRepository.findByUserIdWithRelations(user.getId());
         log.debug("📊 Loaded {} tasks for user {} in {}ms",
                 allTasks.size(), user.getId(), System.currentTimeMillis() - methodStart);
 
