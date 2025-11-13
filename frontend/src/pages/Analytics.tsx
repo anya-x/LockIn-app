@@ -224,53 +224,66 @@ const AnalyticsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Eisenhower Matrix Distribution */}
+      {/* Task Distribution Pie Chart */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Task Distribution (Eisenhower Matrix)
+          Task Distribution by Eisenhower Matrix
         </Typography>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="error.main">
-                {todayAnalytics.urgentImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Urgent & Important
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="warning.main">
-                {todayAnalytics.notUrgentImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Not Urgent & Important
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="info.main">
-                {todayAnalytics.urgentNotImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Urgent & Not Important
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="success.main">
-                {todayAnalytics.notUrgentNotImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Neither Urgent nor Important
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={[
+                {
+                  name: "Urgent & Important",
+                  value: todayAnalytics.urgentImportantCount,
+                  color: "#d32f2f",
+                },
+                {
+                  name: "Not Urgent & Important",
+                  value: todayAnalytics.notUrgentImportantCount,
+                  color: "#f57c00",
+                },
+                {
+                  name: "Urgent & Not Important",
+                  value: todayAnalytics.urgentNotImportantCount,
+                  color: "#1976d2",
+                },
+                {
+                  name: "Neither",
+                  value: todayAnalytics.notUrgentNotImportantCount,
+                  color: "#7cb342",
+                },
+              ]}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) =>
+                `${name}: ${(percent * 100).toFixed(0)}%`
+              }
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {[
+                { color: "#d32f2f" },
+                { color: "#f57c00" },
+                { color: "#1976d2" },
+                { color: "#7cb342" },
+              ].map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 2, display: "block" }}
+        >
+          Based on Eisenhower Matrix - shows how you prioritize tasks
+        </Typography>
       </Paper>
 
       {/* Charts Section */}
