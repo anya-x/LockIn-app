@@ -14,6 +14,7 @@ import {
   Alert,
   Typography,
 } from "@mui/material";
+import { GOAL_TEMPLATES } from "../../constants/goalTemplates";
 
 interface CreateGoalDialogProps {
   open: boolean;
@@ -51,6 +52,7 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("custom");
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -141,6 +143,39 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
     }
   };
 
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+
+    if (templateId === "custom") {
+      // Reset to empty
+      setFormData({
+        title: "",
+        description: "",
+        type: "WEEKLY",
+        startDate: "",
+        endDate: "",
+        targetTasks: undefined,
+        targetPomodoros: undefined,
+        targetFocusMinutes: undefined,
+      });
+      return;
+    }
+
+    const template = GOAL_TEMPLATES.find((t) => t.id === templateId);
+    if (template) {
+      setFormData({
+        title: template.title,
+        description: template.description,
+        type: template.type,
+        startDate: "",
+        endDate: "",
+        targetTasks: template.targetTasks,
+        targetPomodoros: template.targetPomodoros,
+        targetFocusMinutes: template.targetFocusMinutes,
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New Goal</DialogTitle>
@@ -153,6 +188,33 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
           )}
 
           {errors.targets && <Alert severity="warning">{errors.targets}</Alert>}
+
+          {/* Template Selector */}
+          <FormControl fullWidth>
+            <InputLabel>Start From</InputLabel>
+            <Select
+              value={selectedTemplate}
+              label="Start From"
+              onChange={(e) => handleTemplateSelect(e.target.value)}
+            >
+              <MenuItem value="custom">Custom Goal</MenuItem>
+              <MenuItem disabled>──── Templates ────</MenuItem>
+              {GOAL_TEMPLATES.map((template) => (
+                <MenuItem key={template.id} value={template.id}>
+                  {template.title}
+                </MenuItem>
+              ))}
+            </Select>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, ml: 2 }}
+            >
+              {selectedTemplate === "custom"
+                ? "Create your own custom goal"
+                : "Customize template values below"}
+            </Typography>
+          </FormControl>
 
           <TextField
             label="Title"
