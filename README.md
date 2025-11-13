@@ -137,6 +137,7 @@ A science based task management tool that's going to change how you view product
 - ✅ Fixed N+1 query problem in analytics (Nov 2024)
 - ✅ Added database indexes for frequently queried columns
 - ✅ Implemented date-range filtering in SQL instead of Java
+- ✅ Added Spring Cache for analytics (simple cache, TODO: add TTL)
 
 ## Epic 2: Productivity Framework
 
