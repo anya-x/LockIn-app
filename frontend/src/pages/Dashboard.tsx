@@ -15,6 +15,7 @@ import {
   useTheme,
   useMediaQuery,
   Chip,
+  Badge,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -26,6 +27,7 @@ import {
   BarChart as StatsIcon,
   Analytics as AnalyticsIcon,
   Checklist as GoalsIcon,
+  Notifications as NotificationsIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -42,6 +44,8 @@ import Statistics from "./Statistics";
 import Tasks from "./Tasks";
 import Analytics from "./Analytics";
 import Goals from "./Goals";
+import { NotificationCenter } from "../components/notifications/NotificationCenter";
+import { useNotifications } from "../hooks/useNotifications";
 
 const drawerWidth = 240;
 
@@ -188,9 +192,11 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [notificationOpen, setNotificationOpen] = React.useState(false);
   const { logout, user } = useAuth();
 
   const { timer, selectedProfile } = useTimer();
+  const { unreadCount } = useNotifications();
 
   const getCurrentView = ():
     | "tasks"
@@ -390,6 +396,16 @@ const Dashboard: React.FC = () => {
             Welcome, {user?.firstName || user?.email || "User"}
           </Typography>
 
+          <IconButton
+            color="inherit"
+            onClick={() => setNotificationOpen(true)}
+            sx={{ mr: 2 }}
+          >
+            <Badge badgeContent={unreadCount} color="error">
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+
           <TimerChip
             isRunning={timer.isRunning}
             sessionType={timer.sessionType}
@@ -448,6 +464,11 @@ const Dashboard: React.FC = () => {
       >
         {renderContent}
       </Box>
+
+      <NotificationCenter
+        open={notificationOpen}
+        onClose={() => setNotificationOpen(false)}
+      />
     </Box>
   );
 };
