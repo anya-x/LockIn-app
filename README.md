@@ -398,12 +398,12 @@ For questions about this project or visa sponsorship inquiries:
 *Demonstrating production-ready skills, realistic development patterns, and professional maturity for visa sponsorship applications.*
 
 **Total Development Stats:**
-- Commits: 26 (Month 6 only - including CI fixes!)
+- Commits: 32 (Month 6 only - including 4 CI fix iterations!)
 - Test Coverage: Core auth/services covered + frontend components
 - Docker Images: Multi-stage optimized (25MB frontend!)
-- CI/CD: GitHub Actions pipeline
-- Documentation: Comprehensive
-- **Realistic CI journey:** Tests → CI failure → Fix → Success ✅
+- CI/CD: GitHub Actions pipeline (4 iterations to get it right!)
+- Documentation: Comprehensive with full debugging journey
+- **Realistic CI journey:** Tests → 4 Failures → 4 Fixes → Success ✅
 
 🇬🇧 **Ready for UK tech visa sponsorship interviews!** 🚀
 
@@ -426,8 +426,14 @@ For questions about this project or visa sponsorship inquiries:
 - Fix: Added --legacy-peer-deps flag
 - Commit: `de3dad8`
 
+**Iteration 4:** Docker build npm ci failure
+- Issue: Dockerfile used npm ci but no package-lock.json exists
+- Fix: Changed to npm install --production --legacy-peer-deps
+- Commit: `187d572`
+
 **This Shows:**
 - Real debugging process (not perfect first try)
 - Pragmatic solutions (--legacy-peer-deps is industry standard)
 - Professional honesty (documenting challenges)
-- Problem-solving skills (analyzed 3 different CI failures)
+- Problem-solving skills (analyzed 4 different CI failures)
+- Understanding trade-offs (npm install vs npm ci)
