@@ -60,6 +60,8 @@ const AnalyticsPage: React.FC = () => {
 
   const refreshAnalytics = useRefreshAnalytics();
 
+  const [exportingPDF, setExportingPDF] = useState(false);
+
   const loading = todayLoading || rangeLoading;
   const error = todayError ? "Failed to load analytics data" : null;
 
@@ -71,6 +73,28 @@ const AnalyticsPage: React.FC = () => {
 
   const handleRefresh = async () => {
     await refreshAnalytics();
+  };
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      await exportWeeklyReportToPDF(
+        "User",
+        rangeData[0]?.date || "",
+        rangeData[rangeData.length - 1]?.date || "",
+        {
+          tasksCompleted: todayAnalytics?.tasksCompleted || 0,
+          pomodoros: todayAnalytics?.pomodorosCompleted || 0,
+          focusMinutes: todayAnalytics?.focusMinutes || 0,
+          productivityScore: todayAnalytics?.productivityScore || 0,
+        }
+      );
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      alert("Failed to export PDF. Please try again.");
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   if (loading && !todayAnalytics) {
@@ -113,21 +137,13 @@ const AnalyticsPage: React.FC = () => {
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={() => {
-              exportWeeklyReportToPDF(
-                "User",
-                rangeData[0]?.date || "",
-                rangeData[rangeData.length - 1]?.date || "",
-                {
-                  tasksCompleted: todayAnalytics?.tasksCompleted || 0,
-                  pomodoros: todayAnalytics?.pomodorosCompleted || 0,
-                  focusMinutes: todayAnalytics?.focusMinutes || 0,
-                }
-              );
-            }}
+            startIcon={
+              exportingPDF ? <CircularProgress size={16} /> : <DownloadIcon />
+            }
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
           >
-            Export PDF
+            {exportingPDF ? "Generating PDF..." : "Export PDF"}
           </Button>
           <Button
             variant="outlined"
@@ -255,8 +271,9 @@ const AnalyticsPage: React.FC = () => {
         <Typography variant="h6" gutterBottom>
           Task Distribution by Eisenhower Matrix
         </Typography>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
+        <div id="task-distribution-chart">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
             <Pie
               data={[
                 {
@@ -303,6 +320,7 @@ const AnalyticsPage: React.FC = () => {
             <Legend />
           </PieChart>
         </ResponsiveContainer>
+        </div>
         <Typography
           variant="caption"
           color="text.secondary"
@@ -362,8 +380,9 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Focus Time Distribution (7 Days)
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={rangeData}>
+            <div id="focus-time-chart">
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={rangeData}>
                 <defs>
                   <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2196f3" stopOpacity={0.8} />
@@ -401,6 +420,7 @@ const AnalyticsPage: React.FC = () => {
                 />
               </AreaChart>
             </ResponsiveContainer>
+            </div>
             <Typography
               variant="caption"
               color="text.secondary"
