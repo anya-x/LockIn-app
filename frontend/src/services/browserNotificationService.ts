@@ -5,6 +5,9 @@
  * TODO: Add service worker for background notifications
  */
 
+const PERMISSION_REQUESTED_KEY = 'notificationPermissionRequested';
+const PERMISSION_PREFERENCE_KEY = 'notificationPermissionPreference';
+
 export const browserNotificationService = {
   requestPermission: async (): Promise<NotificationPermission> => {
     if (!('Notification' in window)) {
@@ -57,5 +60,53 @@ export const browserNotificationService = {
       console.error('Failed to show notification:', error);
       // Silently fail - don't break the app
     }
+  },
+
+  /**
+   * Request notification permission on first AI request.
+   * This is better UX - ask when user actually needs it!
+   *
+   * Stores preference so we don't ask repeatedly.
+   */
+  requestPermissionOnFirstAIRequest: async (): Promise<NotificationPermission> => {
+    // Check if we already requested
+    const alreadyRequested = localStorage.getItem(PERMISSION_REQUESTED_KEY);
+
+    if (alreadyRequested === 'true') {
+      // Already asked, return current permission
+      return Notification.permission;
+    }
+
+    // Check if browser supports notifications
+    if (!('Notification' in window)) {
+      console.warn('Browser does not support notifications');
+      localStorage.setItem(PERMISSION_REQUESTED_KEY, 'true');
+      return 'denied';
+    }
+
+    // If already granted or denied, don't ask again
+    if (Notification.permission !== 'default') {
+      localStorage.setItem(PERMISSION_REQUESTED_KEY, 'true');
+      return Notification.permission;
+    }
+
+    // Ask for permission!
+    // TODO: Show a friendly toast explaining why we need it
+    console.log('Requesting notification permission for AI updates...');
+    const permission = await Notification.requestPermission();
+
+    // Store that we requested
+    localStorage.setItem(PERMISSION_REQUESTED_KEY, 'true');
+    localStorage.setItem(PERMISSION_PREFERENCE_KEY, permission);
+
+    return permission;
+  },
+
+  /**
+   * Check if we should request permission
+   */
+  shouldRequestPermission: (): boolean => {
+    const alreadyRequested = localStorage.getItem(PERMISSION_REQUESTED_KEY);
+    return alreadyRequested !== 'true' && Notification.permission === 'default';
   },
 };
