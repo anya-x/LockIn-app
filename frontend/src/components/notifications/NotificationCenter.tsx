@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Drawer,
   Box,
@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material';
 import { useNotifications } from '../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
+import { useLocation } from 'react-router-dom';
 
 interface NotificationCenterProps {
   open: boolean;
@@ -27,6 +28,12 @@ interface NotificationCenterProps {
 // Back to Drawer! 380px = goldilocks width
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, onClose }) => {
   const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const location = useLocation();
+
+  // Close drawer when navigation happens (BUG FIX!)
+  useEffect(() => {
+    onClose();
+  }, [location, onClose]);
 
   const handleNotificationClick = (notification: any) => {
     if (!notification.isRead) {
