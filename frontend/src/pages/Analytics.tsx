@@ -17,6 +17,7 @@ import {
   Timer,
   EmojiEvents,
   Refresh as RefreshIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import {
   LineChart,
@@ -43,6 +44,7 @@ import {
   useRefreshAnalytics,
   useTodayAnalytics,
 } from "../hooks/useAnalytics";
+import { exportWeeklyReportToPDF } from "../utils/exportPDF";
 
 const AnalyticsPage: React.FC = () => {
   const { timer } = useTimer();
@@ -108,14 +110,36 @@ const AnalyticsPage: React.FC = () => {
             Analytics Dashboard
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => {
+              exportWeeklyReportToPDF(
+                "User",
+                rangeData[0]?.date || "",
+                rangeData[rangeData.length - 1]?.date || "",
+                {
+                  tasksCompleted: todayAnalytics?.tasksCompleted || 0,
+                  pomodoros: todayAnalytics?.pomodorosCompleted || 0,
+                  focusMinutes: todayAnalytics?.focusMinutes || 0,
+                }
+              );
+            }}
+          >
+            Export PDF
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={
+              loading ? <CircularProgress size={16} /> : <RefreshIcon />
+            }
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
 
       {/* Burnout Alert */}
