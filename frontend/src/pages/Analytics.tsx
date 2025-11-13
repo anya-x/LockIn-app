@@ -45,6 +45,7 @@ import {
   useTodayAnalytics,
 } from "../hooks/useAnalytics";
 import { exportWeeklyReportToPDF } from "../utils/exportPDF";
+import { CHART_COLORS } from "../constants/chartColors";
 
 const AnalyticsPage: React.FC = () => {
   const { timer } = useTimer();
@@ -279,22 +280,22 @@ const AnalyticsPage: React.FC = () => {
                 {
                   name: "Urgent & Important",
                   value: todayAnalytics.urgentImportantCount,
-                  color: "#d32f2f",
+                  color: CHART_COLORS.urgentImportant,
                 },
                 {
                   name: "Not Urgent & Important",
                   value: todayAnalytics.notUrgentImportantCount,
-                  color: "#f57c00",
+                  color: CHART_COLORS.notUrgentImportant,
                 },
                 {
                   name: "Urgent & Not Important",
                   value: todayAnalytics.urgentNotImportantCount,
-                  color: "#1976d2",
+                  color: CHART_COLORS.urgentNotImportant,
                 },
                 {
                   name: "Neither",
                   value: todayAnalytics.notUrgentNotImportantCount,
-                  color: "#7cb342",
+                  color: CHART_COLORS.notUrgentNotImportant,
                 },
               ]}
               cx="50%"
@@ -308,10 +309,10 @@ const AnalyticsPage: React.FC = () => {
               dataKey="value"
             >
               {[
-                { color: "#d32f2f" },
-                { color: "#f57c00" },
-                { color: "#1976d2" },
-                { color: "#7cb342" },
+                { color: CHART_COLORS.urgentImportant },
+                { color: CHART_COLORS.notUrgentImportant },
+                { color: CHART_COLORS.urgentNotImportant },
+                { color: CHART_COLORS.notUrgentNotImportant },
               ].map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
@@ -359,14 +360,14 @@ const AnalyticsPage: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="productivityScore"
-                  stroke="#2196f3"
+                  stroke={CHART_COLORS.productivity}
                   strokeWidth={2}
                   name="Productivity Score"
                 />
                 <Line
                   type="monotone"
                   dataKey="focusScore"
-                  stroke="#4caf50"
+                  stroke={CHART_COLORS.focusTime}
                   strokeWidth={2}
                   name="Focus Score"
                 />
@@ -385,8 +386,8 @@ const AnalyticsPage: React.FC = () => {
                 <AreaChart data={rangeData}>
                 <defs>
                   <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2196f3" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#2196f3" stopOpacity={0} />
+                    <stop offset="5%" stopColor={CHART_COLORS.focusGradient.start} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={CHART_COLORS.focusGradient.end} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -413,7 +414,7 @@ const AnalyticsPage: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="focusMinutes"
-                  stroke="#2196f3"
+                  stroke={CHART_COLORS.focusTime}
                   fillOpacity={1}
                   fill="url(#colorFocus)"
                   name="Focus Minutes"
@@ -458,7 +459,7 @@ const AnalyticsPage: React.FC = () => {
                     <Legend />
                     <Bar
                       dataKey="focusMinutes"
-                      fill="#2196f3"
+                      fill={CHART_COLORS.focusTime}
                       name="Focus Minutes"
                     />
                   </BarChart>
@@ -492,7 +493,7 @@ const AnalyticsPage: React.FC = () => {
                     <Legend />
                     <Bar
                       dataKey="tasksCompleted"
-                      fill="#4caf50"
+                      fill={CHART_COLORS.tasks}
                       name="Tasks Completed"
                     />
                   </BarChart>
@@ -513,12 +514,12 @@ const AnalyticsPage: React.FC = () => {
                     {
                       name: "Focus Time",
                       value: todayAnalytics.focusMinutes,
-                      color: "#2196f3",
+                      color: CHART_COLORS.focusTime,
                     },
                     {
                       name: "Break Time",
                       value: todayAnalytics.breakMinutes,
-                      color: "#4caf50",
+                      color: CHART_COLORS.breaks,
                     },
                   ]}
                   cx="50%"
@@ -529,7 +530,7 @@ const AnalyticsPage: React.FC = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {[{ color: "#2196f3" }, { color: "#4caf50" }].map(
+                  {[{ color: CHART_COLORS.focusTime }, { color: CHART_COLORS.breaks }].map(
                     (entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     )
