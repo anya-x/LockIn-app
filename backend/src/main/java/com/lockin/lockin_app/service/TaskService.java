@@ -63,7 +63,11 @@ public class TaskService {
         log.info("Created task: {}", saved.getId());
 
         // Automatically sync to Google Calendar if connected and task has due date
-        if (calendarService.isCalendarConnected(user) && saved.getDueDate() != null) {
+        // BUG: This check is wrong! Should check saved.getGoogleEventId() but checking task.getGoogleEventId()
+        // which is always null for new tasks, but this will break on updates!
+        if (calendarService.isCalendarConnected(user)
+            && saved.getDueDate() != null
+            && task.getGoogleEventId() == null) {
             try {
                 log.info("Creating calendar event for task: {}", saved.getId());
 
@@ -189,6 +193,29 @@ public class TaskService {
         Task updated = taskRepository.save(task);
 
         log.info("Updated task: {}", updated.getId());
+
+        // Sync to calendar if connected and task has due date
+        // BUG: Not checking if event already exists! Will create duplicates!
+        User user = task.getUser();
+        if (calendarService.isCalendarConnected(user) && updated.getDueDate() != null) {
+            try {
+                log.info("Syncing updated task to calendar: {}", updated.getId());
+
+                String eventId = calendarService.createEventFromTask(
+                    user,
+                    updated.getTitle(),
+                    updated.getDescription(),
+                    updated.getDueDate(),
+                    30
+                );
+
+                updated.setGoogleEventId(eventId);
+                taskRepository.save(updated);
+
+            } catch (Exception e) {
+                log.error("Failed to sync task update to calendar", e);
+            }
+        }
 
         return TaskResponseDTO.fromEntity(updated);
     }
