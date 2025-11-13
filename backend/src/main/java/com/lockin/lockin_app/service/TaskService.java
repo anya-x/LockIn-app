@@ -85,9 +85,16 @@ public class TaskService {
 
                 log.info("Created calendar event {} for task {}", eventId, saved.getId());
 
+            } catch (IllegalArgumentException e) {
+                // Validation error - log but don't break task creation
+                log.warn("Invalid calendar event data for task {}: {}", saved.getId(), e.getMessage());
+            } catch (RuntimeException e) {
+                // Calendar sync error (token expired, API error, etc.)
+                log.error("Failed to sync task {} to calendar: {}. User may need to reconnect.",
+                    saved.getId(), e.getMessage());
             } catch (Exception e) {
-                // Don't fail task creation if calendar sync fails
-                log.error("Failed to create calendar event for task {}", saved.getId(), e);
+                // Unexpected error
+                log.error("Unexpected error syncing task {} to calendar", saved.getId(), e);
             }
         }
 
@@ -215,8 +222,13 @@ public class TaskService {
                 }
                 // TODO: Update existing events instead of just skipping
 
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid calendar event data for task {}: {}", updated.getId(), e.getMessage());
+            } catch (RuntimeException e) {
+                log.error("Failed to sync task {} update to calendar: {}. User may need to reconnect.",
+                    updated.getId(), e.getMessage());
             } catch (Exception e) {
-                log.error("Failed to sync task update to calendar", e);
+                log.error("Unexpected error syncing task {} update to calendar", updated.getId(), e);
             }
         }
 
