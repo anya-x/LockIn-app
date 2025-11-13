@@ -115,13 +115,25 @@ public class GoogleCalendarService {
      * @param startTime Event start time
      * @param durationMinutes Duration in minutes
      * @return Event ID from Google Calendar
+     * @throws RuntimeException if calendar is not connected or token expired
      */
     public String createEventFromTask(User user, String title, String description,
                                       LocalDateTime startTime, int durationMinutes) {
+        // Validation
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Event title cannot be empty");
+        }
+        if (startTime == null) {
+            throw new IllegalArgumentException("Event start time cannot be null");
+        }
+        if (durationMinutes <= 0 || durationMinutes > 1440) {
+            throw new IllegalArgumentException("Duration must be between 1 and 1440 minutes");
+        }
+
         try {
             log.info("Creating calendar event for user {}: {}", user.getEmail(), title);
 
-            // Get Calendar client
+            // Get Calendar client (will throw if token expired)
             Calendar calendar = buildCalendarClient(user);
 
             // Create event object
