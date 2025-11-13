@@ -78,7 +78,35 @@ public class GoogleCalendarController {
             GoogleCalendarToken token = tokenRepository.findByUser(user).get();
             response.put("connectedAt", token.getConnectedAt());
             response.put("lastSyncAt", token.getLastSyncAt());
+            response.put("tokenExpiresAt", token.getTokenExpiresAt());
         }
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Disconnect Google Calendar.
+     * Removes stored tokens so user can reconnect fresh.
+     *
+     * This is the solution to token refresh problems:
+     * Just let users disconnect and reconnect manually!
+     */
+    @DeleteMapping("/disconnect")
+    public ResponseEntity<?> disconnectCalendar(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("User {} disconnecting Google Calendar", userDetails.getUsername());
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        tokenRepository.findByUser(user).ifPresent(token -> {
+            log.info("Deleting calendar tokens for user {}", user.getEmail());
+            tokenRepository.delete(token);
+        });
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Calendar disconnected successfully");
 
         return ResponseEntity.ok(response);
     }
