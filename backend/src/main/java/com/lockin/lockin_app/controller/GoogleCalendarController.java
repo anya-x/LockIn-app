@@ -58,6 +58,32 @@ public class GoogleCalendarController {
     private final Map<String, String> stateTokens = new HashMap<>();
 
     /**
+     * Check if user has connected Google Calendar.
+     */
+    @GetMapping("/status")
+    public ResponseEntity<?> getConnectionStatus(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isConnected = tokenRepository.findByUser(user)
+            .map(GoogleCalendarToken::getIsActive)
+            .orElse(false);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("connected", isConnected);
+
+        if (isConnected) {
+            GoogleCalendarToken token = tokenRepository.findByUser(user).get();
+            response.put("connectedAt", token.getConnectedAt());
+            response.put("lastSyncAt", token.getLastSyncAt());
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Generate Google OAuth authorization URL.
      * User clicks "Connect Google Calendar" -> redirects here.
      */
