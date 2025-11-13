@@ -1,5 +1,10 @@
 package com.lockin.lockin_app.controller;
 
+import com.lockin.lockin_app.entity.GoogleCalendarToken;
+import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.repository.GoogleCalendarTokenRepository;
+import com.lockin.lockin_app.repository.UserRepository;
+import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,11 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,11 +39,19 @@ public class GoogleCalendarController {
     @Value("${google.oauth.client-id}")
     private String clientId;
 
+    @Value("${google.oauth.client-secret}")
+    private String clientSecret;
+
     @Value("${google.oauth.redirect-uri}")
     private String redirectUri;
 
     @Value("${google.oauth.scopes}")
     private String scopes;
+
+    private final TokenEncryptionService encryptionService;
+    private final GoogleCalendarTokenRepository tokenRepository;
+    private final UserRepository userRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     // TODO: Move this to a proper session store or Redis
     // For now just using in-memory map (will break with multiple instances!)
@@ -103,8 +118,6 @@ public class GoogleCalendarController {
     /**
      * OAuth callback endpoint.
      * Google redirects here after user authorizes.
-     *
-     * WIP: Need to implement token exchange
      */
     @GetMapping("/oauth/callback")
     public RedirectView oauthCallback(
@@ -117,14 +130,76 @@ public class GoogleCalendarController {
 
         if (error != null) {
             log.error("OAuth error: {}", error);
-            // TODO: Redirect to frontend with error
             return new RedirectView("http://localhost:5173/settings?error=" + error);
         }
 
-        // TODO: Exchange code for tokens
-        // TODO: Store encrypted tokens
-        // TODO: Redirect to frontend success page
+        // Verify state token
+        if (state == null || !stateTokens.containsKey(state)) {
+            log.error("Invalid or missing state token");
+            return new RedirectView("http://localhost:5173/settings?error=invalid_state");
+        }
 
-        return new RedirectView("http://localhost:5173/settings?success=true");
+        String username = stateTokens.remove(state);
+        log.info("State verified for user: {}", username);
+
+        try {
+            // Exchange authorization code for tokens
+            Map<String, String> tokenRequest = new HashMap<>();
+            tokenRequest.put("code", code);
+            tokenRequest.put("client_id", clientId);
+            tokenRequest.put("client_secret", clientSecret);
+            // BUG: Adding trailing slash here - Google is VERY strict about redirect URI matching!
+            tokenRequest.put("redirect_uri", redirectUri + "/");
+            tokenRequest.put("grant_type", "authorization_code");
+
+            log.info("Exchanging code for tokens...");
+
+            ResponseEntity<Map> tokenResponse = restTemplate.postForEntity(
+                "https://oauth2.googleapis.com/token",
+                tokenRequest,
+                Map.class
+            );
+
+            Map<String, Object> tokens = tokenResponse.getBody();
+            String accessToken = (String) tokens.get("access_token");
+            String refreshToken = (String) tokens.get("refresh_token");
+            Integer expiresIn = (Integer) tokens.get("expires_in");
+
+            log.info("Tokens received successfully for user {}", username);
+
+            // Find user and store encrypted tokens
+            User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+            // Encrypt tokens before storage
+            String encryptedAccessToken = encryptionService.encrypt(accessToken);
+            String encryptedRefreshToken = encryptionService.encrypt(refreshToken);
+
+            // Check if user already has tokens (reconnecting)
+            GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
+                .orElse(new GoogleCalendarToken());
+
+            tokenEntity.setUser(user);
+            tokenEntity.setEncryptedAccessToken(encryptedAccessToken);
+            tokenEntity.setEncryptedRefreshToken(encryptedRefreshToken);
+            tokenEntity.setTokenExpiresAt(ZonedDateTime.now().plusSeconds(expiresIn));
+            tokenEntity.setIsActive(true);
+
+            // Only set connectedAt if this is a new connection
+            if (tokenEntity.getId() == null) {
+                tokenEntity.setConnectedAt(ZonedDateTime.now());
+            }
+            tokenEntity.setLastSyncAt(ZonedDateTime.now());
+
+            tokenRepository.save(tokenEntity);
+
+            log.info("Tokens stored successfully for user {}", username);
+
+            return new RedirectView("http://localhost:5173/settings?success=true");
+
+        } catch (Exception e) {
+            log.error("Error during token exchange", e);
+            return new RedirectView("http://localhost:5173/settings?error=token_exchange_failed");
+        }
     }
 }
