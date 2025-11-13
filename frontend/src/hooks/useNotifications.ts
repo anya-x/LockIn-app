@@ -64,8 +64,25 @@ export const useNotifications = () => {
       }
     );
 
+    // BUG FIX: Reconnect WebSocket when tab becomes active again
+    // (WebSocket disconnects when tab inactive or computer sleeps)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab active - checking WebSocket connection...');
+
+        // If disconnected, reconnect
+        if (!stompClient.active) {
+          console.log('WebSocket disconnected, reconnecting...');
+          stompClient.activate();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       console.log('Cleaning up WebSocket...');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       stompClient.deactivate();
     };
   }, [user, queryClient]);
