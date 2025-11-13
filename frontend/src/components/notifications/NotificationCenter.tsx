@@ -1,5 +1,5 @@
 import React from 'react';
-import { Drawer, Box, Typography, IconButton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, IconButton, Box, Typography } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 
 interface NotificationCenterProps {
@@ -7,30 +7,28 @@ interface NotificationCenterProps {
   onClose: () => void;
 }
 
-// WIP: Just trying drawer layout first
+// Trying Dialog instead...
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, onClose }) => {
   return (
-    <Drawer
-      anchor="right"
+    <Dialog
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: { width: 350 }, // 350px feels a bit narrow?
-      }}
+      maxWidth="sm"
+      fullWidth
     >
-      <Box sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6">Notifications</Typography>
+      <DialogTitle>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Notifications
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
           </IconButton>
         </Box>
+      </DialogTitle>
 
-        {/* TODO: Add notification list here */}
-        <Typography color="text.secondary">
-          No notifications yet
-        </Typography>
-      </Box>
-    </Drawer>
+      <DialogContent>
+        {/* TODO: Notification list */}
+        <Typography>No notifications</Typography>
+      </DialogContent>
+    </Dialog>
   );
 };
