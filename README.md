@@ -75,6 +75,14 @@ A science based task management tool that's going to change how you view product
 - GET `/api/tasks/search?query={term}` - search tasks
 - GET `/api/tasks/filter?status=...&categoryId=...&isUrgent=...&isImportant=...` - multi-criteria filtering
 
+### Notifications (Authenticated)
+
+- GET `/api/notifications` - get all user notifications
+- GET `/api/notifications/unread` - get unread notifications only
+- POST `/api/notifications/{id}/read` - mark a notification as read
+- POST `/api/notifications/mark-all-read` - mark all notifications as read
+- WebSocket `/ws` - real-time notification delivery via STOMP
+
 ## Features & Roadmap
 
 ## Epic 1: Authentication & Foundation
@@ -272,6 +280,137 @@ A science based task management tool that's going to change how you view product
 
 #### US-5.1:
 
+## Month 5: Real-Time Notifications System
+
+### ✅ Notification Center (Week 20)
+
+**Implementation Date:** August 15-21, 2024
+
+A complete real-time notification system built with WebSocket and React Query.
+
+#### Features Implemented:
+
+1. **Real-time Delivery**
+   - WebSocket integration using STOMP protocol
+   - Reuses Month 3 WebSocket infrastructure
+   - Auto-reconnection when tab becomes active
+   - React Query cache invalidation on notification receipt
+
+2. **Notification Center UI**
+   - Drawer component (380px width - perfect!)
+   - Read/unread visual states
+   - Click to mark as read and navigate
+   - "Mark all as read" functionality
+   - Loading skeleton for better UX
+   - Auto-closes on navigation
+
+3. **Badge Integration**
+   - Notification bell icon in navbar
+   - Real-time unread count badge
+   - Red badge for visibility
+   - Updates immediately after actions
+
+4. **Browser Notifications**
+   - Native browser notification support
+   - Permission requested on first AI use (better UX!)
+   - Graceful degradation on unsupported browsers
+   - iOS Safari known limitation
+   - Click notification to navigate to action URL
+
+5. **Preferences (WIP)**
+   - Basic settings UI structure
+   - TODO: Toggle controls for browser/in-app notifications
+   - TODO: Clear preferences functionality
+
+#### Technical Architecture:
+
+**Backend:**
+- `Notification` entity with type, title, message, actionUrl
+- `NotificationService` for creation and WebSocket delivery
+- `NotificationController` with REST endpoints
+- WebSocket `/ws` endpoint with STOMP
+
+**Frontend:**
+- `NotificationCenter` component (Drawer UI)
+- `useNotifications` hook (React Query + WebSocket integration)
+- `browserNotificationService` for native notifications
+- `notificationService` for API calls and WebSocket subscription
+
+#### Key Implementation Details:
+
+**The React Query + WebSocket Pattern:**
+```typescript
+// In useNotifications hook
+const stompClient = notificationService.subscribeToNotifications(
+  user.email,
+  (notification) => {
+    // THIS IS THE KEY! Invalidate cache on WebSocket message
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+  }
+);
+```
+
+This pattern solved the real-time UI update problem:
+- WebSocket delivers notification
+- Callback invalidates React Query cache
+- UI re-fetches and updates automatically
+- No polling needed!
+
+**WebSocket Reconnection:**
+```typescript
+// Listen to page visibility to reconnect
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !stompClient.active) {
+    stompClient.activate(); // Reconnect!
+  }
+});
+```
+
+#### Known Issues:
+
+- Browser notifications don't work on iOS Safari (Apple limitation)
+- Service worker not implemented yet (can't show notifications when app closed)
+- Notification preferences UI incomplete (toggles coming later)
+- No notification sound (TODO)
+- Can't delete individual notifications (only mark as read)
+- Unread count might show stale data briefly on slow connections
+
+#### Bugs Fixed During Development:
+
+1. ✅ Notification drawer staying open after navigation
+2. ✅ WebSocket disconnecting when tab inactive
+3. ✅ Unread count not updating after "mark all read"
+4. ✅ React Query cache not invalidating on WebSocket message
+
+#### Development Time:
+
+- Day 1 (Aug 15): Entity + WebSocket integration - 5h
+- Day 2 (Aug 16): Browser notifications + UI - 5h
+- Day 3 (Aug 17): Preferences + permission handling - 2h
+- Days 4-6 (Aug 18-20): Bug fixes - 5h
+- Day 7 (Aug 21): Documentation - 2h
+
+**Total:** ~19 hours (estimated 12h originally 😅)
+
+#### Future Improvements:
+
+- Add notification sounds
+- Implement service worker for offline support
+- Complete preferences UI with toggles
+- Add notification types: TASK_DUE, CALENDAR_SYNC, etc.
+- Delete/dismiss individual notifications
+- Notification history with pagination
+- Group notifications by type
+- Snooze functionality
+
+#### References:
+
+- [React Query Docs](https://tanstack.com/query/latest)
+- [STOMP Protocol](https://stomp.github.io/)
+- [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API)
+- [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API)
+
 ## Epic 6: Production Readiness
 
 #### US-6.1: Comprehensive Testing
@@ -339,4 +478,4 @@ All productivity features are backed by research:
 
 " - overwork detection 6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
 
-**Last Updated:** 3 June 2025
+**Last Updated:** August 21, 2024 (Month 5 notifications complete!)
