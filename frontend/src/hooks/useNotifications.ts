@@ -36,9 +36,14 @@ export const useNotifications = () => {
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
     mutationFn: notificationService.markAllAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+    onSuccess: async () => {
+      // BUG FIX: Force refetch to update badge immediately
+      // invalidateQueries alone wasn't enough - badge showed stale count
+      await queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      await queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+
+      // Force immediate refetch
+      await queryClient.refetchQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 
