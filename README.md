@@ -409,8 +409,25 @@ For questions about this project or visa sponsorship inquiries:
 
 ### Why This Approach is More Realistic
 
-**CI Failures Are Normal:**
-- First CI run revealed test API mismatches
-- Simplified tests to match actual codebase
-- Shows real development process, not perfect first try
-- Demonstrates debugging and problem-solving skills
+**CI Failures Are Normal - The Complete Journey:**
+
+**Iteration 1:** Test compilation errors
+- Issue: Entity field names didn't match actual API
+- Fix: Simplified tests, updated TestDataFactory
+- Commit: `8d7990d`
+
+**Iteration 2:** npm cache warnings
+- Issue: No package-lock.json in frontend
+- Fix: Removed cache config, used npm install
+- Commit: `5a3d064`
+
+**Iteration 3:** React 19 peer dependency conflict
+- Issue: @testing-library/react requires React 18
+- Fix: Added --legacy-peer-deps flag
+- Commit: `de3dad8`
+
+**This Shows:**
+- Real debugging process (not perfect first try)
+- Pragmatic solutions (--legacy-peer-deps is industry standard)
+- Professional honesty (documenting challenges)
+- Problem-solving skills (analyzed 3 different CI failures)
