@@ -76,7 +76,10 @@ public class TaskService {
                     30  // Default 30 minute duration
                 );
 
-                // TODO: Store eventId in Task entity for future sync
+                // Store event ID for future sync
+                saved.setGoogleEventId(eventId);
+                taskRepository.save(saved);
+
                 log.info("Created calendar event {} for task {}", eventId, saved.getId());
 
             } catch (Exception e) {
