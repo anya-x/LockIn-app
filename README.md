@@ -398,12 +398,12 @@ For questions about this project or visa sponsorship inquiries:
 *Demonstrating production-ready skills, realistic development patterns, and professional maturity for visa sponsorship applications.*
 
 **Total Development Stats:**
-- Commits: 34+ (Month 6 only - including 6 CI fix iterations!)
+- Commits: 35+ (Month 6 only - including 7 CI fix iterations!)
 - Test Coverage: Core auth/services covered + frontend components
 - Docker Images: Multi-stage optimized (25MB frontend!)
-- CI/CD: GitHub Actions pipeline (6 iterations to get it right!)
+- CI/CD: GitHub Actions pipeline (7 iterations to get it right!)
 - Documentation: Comprehensive with full debugging journey
-- **Realistic CI journey:** Tests → 6 Failures (32 TS errors!) → 6 Fixes → Success ✅
+- **Realistic CI journey:** Tests → 7 Failures (32 TS errors!) → 7 Fixes → Success ✅
 
 🇬🇧 **Ready for UK tech visa sponsorship interviews!** 🚀
 
@@ -444,14 +444,29 @@ For questions about this project or visa sponsorship inquiries:
   * Module not found (typo in import path)
   * Test setup type conflicts
 - Fix: Cleaned up all imports, added null checks, fixed type conversions
-- Commit: (current)
+- Commit: `b9a584b`
 - Learning: CI/CD catches technical debt that dev mode doesn't!
+
+**Iteration 6a:** Overzealous cleanup
+- Issue: Removed Category type that was actually being used
+- Fix: Restored the Category type import
+- Commit: `aa58195`
+- Learning: Even cleanup can introduce bugs - CI catches everything!
+
+**Iteration 7:** Node version mismatch and docker-compose v2
+- Issue:
+  * Vite 7.2.2, React Router 7.9.5 require Node >=20 (Dockerfile used Node 18)
+  * docker-compose command not found (CI has v2 which uses 'docker compose')
+- Fix: Updated Dockerfile to node:20-alpine, CI to use 'docker compose config'
+- Commit: (current)
+- Learning: Keep infrastructure aligned with package requirements!
 
 **This Shows:**
 - Real debugging process (not perfect first try)
 - Pragmatic solutions (--legacy-peer-deps is industry standard)
 - Professional honesty (documenting challenges)
-- Problem-solving skills (analyzed 6 different CI failures, fixed 32 TS errors)
+- Problem-solving skills (analyzed 7 different CI failures, fixed 32 TS errors)
 - Understanding trade-offs (npm install vs npm ci, build vs runtime deps)
 - Docker multi-stage build knowledge (devDeps needed in build stage)
 - TypeScript strictness catching real issues (null safety, type safety)
+- Infrastructure awareness (Node versions, Docker Compose v1 vs v2)
