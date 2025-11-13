@@ -116,3 +116,39 @@ Client ID: [configured in environment]
 Client Secret: [configured in environment]
 
 Time spent on console setup: 1 hour!
+
+## Implementation Summary (Week 19)
+
+**What Works:**
+✅ OAuth2 flow with encrypted token storage
+✅ Calendar event creation when tasks are created
+✅ Event syncing on task updates (new events only)
+✅ Status and connection checking
+✅ Manual disconnect/reconnect flow
+✅ Duplicate prevention with database constraints
+✅ Timezone handling
+✅ CSRF protection with state tokens
+
+**What Doesn't Work (Yet):**
+❌ Automatic token refresh (gave up - too complex!)
+❌ Updating existing calendar events (only creates new)
+❌ Deleting calendar events when tasks deleted
+❌ Two-way sync (Calendar → Tasks)
+❌ Periodic background sync
+❌ Choosing which calendar (always uses "primary")
+
+**Key Learnings:**
+1. Google OAuth is finicky about redirect URIs (trailing slashes!)
+2. Token refresh is way harder than expected
+3. Timezone handling requires TimeZone parameter in DateTime
+4. Database constraints >> application logic for race conditions
+5. Manual reconnect UX > buggy automatic refresh
+6. OAuth takes 3x longer than estimated
+
+**Time Spent:** ~15 hours over 6 days (estimated 5 hours originally 😅)
+
+**Next Steps:**
+- Frontend integration (Settings page UI)
+- User testing
+- Monitor for edge cases
+- Consider implementing event updates/deletes later
