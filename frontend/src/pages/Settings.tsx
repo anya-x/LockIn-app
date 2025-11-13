@@ -194,8 +194,29 @@ const Settings: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Notification Preferences */}
+      <Card sx={{ mt: 3 }}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            Notification Preferences
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Control how you receive notifications from Lockin.
+          </Typography>
+
+          <Divider sx={{ mb: 3 }} />
+
+          {/* TODO: Add toggles for browser/in-app notifications */}
+          {/* TODO: Add clear preferences button */}
+          <Alert severity="info">
+            Notification preferences coming soon! You can manage browser
+            notifications through your browser settings for now.
+          </Alert>
+        </CardContent>
+      </Card>
+
       {/* TODO: Add more settings sections */}
-      {/* - Notification preferences */}
       {/* - Account settings */}
       {/* - Theme preferences */}
     </Container>
