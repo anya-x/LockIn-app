@@ -10,6 +10,7 @@ import {
   Badge,
   Divider,
   Button,
+  Skeleton,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -27,7 +28,7 @@ interface NotificationCenterProps {
 
 // Back to Drawer! 380px = goldilocks width
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, onClose }) => {
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, isLoading } = useNotifications();
   const location = useLocation();
 
   // Close drawer when navigation happens (BUG FIX!)
@@ -80,7 +81,23 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, on
         <Divider sx={{ mb: 2 }} />
 
         {/* Notification list */}
-        {notifications.length === 0 ? (
+        {isLoading ? (
+          <List sx={{ p: 0 }}>
+            {[1, 2, 3].map((i) => (
+              <ListItem key={i} sx={{ mb: 1 }}>
+                <ListItemText
+                  primary={<Skeleton variant="text" width="80%" />}
+                  secondary={
+                    <>
+                      <Skeleton variant="text" width="100%" />
+                      <Skeleton variant="text" width="40%" />
+                    </>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        ) : notifications.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
             <Typography color="text.secondary">
