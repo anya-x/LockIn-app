@@ -47,6 +47,34 @@ import {
 import { exportWeeklyReportToPDF } from "../utils/exportPDF";
 import { CHART_COLORS } from "../constants/chartColors";
 
+// Custom tooltip for better formatting
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <Paper sx={{ p: 1.5, border: "1px solid #ccc" }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+          {new Date(label).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })}
+        </Typography>
+        {payload.map((entry: any, index: number) => (
+          <Typography
+            key={index}
+            variant="body2"
+            sx={{ color: entry.color }}
+          >
+            {entry.name}: {entry.value}
+            {entry.dataKey === "focusMinutes" ? "m" : ""}
+          </Typography>
+        ))}
+      </Paper>
+    );
+  }
+  return null;
+};
+
 const AnalyticsPage: React.FC = () => {
   const { timer } = useTimer();
 
@@ -353,9 +381,7 @@ const AnalyticsPage: React.FC = () => {
                   }
                 />
                 <YAxis />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Line
                   type="monotone"
@@ -407,9 +433,7 @@ const AnalyticsPage: React.FC = () => {
                     position: "insideLeft",
                   }}
                 />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Area
                   type="monotone"
@@ -451,11 +475,7 @@ const AnalyticsPage: React.FC = () => {
                       }
                     />
                     <YAxis />
-                    <Tooltip
-                      labelFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
-                      }
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar
                       dataKey="focusMinutes"
@@ -485,11 +505,7 @@ const AnalyticsPage: React.FC = () => {
                       }
                     />
                     <YAxis />
-                    <Tooltip
-                      labelFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
-                      }
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar
                       dataKey="tasksCompleted"
@@ -577,9 +593,7 @@ const AnalyticsPage: React.FC = () => {
                     }
                   />
                   <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend />
                   {/* Danger zones */}
                   <Area

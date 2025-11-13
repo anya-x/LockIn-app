@@ -202,8 +202,17 @@ const Goals: React.FC = () => {
                       mb: 2,
                     }}
                   >
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" component="h3" gutterBottom>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="h6"
+                        component="h3"
+                        gutterBottom
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {goal.title}
                       </Typography>
                       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -236,7 +245,15 @@ const Goals: React.FC = () => {
                     <Typography
                       variant="body2"
                       color="text.secondary"
-                      sx={{ mb: 2 }}
+                      sx={{
+                        mb: 2,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        wordBreak: "break-word",
+                      }}
                     >
                       {goal.description}
                     </Typography>

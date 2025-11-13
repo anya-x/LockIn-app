@@ -133,7 +133,31 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
   };
 
   const updateField = (field: keyof GoalFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      // Real-time date validation
+      if (field === "startDate" || field === "endDate") {
+        const startDate = field === "startDate" ? value : prev.startDate;
+        const endDate = field === "endDate" ? value : prev.endDate;
+
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            endDate: "End date must be after start date",
+          }));
+        } else if (errors.endDate === "End date must be after start date") {
+          setErrors((prevErrors) => {
+            const newErrors = { ...prevErrors };
+            delete newErrors.endDate;
+            return newErrors;
+          });
+        }
+      }
+
+      return updated;
+    });
+
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -271,6 +295,9 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
               inputLabel: {
                 shrink: true,
               },
+              htmlInput: {
+                min: new Date().toISOString().split("T")[0],
+              },
             }}
           />
 
@@ -282,10 +309,13 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
             fullWidth
             required
             error={!!errors.endDate}
-            helperText={errors.endDate}
+            helperText={errors.endDate || "Must be after start date"}
             slotProps={{
               inputLabel: {
                 shrink: true,
+              },
+              htmlInput: {
+                min: formData.startDate || new Date().toISOString().split("T")[0],
               },
             }}
           />
