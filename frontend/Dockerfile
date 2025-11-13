@@ -9,7 +9,8 @@ COPY package*.json ./
 
 # Install dependencies
 # Using npm install instead of npm ci (no package-lock.json)
-RUN npm install --production --legacy-peer-deps
+# Note: devDependencies needed for build (TypeScript, Vite)
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
