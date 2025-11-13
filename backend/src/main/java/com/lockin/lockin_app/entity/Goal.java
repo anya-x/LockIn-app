@@ -68,10 +68,16 @@ public class Goal {
         MONTHLY
     }
 
+    /**
+     * Calculates progress percentage across all defined targets
+     *
+     * @return average progress percentage (0-100), or 0 if no targets are set
+     */
     public double getProgressPercentage() {
         int targetCount = 0;
         double achievedScore = 0;
 
+        // Each metric is capped at 100% to prevent over-achievement inflation
         if (targetTasks != null && targetTasks > 0) {
             targetCount++;
             double taskProgress = Math.min(100, (currentTasks / (double) targetTasks) * 100);
@@ -92,6 +98,11 @@ public class Goal {
             achievedScore += focusProgress;
         }
 
-        return targetCount > 0 ? achievedScore / targetCount : 0;
+        // FIX: Handle division by zero when no targets are set
+        if (targetCount == 0) {
+            return 0.0;  // No targets set, return 0%
+        }
+
+        return achievedScore / targetCount;
     }
 }

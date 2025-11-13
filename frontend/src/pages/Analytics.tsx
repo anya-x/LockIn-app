@@ -17,6 +17,7 @@ import {
   Timer,
   EmojiEvents,
   Refresh as RefreshIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import {
   LineChart,
@@ -25,6 +26,8 @@ import {
   Bar,
   PieChart,
   Pie,
+  AreaChart,
+  Area,
   Cell,
   XAxis,
   YAxis,
@@ -35,12 +38,43 @@ import {
 } from "recharts";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
+import Achievements from "../components/analytics/Achievements";
 import { useTimer } from "../context/TimerContext";
 import {
   useAnalyticsRange,
   useRefreshAnalytics,
   useTodayAnalytics,
 } from "../hooks/useAnalytics";
+import { exportWeeklyReportToPDF } from "../utils/exportPDF";
+import { CHART_COLORS } from "../constants/chartColors";
+
+// Custom tooltip for better formatting
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <Paper sx={{ p: 1.5, border: "1px solid #ccc" }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+          {new Date(label).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })}
+        </Typography>
+        {payload.map((entry: any, index: number) => (
+          <Typography
+            key={index}
+            variant="body2"
+            sx={{ color: entry.color }}
+          >
+            {entry.name}: {entry.value}
+            {entry.dataKey === "focusMinutes" ? "m" : ""}
+          </Typography>
+        ))}
+      </Paper>
+    );
+  }
+  return null;
+};
 
 const AnalyticsPage: React.FC = () => {
   const { timer } = useTimer();
@@ -56,6 +90,8 @@ const AnalyticsPage: React.FC = () => {
 
   const refreshAnalytics = useRefreshAnalytics();
 
+  const [exportingPDF, setExportingPDF] = useState(false);
+
   const loading = todayLoading || rangeLoading;
   const error = todayError ? "Failed to load analytics data" : null;
 
@@ -67,6 +103,28 @@ const AnalyticsPage: React.FC = () => {
 
   const handleRefresh = async () => {
     await refreshAnalytics();
+  };
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      await exportWeeklyReportToPDF(
+        "User",
+        rangeData[0]?.date || "",
+        rangeData[rangeData.length - 1]?.date || "",
+        {
+          tasksCompleted: todayAnalytics?.tasksCompleted || 0,
+          pomodoros: todayAnalytics?.pomodorosCompleted || 0,
+          focusMinutes: todayAnalytics?.focusMinutes || 0,
+          productivityScore: todayAnalytics?.productivityScore || 0,
+        }
+      );
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      alert("Failed to export PDF. Please try again.");
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   if (loading && !todayAnalytics) {
@@ -106,14 +164,28 @@ const AnalyticsPage: React.FC = () => {
             Analytics Dashboard
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={
+              exportingPDF ? <CircularProgress size={16} /> : <DownloadIcon />
+            }
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
+          >
+            {exportingPDF ? "Generating PDF..." : "Export PDF"}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={
+              loading ? <CircularProgress size={16} /> : <RefreshIcon />
+            }
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
 
       {/* Burnout Alert */}
@@ -224,53 +296,68 @@ const AnalyticsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Eisenhower Matrix Distribution */}
+      {/* Task Distribution Pie Chart */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Task Distribution (Eisenhower Matrix)
+          Task Distribution by Eisenhower Matrix
         </Typography>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="error.main">
-                {todayAnalytics.urgentImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Urgent & Important
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="warning.main">
-                {todayAnalytics.notUrgentImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Not Urgent & Important
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="info.main">
-                {todayAnalytics.urgentNotImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Urgent & Not Important
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="success.main">
-                {todayAnalytics.notUrgentNotImportantCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Neither Urgent nor Important
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
+        <div id="task-distribution-chart">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+            <Pie
+              data={[
+                {
+                  name: "Urgent & Important",
+                  value: todayAnalytics.urgentImportantCount,
+                  color: CHART_COLORS.urgentImportant,
+                },
+                {
+                  name: "Not Urgent & Important",
+                  value: todayAnalytics.notUrgentImportantCount,
+                  color: CHART_COLORS.notUrgentImportant,
+                },
+                {
+                  name: "Urgent & Not Important",
+                  value: todayAnalytics.urgentNotImportantCount,
+                  color: CHART_COLORS.urgentNotImportant,
+                },
+                {
+                  name: "Neither",
+                  value: todayAnalytics.notUrgentNotImportantCount,
+                  color: CHART_COLORS.notUrgentNotImportant,
+                },
+              ]}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) =>
+                `${name}: ${(percent * 100).toFixed(0)}%`
+              }
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {[
+                { color: CHART_COLORS.urgentImportant },
+                { color: CHART_COLORS.notUrgentImportant },
+                { color: CHART_COLORS.urgentNotImportant },
+                { color: CHART_COLORS.notUrgentNotImportant },
+              ].map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+        </div>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 2, display: "block" }}
+        >
+          Based on Eisenhower Matrix - shows how you prioritize tasks
+        </Typography>
       </Paper>
 
       {/* Charts Section */}
@@ -281,8 +368,9 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               7-Day Productivity Trend
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={rangeData}>
+            <div id="productivity-chart">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={rangeData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
@@ -294,26 +382,78 @@ const AnalyticsPage: React.FC = () => {
                   }
                 />
                 <YAxis />
-                <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="productivityScore"
-                  stroke="#2196f3"
+                  stroke={CHART_COLORS.productivity}
                   strokeWidth={2}
                   name="Productivity Score"
                 />
                 <Line
                   type="monotone"
                   dataKey="focusScore"
-                  stroke="#4caf50"
+                  stroke={CHART_COLORS.focusTime}
                   strokeWidth={2}
                   name="Focus Score"
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
+          </Paper>
+
+          {/* Focus Time Area Chart */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Focus Time Distribution (7 Days)
+            </Typography>
+            <div id="focus-time-chart">
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={rangeData}>
+                <defs>
+                  <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_COLORS.focusGradient.start} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={CHART_COLORS.focusGradient.end} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) =>
+                    new Date(date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  }
+                />
+                <YAxis
+                  label={{
+                    value: "Minutes",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="focusMinutes"
+                  stroke={CHART_COLORS.focusTime}
+                  fillOpacity={1}
+                  fill="url(#colorFocus)"
+                  name="Focus Minutes"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            </div>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 2, display: "block" }}
+            >
+              Total focused work time per day
+            </Typography>
           </Paper>
 
           {/* Focus Time and Tasks */}
@@ -336,15 +476,11 @@ const AnalyticsPage: React.FC = () => {
                       }
                     />
                     <YAxis />
-                    <Tooltip
-                      labelFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
-                      }
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar
                       dataKey="focusMinutes"
-                      fill="#2196f3"
+                      fill={CHART_COLORS.focusTime}
                       name="Focus Minutes"
                     />
                   </BarChart>
@@ -370,15 +506,11 @@ const AnalyticsPage: React.FC = () => {
                       }
                     />
                     <YAxis />
-                    <Tooltip
-                      labelFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
-                      }
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar
                       dataKey="tasksCompleted"
-                      fill="#4caf50"
+                      fill={CHART_COLORS.tasks}
                       name="Tasks Completed"
                     />
                   </BarChart>
@@ -399,12 +531,12 @@ const AnalyticsPage: React.FC = () => {
                     {
                       name: "Focus Time",
                       value: todayAnalytics.focusMinutes,
-                      color: "#2196f3",
+                      color: CHART_COLORS.focusTime,
                     },
                     {
                       name: "Break Time",
                       value: todayAnalytics.breakMinutes,
-                      color: "#4caf50",
+                      color: CHART_COLORS.breaks,
                     },
                   ]}
                   cx="50%"
@@ -415,7 +547,7 @@ const AnalyticsPage: React.FC = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {[{ color: "#2196f3" }, { color: "#4caf50" }].map(
+                  {[{ color: CHART_COLORS.focusTime }, { color: CHART_COLORS.breaks }].map(
                     (entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     )
@@ -426,8 +558,105 @@ const AnalyticsPage: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
           </Paper>
+
+          {/* Burnout Risk Trend */}
+          {rangeData.some((d) => d.burnoutRiskScore > 0) && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Burnout Risk Trend
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Based on late night work, consecutive days, and productivity
+                decline
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={rangeData}>
+                  <defs>
+                    <linearGradient
+                      id="colorBurnout"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(date) =>
+                      new Date(date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
+                  />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  {/* Danger zones */}
+                  <Area
+                    type="monotone"
+                    dataKey="burnoutRiskScore"
+                    stroke="#f44336"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorBurnout)"
+                    name="Burnout Risk"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+
+              {/* Risk level indicators */}
+              <Box sx={{ display: "flex", gap: 2, mt: 2, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      bgcolor: "#4caf50",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <Typography variant="caption">Low (0-30)</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      bgcolor: "#ff9800",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <Typography variant="caption">Medium (31-60)</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      bgcolor: "#f44336",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <Typography variant="caption">High (61-100)</Typography>
+                </Box>
+              </Box>
+
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Based on Maslach Burnout Inventory research - tracks exhaustion
+                indicators
+              </Alert>
+            </Paper>
+          )}
         </>
       )}
+
+      {/* Achievements */}
+      <Achievements />
 
       {/* Weekly Report */}
       <WeeklyReport />
