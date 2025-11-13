@@ -63,11 +63,10 @@ public class TaskService {
         log.info("Created task: {}", saved.getId());
 
         // Automatically sync to Google Calendar if connected and task has due date
-        // BUG: This check is wrong! Should check saved.getGoogleEventId() but checking task.getGoogleEventId()
-        // which is always null for new tasks, but this will break on updates!
+        // Database constraint ensures no duplicate event IDs
         if (calendarService.isCalendarConnected(user)
             && saved.getDueDate() != null
-            && task.getGoogleEventId() == null) {
+            && saved.getGoogleEventId() == null) {
             try {
                 log.info("Creating calendar event for task: {}", saved.getId());
 
@@ -195,12 +194,12 @@ public class TaskService {
         log.info("Updated task: {}", updated.getId());
 
         // Sync to calendar if connected and task has due date
-        // ATTEMPTED FIX: Check if event already exists before creating
+        // Database constraint prevents duplicate event IDs
         User user = task.getUser();
         if (calendarService.isCalendarConnected(user) && updated.getDueDate() != null) {
             try {
-                // Only create new event if task doesn't have one yet
-                if (updated.getGoogleEventId() == null || updated.getGoogleEventId().isEmpty()) {
+                // Only create event if task doesn't already have one
+                if (updated.getGoogleEventId() == null) {
                     log.info("Creating calendar event for updated task: {}", updated.getId());
 
                     String eventId = calendarService.createEventFromTask(
@@ -213,10 +212,8 @@ public class TaskService {
 
                     updated.setGoogleEventId(eventId);
                     taskRepository.save(updated);
-                } else {
-                    log.debug("Task {} already has calendar event {}, skipping creation",
-                        updated.getId(), updated.getGoogleEventId());
                 }
+                // TODO: Update existing events instead of just skipping
 
             } catch (Exception e) {
                 log.error("Failed to sync task update to calendar", e);
