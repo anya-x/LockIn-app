@@ -398,12 +398,12 @@ For questions about this project or visa sponsorship inquiries:
 *Demonstrating production-ready skills, realistic development patterns, and professional maturity for visa sponsorship applications.*
 
 **Total Development Stats:**
-- Commits: 35+ (Month 6 only - including 7 CI fix iterations!)
+- Commits: 36+ (Month 6 only - including 8 CI fix iterations!)
 - Test Coverage: Core auth/services covered + frontend components
 - Docker Images: Multi-stage optimized (25MB frontend!)
-- CI/CD: GitHub Actions pipeline (7 iterations to get it right!)
+- CI/CD: GitHub Actions pipeline (8 iterations to get it right!)
 - Documentation: Comprehensive with full debugging journey
-- **Realistic CI journey:** Tests → 7 Failures (32 TS errors!) → 7 Fixes → Success ✅
+- **Realistic CI journey:** Tests → 8 Failures (32 TS errors!) → 8 Fixes → Success ✅
 
 🇬🇧 **Ready for UK tech visa sponsorship interviews!** 🚀
 
@@ -458,15 +458,23 @@ For questions about this project or visa sponsorship inquiries:
   * Vite 7.2.2, React Router 7.9.5 require Node >=20 (Dockerfile used Node 18)
   * docker-compose command not found (CI has v2 which uses 'docker compose')
 - Fix: Updated Dockerfile to node:20-alpine, CI to use 'docker compose config'
-- Commit: (current)
+- Commit: `e42a3c9`
 - Learning: Keep infrastructure aligned with package requirements!
+
+**Iteration 8:** GitHub Actions permissions for security scanning
+- Issue: CodeQL SARIF upload failing with "Resource not accessible by integration"
+- Root cause: Workflow missing 'security-events: write' permission
+- Fix: Added permissions block to security-scan job
+- Commit: (current)
+- Learning: GitHub Actions security features require explicit permissions!
 
 **This Shows:**
 - Real debugging process (not perfect first try)
 - Pragmatic solutions (--legacy-peer-deps is industry standard)
 - Professional honesty (documenting challenges)
-- Problem-solving skills (analyzed 7 different CI failures, fixed 32 TS errors)
+- Problem-solving skills (analyzed 8 different CI failures, fixed 32 TS errors)
 - Understanding trade-offs (npm install vs npm ci, build vs runtime deps)
 - Docker multi-stage build knowledge (devDeps needed in build stage)
 - TypeScript strictness catching real issues (null safety, type safety)
 - Infrastructure awareness (Node versions, Docker Compose v1 vs v2)
+- GitHub Actions security model (GITHUB_TOKEN permissions)
