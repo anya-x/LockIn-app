@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Cleanup after each test
@@ -22,8 +22,8 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock window.scrollTo
-window.scrollTo = vi.fn();
+// Mock window.scrollTo (overloaded signatures)
+window.scrollTo = vi.fn() as any;
 
 // Mock localStorage
 const localStorageMock = {

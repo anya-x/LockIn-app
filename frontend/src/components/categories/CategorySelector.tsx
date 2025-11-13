@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   FormControl,
   InputLabel,
@@ -15,7 +15,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
-import { categoryService, type Category } from "../../services/categoryService";
 import { useCategories, useCreateCategory } from "../../hooks/useCategories";
 
 interface CategorySelectorProps {

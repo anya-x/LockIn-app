@@ -37,14 +37,6 @@ import StatCard from "../components/shared/StatCard";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 
-interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
-
 const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,7 +227,7 @@ const Tasks: React.FC = () => {
   };
 
   const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
+    _event: React.ChangeEvent<unknown>,
     page: number
   ) => {
     setCurrentPage(page - 1);
@@ -252,13 +244,24 @@ const Tasks: React.FC = () => {
     setEditingTask(undefined);
   };
 
-  const handleSaveTask = async (taskData: TaskRequest) => {
+  const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
+      // Convert Partial<Task> to TaskRequest by ensuring required fields
+      const taskRequest: TaskRequest = {
+        title: taskData.title || "",
+        description: taskData.description,
+        status: taskData.status || "TODO",
+        isUrgent: taskData.isUrgent || false,
+        isImportant: taskData.isImportant || false,
+        dueDate: taskData.dueDate,
+        categoryId: taskData.categoryId || null,
+      };
+
       if (editingTask) {
-        const updated = await taskService.updateTask(editingTask.id, taskData);
+        const updated = await taskService.updateTask(editingTask.id, taskRequest);
         setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
       } else {
-        await taskService.createTask(taskData);
+        await taskService.createTask(taskRequest);
         if (hasActiveFilters()) {
           fetchFilteredTasks(currentPage);
         } else {

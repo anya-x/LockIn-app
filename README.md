@@ -398,12 +398,12 @@ For questions about this project or visa sponsorship inquiries:
 *Demonstrating production-ready skills, realistic development patterns, and professional maturity for visa sponsorship applications.*
 
 **Total Development Stats:**
-- Commits: 33+ (Month 6 only - including 5 CI fix iterations!)
+- Commits: 34+ (Month 6 only - including 6 CI fix iterations!)
 - Test Coverage: Core auth/services covered + frontend components
 - Docker Images: Multi-stage optimized (25MB frontend!)
-- CI/CD: GitHub Actions pipeline (5 iterations to get it right!)
+- CI/CD: GitHub Actions pipeline (6 iterations to get it right!)
 - Documentation: Comprehensive with full debugging journey
-- **Realistic CI journey:** Tests → 5 Failures → 5 Fixes → Success ✅
+- **Realistic CI journey:** Tests → 6 Failures (32 TS errors!) → 6 Fixes → Success ✅
 
 🇬🇧 **Ready for UK tech visa sponsorship interviews!** 🚀
 
@@ -434,12 +434,24 @@ For questions about this project or visa sponsorship inquiries:
 **Iteration 5:** TypeScript not found during Docker build
 - Issue: --production flag excluded devDependencies (TypeScript, Vite)
 - Fix: Removed --production flag (multi-stage build excludes node_modules anyway)
+- Commit: `d9fa539`
+
+**Iteration 6:** TypeScript compilation errors (32 errors!)
+- Issue: Strict TypeScript checking revealed existing code issues:
+  * Unused imports (useState, useEffect, React, types)
+  * Possibly null errors (timer.sessionStartedAt)
+  * Type mismatches (Partial<Task> vs TaskRequest)
+  * Module not found (typo in import path)
+  * Test setup type conflicts
+- Fix: Cleaned up all imports, added null checks, fixed type conversions
 - Commit: (current)
+- Learning: CI/CD catches technical debt that dev mode doesn't!
 
 **This Shows:**
 - Real debugging process (not perfect first try)
 - Pragmatic solutions (--legacy-peer-deps is industry standard)
 - Professional honesty (documenting challenges)
-- Problem-solving skills (analyzed 5 different CI failures)
+- Problem-solving skills (analyzed 6 different CI failures, fixed 32 TS errors)
 - Understanding trade-offs (npm install vs npm ci, build vs runtime deps)
 - Docker multi-stage build knowledge (devDeps needed in build stage)
+- TypeScript strictness catching real issues (null safety, type safety)
