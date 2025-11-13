@@ -129,7 +129,7 @@ A science based task management tool that's going to change how you view product
 - Create tasks with title and description
 - View all my tasks
 - Edit task details
-- Confirmation dialog when deletng tasks
+- Confirmation dialog when deleting tasks
 - Tasks unique to authenticated user
 
 **Performance Improvements**
