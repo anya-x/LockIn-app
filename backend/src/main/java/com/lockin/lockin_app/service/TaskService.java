@@ -36,6 +36,7 @@ public class TaskService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final GoalService goalService;
+    private final GoogleCalendarService calendarService;
 
     /**
      * Creates a new task for the user
@@ -60,6 +61,29 @@ public class TaskService {
         Task saved = taskRepository.save(task);
 
         log.info("Created task: {}", saved.getId());
+
+        // Automatically sync to Google Calendar if connected and task has due date
+        if (calendarService.isCalendarConnected(user) && saved.getDueDate() != null) {
+            try {
+                log.info("Creating calendar event for task: {}", saved.getId());
+
+                // Create event for task due date with 30 min duration (default)
+                String eventId = calendarService.createEventFromTask(
+                    user,
+                    saved.getTitle(),
+                    saved.getDescription(),
+                    saved.getDueDate(),
+                    30  // Default 30 minute duration
+                );
+
+                // TODO: Store eventId in Task entity for future sync
+                log.info("Created calendar event {} for task {}", eventId, saved.getId());
+
+            } catch (Exception e) {
+                // Don't fail task creation if calendar sync fails
+                log.error("Failed to create calendar event for task {}", saved.getId(), e);
+            }
+        }
 
         return TaskResponseDTO.fromEntity(saved);
     }
