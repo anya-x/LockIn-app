@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Service for interacting with Google Calendar API.
@@ -98,15 +99,21 @@ public class GoogleCalendarService {
                 .setSummary(title)
                 .setDescription(description);
 
-            // BUG: Not including timezone here! Will cause events to be created in wrong time
-            // Should be: new DateTime(Date.from(...), TimeZone.getTimeZone(ZoneId.systemDefault()))
+            // FIXED: Include timezone to prevent wrong times!
             LocalDateTime endTime = startTime.plusMinutes(durationMinutes);
+            TimeZone timeZone = TimeZone.getTimeZone(ZoneId.systemDefault());
 
             EventDateTime start = new EventDateTime()
-                .setDateTime(new DateTime(Date.from(startTime.atZone(ZoneId.systemDefault()).toInstant())));
+                .setDateTime(new DateTime(
+                    Date.from(startTime.atZone(ZoneId.systemDefault()).toInstant()),
+                    timeZone
+                ));
 
             EventDateTime end = new EventDateTime()
-                .setDateTime(new DateTime(Date.from(endTime.atZone(ZoneId.systemDefault()).toInstant())));
+                .setDateTime(new DateTime(
+                    Date.from(endTime.atZone(ZoneId.systemDefault()).toInstant()),
+                    timeZone
+                ));
 
             event.setStart(start);
             event.setEnd(end);
