@@ -204,4 +204,17 @@ public class GoogleCalendarService {
             .map(GoogleCalendarToken::getIsActive)
             .orElse(false);
     }
+
+    /**
+     * Check if user's access token is expiring soon (within 1 hour).
+     * Frontend can use this to show "Reconnect Calendar" warning.
+     *
+     * @param user User to check
+     * @return true if token expires within 1 hour
+     */
+    public boolean isTokenExpiringSoon(User user) {
+        return tokenRepository.findByUser(user)
+            .map(token -> token.getTokenExpiresAt().isBefore(ZonedDateTime.now().plusHours(1)))
+            .orElse(false);
+    }
 }
