@@ -63,6 +63,7 @@ A science based task management tool that's going to change how you view product
 - GET `/api/analytics/range?days={number}` - get analytics for date range
 - POST `/api/analytics/calculate/{date}` - calculate analytics for specific date
 - GET `/api/analytics/weekly-report` - get weekly performance report
+- GET `/api/analytics/compare?currentStart={date}&currentEnd={date}&previousStart={date}&previousEnd={date}` - compare two time periods
 
 ### Eisenhower Matrix Endpoints
 
@@ -131,9 +132,11 @@ A science based task management tool that's going to change how you view product
 - Confirmation dialog when deletng tasks
 - Tasks unique to authenticated user
 
-**Known Issues**
+**Performance Improvements**
 
-- n+1 query problem
+- ✅ Fixed N+1 query problem in analytics (Nov 2024)
+- ✅ Added database indexes for frequently queried columns
+- ✅ Implemented date-range filtering in SQL instead of Java
 
 ## Epic 2: Productivity Framework
 
