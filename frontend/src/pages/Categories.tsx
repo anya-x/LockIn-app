@@ -19,6 +19,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { type Category } from "../services/categoryService";
 import {
   useCategories,
   useCreateCategory,
