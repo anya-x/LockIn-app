@@ -52,8 +52,8 @@ public class AnalyticsCalculationService {
      * work-break balance - Burnout risk: Overwork, late night sessions, interruption rate - Focus:
      * Optimal range 240min, diminishing returns after 360min
      *
-     * <p>Cached to avoid recalculating same day multiple times
-     * TODO: add cache eviction when tasks/sessions are completed
+     * <p>Cached to avoid recalculating same day multiple times.
+     * Cache automatically evicted when tasks/sessions completed (see TaskService, FocusSessionService)
      *
      * @param userId user to calculate analytics for
      * @param date specific date to analyze
