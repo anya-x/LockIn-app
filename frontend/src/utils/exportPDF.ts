@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
-export const exportWeeklyReportToPDF = (
+export const exportWeeklyReportToPDF = async (
   userName: string,
   startDate: string,
   endDate: string,
@@ -8,24 +9,23 @@ export const exportWeeklyReportToPDF = (
 ) => {
   const doc = new jsPDF();
 
-  // Add title
+  // Add text header
   doc.setFontSize(20);
   doc.text("Weekly Productivity Report", 20, 20);
-
   doc.setFontSize(12);
-  doc.text(`${userName}`, 20, 30);
-  doc.text(`Period: ${startDate} - ${endDate}`, 20, 40);
+  doc.text(`${userName} | ${startDate} - ${endDate}`, 20, 30);
 
-  // Add stats
-  doc.setFontSize(10);
-  doc.text(`Tasks Completed: ${stats.tasksCompleted}`, 20, 60);
-  doc.text(`Pomodoros: ${stats.pomodoros}`, 20, 70);
-  doc.text(`Focus Time: ${stats.focusMinutes} minutes`, 20, 80);
+  // Try to capture productivity chart
+  const chartElement = document.getElementById("productivity-chart");
+  if (chartElement) {
+    const canvas = await html2canvas(chartElement);
+    const imgData = canvas.toDataURL("image/png");
+    doc.addImage(imgData, "PNG", 20, 50, 170, 80);
+  }
 
-  // TODO: How to add charts??? They're React components...
-  // TODO: This looks really ugly
-  // TODO: No formatting
-  // TODO: Need images of charts somehow
+  // TODO: This is slow... takes 3-4 seconds
+  // TODO: Need to add IDs to all charts
+  // TODO: Charts need to be visible (not in tabs/collapsed)
 
-  doc.save("weekly-report.pdf");
+  doc.save(`weekly-report-${startDate}.pdf`);
 };

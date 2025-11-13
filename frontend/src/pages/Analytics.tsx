@@ -320,8 +320,9 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               7-Day Productivity Trend
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={rangeData}>
+            <div id="productivity-chart">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={rangeData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
@@ -353,6 +354,7 @@ const AnalyticsPage: React.FC = () => {
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </Paper>
 
           {/* Focus Time Area Chart */}
