@@ -90,6 +90,11 @@ public class AnalyticsCalculationService {
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
         long methodStart = System.currentTimeMillis();
 
+        // TODO: PERFORMANCE ISSUE - N+1 Query Problem
+        // This loads ALL tasks for the user, then filters in Java
+        // For a user with 1000 tasks, we load all 1000, then only use ~10 for this date
+        // Better approach: Add date range filtering to the repository query
+        // Impact: ~10x slower than it should be
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
         log.debug("📊 Loaded {} tasks for user {} in {}ms",
                 allTasks.size(), user.getId(), System.currentTimeMillis() - methodStart);
@@ -185,6 +190,9 @@ public class AnalyticsCalculationService {
     // counts current tasks by Eisenhower matrix quadrant
     private void calculateEisenhowerDistribution(
             DailyAnalytics analytics, User user, LocalDate date) {
+        // TODO: PERFORMANCE ISSUE - Same N+1 problem as calculateTaskMetrics
+        // Loading ALL tasks again! This is the second time in the same method call
+        // We should either: 1) Pass tasks as parameter, or 2) Add caching, or 3) Combine queries
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
 
         int urgentImportant = 0;
