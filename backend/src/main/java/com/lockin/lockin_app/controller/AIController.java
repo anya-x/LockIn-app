@@ -3,6 +3,8 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.BreakdownRequest;
 import com.lockin.lockin_app.dto.EnhanceRequest;
 import com.lockin.lockin_app.dto.TaskBreakdownResult;
+import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.service.DailyBriefingService;
 import com.lockin.lockin_app.service.DescriptionEnhancementService;
 import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
@@ -31,6 +33,7 @@ public class AIController {
 
     private final TaskBreakdownService taskBreakdownService;
     private final DescriptionEnhancementService descriptionEnhancementService;
+    private final DailyBriefingService dailyBriefingService;
     private final UserService userService;
     private final RateLimitService rateLimitService;
 
@@ -107,6 +110,31 @@ public class AIController {
 
         // Save usage (simplified for now)
         log.info("Enhancement request by user {}: tokens={}, cost=${}",
+            userId,
+            result.getTokensUsed(),
+            result.getCostUSD());
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/daily-briefing")
+    public ResponseEntity<?> getDailyBriefing(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        User user = userService.getUserById(userId);
+
+        // Check rate limit
+        if (!rateLimitService.canMakeRequest(userId)) {
+            return ResponseEntity.status(429)
+                .body(Map.of("error", "Rate limit exceeded"));
+        }
+
+        DailyBriefingService.BriefingResult result =
+            dailyBriefingService.generateBriefing(user);
+
+        // Save usage (simplified for now)
+        log.info("Briefing request by user {}: tokens={}, cost=${}",
             userId,
             result.getTokensUsed(),
             result.getCostUSD());
