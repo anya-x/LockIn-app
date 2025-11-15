@@ -53,25 +53,47 @@ export const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
     },
   });
 
+  // Helper function to map AI priority to Eisenhower Matrix
+  const mapPriorityToEisenhower = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'urgent':
+        return { isUrgent: true, isImportant: true };
+      case 'important':
+        return { isUrgent: false, isImportant: true };
+      case 'normal':
+        return { isUrgent: true, isImportant: false };
+      case 'low':
+      default:
+        return { isUrgent: false, isImportant: false };
+    }
+  };
+
   const createSubtasksMutation = useMutation({
     mutationFn: async (subtasks: any[]) => {
-      // Create all subtasks in database
-      const promises = subtasks.map((subtask) =>
-        api.post('/tasks', {
+      const promises = subtasks.map((subtask) => {
+        const eisenhower = mapPriorityToEisenhower(subtask.priority);
+
+        return api.post('/tasks', {
           title: subtask.title,
           description: subtask.description,
-          estimatedMinutes: subtask.estimatedMinutes,
-          priority: subtask.priority,
-          // TODO: Link to parent task?
-          // TODO: Set isSubtask flag?
-        })
-      );
+          // Map AI minutes to our focus profile system!
+          // From Month 3: we have 25-5, 50-10, 90-30 profiles
+          estimatedPomodoros: Math.ceil(subtask.estimatedMinutes / 25),
+          ...eisenhower,
+          status: 'TODO',
+        });
+      });
       return Promise.all(promises);
     },
-    onSuccess: () => {
+    onSuccess: (createdTasks) => {
       setShowReview(false);
-      // TODO: Refresh task list
-      // TODO: Show success message
+      console.log(`Created ${createdTasks.length} subtasks!`);
+      // TODO: Callback to refresh parent task list
+      onSubtasksGenerated(createdTasks.map(t => t.data));
+    },
+    onError: (error: any) => {
+      console.error('Failed to create subtasks:', error);
+      // TODO: Show error snackbar
     },
   });
 
