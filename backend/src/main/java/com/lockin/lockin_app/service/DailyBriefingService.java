@@ -33,6 +33,10 @@ public class DailyBriefingService {
     private final AICache aiCache;
 
     public BriefingResult generateBriefing(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
         // Cache key includes date so it regenerates daily
         String cacheKey = "briefing:" + user.getId() + ":" +
             LocalDate.now().toString();
@@ -44,9 +48,13 @@ public class DailyBriefingService {
             return cached;
         }
 
-        // Get richer context
+        // Get richer context (with null safety)
         List<Task> todayTasks = getTasksDueToday(user.getId());
         List<Task> overdueTasks = getOverdueTasks(user.getId());
+
+        // Ensure lists are never null
+        if (todayTasks == null) todayTasks = List.of();
+        if (overdueTasks == null) overdueTasks = List.of();
 
         // Get completion stats from last 7 days
         LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
