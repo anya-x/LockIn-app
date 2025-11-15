@@ -3,6 +3,7 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.ai.ClaudeAPIClient;
 import com.lockin.lockin_app.ai.ClaudeResponse;
 import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.AllArgsConstructor;
@@ -43,8 +44,14 @@ public class DailyBriefingService {
             return cached;
         }
 
-        // Get user's tasks for today
+        // Get richer context
         List<Task> todayTasks = getTasksDueToday(user.getId());
+        List<Task> overdueTasks = getOverdueTasks(user.getId());
+
+        // Get completion stats from last 7 days
+        LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+        long completedLastWeek = countCompletedSince(user.getId(), weekAgo);
+        long totalLastWeek = countCreatedSince(user.getId(), weekAgo);
 
         if (todayTasks.isEmpty()) {
             return new BriefingResult(
@@ -55,32 +62,41 @@ public class DailyBriefingService {
             );
         }
 
-        // Build prompt with task context
+        // Build enriched prompt
         String systemPrompt = """
-            You are a supportive productivity coach providing a daily briefing.
+            You are a supportive productivity coach providing a personalized daily briefing.
 
-            Analyze the user's tasks and provide:
-            1. Brief overview (2-3 sentences)
-            2. Top priority recommendation
-            3. One motivational insight or tip
+            Analyze the user's context and provide:
+            1. Brief overview considering their workload and history
+            2. Specific priority recommendation based on task details
+            3. One personalized insight based on their patterns
 
-            Keep it concise, positive, and actionable.
+            Keep it concise (100-150 words), empathetic, and actionable.
             """;
 
-        // WIP: This doesn't include enough context!
-        // TODO: Add focus session history, completion patterns, etc.
         String taskList = todayTasks.stream()
-            .map(t -> String.format("- %s [%s]",
+            .limit(10) // Don't overwhelm Claude
+            .map(t -> String.format("- %s [Priority: %s/%s, Status: %s]",
                 t.getTitle(),
+                t.getIsUrgent() ? "Urgent" : "Not Urgent",
+                t.getIsImportant() ? "Important" : "Not Important",
                 t.getStatus()))
             .collect(Collectors.joining("\n"));
 
-        String userPrompt = String.format(
-            "Here are the user's %d tasks for today:\n\n%s\n\n" +
-            "Provide a brief, motivational daily briefing.",
+        String contextInfo = String.format(
+            "Context:\n" +
+            "- Tasks due today: %d\n" +
+            "- Overdue tasks: %d\n" +
+            "- Completion rate last 7 days: %d/%d (%.0f%%)\n\n",
             todayTasks.size(),
-            taskList
+            overdueTasks.size(),
+            completedLastWeek,
+            totalLastWeek,
+            totalLastWeek > 0 ? (completedLastWeek * 100.0 / totalLastWeek) : 0
         );
+
+        String userPrompt = contextInfo + "Today's tasks:\n" + taskList +
+            "\n\nProvide a personalized daily briefing.";
 
         ClaudeResponse response = claudeAPIClient.sendMessage(systemPrompt, userPrompt);
 
@@ -109,6 +125,36 @@ public class DailyBriefingService {
                 !task.getDueDate().isBefore(startOfDay) &&
                 task.getDueDate().isBefore(endOfDay))
             .collect(Collectors.toList());
+    }
+
+    private List<Task> getOverdueTasks(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Task> allTasks = taskRepository.findByUserId(userId);
+
+        return allTasks.stream()
+            .filter(task -> task.getDueDate() != null &&
+                task.getDueDate().isBefore(now) &&
+                task.getStatus() != TaskStatus.COMPLETED)
+            .collect(Collectors.toList());
+    }
+
+    private long countCompletedSince(Long userId, LocalDateTime since) {
+        List<Task> allTasks = taskRepository.findByUserId(userId);
+
+        return allTasks.stream()
+            .filter(task -> task.getStatus() == TaskStatus.COMPLETED &&
+                task.getUpdatedAt() != null &&
+                !task.getUpdatedAt().isBefore(since))
+            .count();
+    }
+
+    private long countCreatedSince(Long userId, LocalDateTime since) {
+        List<Task> allTasks = taskRepository.findByUserId(userId);
+
+        return allTasks.stream()
+            .filter(task -> task.getCreatedAt() != null &&
+                !task.getCreatedAt().isBefore(since))
+            .count();
     }
 
     @Data
