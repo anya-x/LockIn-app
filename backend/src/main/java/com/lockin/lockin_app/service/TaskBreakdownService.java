@@ -27,6 +27,7 @@ public class TaskBreakdownService {
     private final ClaudeAPIClient claudeAPIClient;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
+    private final AICache aiCache;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -38,7 +39,21 @@ public class TaskBreakdownService {
      * @return TaskBreakdownResult with structured subtasks
      */
     public TaskBreakdownResult breakdownTask(String title, String description, Long userId) {
-        log.info("Breaking down task: {}", title);
+        // Create cache key from title + description
+        String cacheKey = "breakdown:" + title + ":" +
+            (description != null ? description.hashCode() : "");
+
+        // Check cache first
+        TaskBreakdownResult cached = aiCache.get(cacheKey, TaskBreakdownResult.class);
+        if (cached != null) {
+            log.info("Returning cached breakdown for: {}", title);
+            // Still count as usage for rate limiting, but no cost!
+            saveUsageRecord(userId, cached, true);
+            return cached;
+        }
+
+        // Cache miss - call Claude API
+        log.info("Cache miss, calling Claude API for: {}", title);
 
         // Improved system prompt with clear instructions
         String systemPrompt = """
@@ -102,33 +117,42 @@ public class TaskBreakdownService {
                 response.getEstimatedCostUSD(),
                 response.getTotalTokens());
 
-            // Save usage record
-            User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-            AIUsage usage = new AIUsage();
-            usage.setUser(user);
-            usage.setFeatureType("BREAKDOWN");
-            usage.setTokensUsed(response.getTotalTokens());
-            usage.setCostUSD(response.getEstimatedCostUSD());
-            usage.setRequestDetails(String.format("{\"title\":\"%s\"}", title));
-            // TODO: Save response details
-
-            aiUsageRepository.save(usage);
-
-            log.info("Saved AI usage: {} tokens, ${}",
-                usage.getTokensUsed(),
-                usage.getCostUSD());
-
-            return new TaskBreakdownResult(
+            // Create result
+            TaskBreakdownResult result = new TaskBreakdownResult(
                 subtasks,
                 response.getEstimatedCostUSD(),
                 response.getTotalTokens()
             );
 
+            // Save usage record (not from cache)
+            saveUsageRecord(userId, result, false);
+
+            // Cache the result
+            aiCache.put(cacheKey, result);
+
+            return result;
+
         } catch (Exception e) {
             log.error("Failed to break down task", e);
             throw new RuntimeException("Failed to break down task: " + e.getMessage(), e);
         }
+    }
+
+    private void saveUsageRecord(Long userId, TaskBreakdownResult result, boolean fromCache) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        AIUsage usage = new AIUsage();
+        usage.setUser(user);
+        usage.setFeatureType("BREAKDOWN" + (fromCache ? "_CACHED" : ""));
+        usage.setTokensUsed(fromCache ? 0 : result.getTotalTokens());
+        usage.setCostUSD(fromCache ? 0.0 : result.getCost());
+
+        aiUsageRepository.save(usage);
+
+        log.info("Saved AI usage: {} tokens, ${}, cached: {}",
+            usage.getTokensUsed(),
+            usage.getCostUSD(),
+            fromCache);
     }
 }
