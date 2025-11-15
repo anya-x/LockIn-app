@@ -3,7 +3,9 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.BreakdownRequest;
 import com.lockin.lockin_app.dto.EnhanceRequest;
 import com.lockin.lockin_app.dto.TaskBreakdownResult;
+import com.lockin.lockin_app.entity.AIUsage;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.service.DailyBriefingService;
 import com.lockin.lockin_app.service.DescriptionEnhancementService;
 import com.lockin.lockin_app.service.RateLimitService;
@@ -36,6 +38,7 @@ public class AIController {
     private final DailyBriefingService dailyBriefingService;
     private final UserService userService;
     private final RateLimitService rateLimitService;
+    private final AIUsageRepository aiUsageRepository;
 
     /**
      * Break down a task into subtasks using AI.
@@ -140,5 +143,40 @@ public class AIController {
             result.getCostUSD());
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/usage/stats")
+    public ResponseEntity<?> getUsageStats(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        User user = userService.getUserById(userId);
+
+        List<AIUsage> allUsage = aiUsageRepository.findByUserOrderByCreatedAtDesc(user);
+
+        // Calculate stats
+        int totalRequests = allUsage.size();
+        int requestsToday = (int) allUsage.stream()
+            .filter(u -> u.getCreatedAt().toLocalDate().equals(java.time.LocalDate.now()))
+            .count();
+        int remainingRequests = rateLimitService.getRemainingRequests(userId);
+        double totalCost = allUsage.stream()
+            .mapToDouble(AIUsage::getCostUSD)
+            .sum();
+
+        // Count by feature type
+        java.util.Map<String, Long> byFeature = allUsage.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                AIUsage::getFeatureType,
+                java.util.stream.Collectors.counting()
+            ));
+
+        return ResponseEntity.ok(Map.of(
+            "totalRequests", totalRequests,
+            "requestsToday", requestsToday,
+            "remainingRequests", remainingRequests,
+            "totalCost", totalCost,
+            "byFeature", byFeature
+        ));
     }
 }
