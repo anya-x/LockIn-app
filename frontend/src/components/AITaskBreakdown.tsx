@@ -8,7 +8,7 @@ import {
   Snackbar,
 } from '@mui/material';
 import { AutoAwesome, Timer, AttachMoney } from '@mui/icons-material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import api from '../services/api';
 import { SubtaskReviewDialog } from './SubtaskReviewDialog';
 
@@ -39,33 +39,13 @@ export const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   const [generatedSubtasks, setGeneratedSubtasks] = useState<any[]>([]);
   const [successMessage, setSuccessMessage] = useState('');
 
-  const queryClient = useQueryClient();
-
-  // Create a cache key based on title + description
-  const cacheKey = ['ai-breakdown', title, description];
-
-  // Try to get from cache first
-  const cachedData = queryClient.getQueryData(cacheKey);
-
   // Use React Query mutation (learned this in Month 3!)
   const breakdownMutation = useMutation({
     mutationFn: async () => {
-      // Check cache before API call
-      if (cachedData) {
-        console.log('Using cached breakdown!');
-        return cachedData;
-      }
-
       const response = await api.post('/ai/breakdown', {
         title,
         description,
       });
-
-      // Cache the response for 1 hour
-      queryClient.setQueryData(cacheKey, response.data, {
-        cacheTime: 1000 * 60 * 60, // 1 hour
-      });
-
       return response.data;
     },
     onSuccess: (data) => {
