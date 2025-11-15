@@ -1,0 +1,54 @@
+# Auto-label PRs based on files changed
+
+# Backend changes
+backend:
+  - backend/**/*
+
+# Frontend changes
+frontend:
+  - frontend/**/*
+
+# Infrastructure changes
+infrastructure:
+  - terraform/**/*
+  - .github/workflows/terraform.yml
+
+# CI/CD changes
+ci/cd:
+  - .github/workflows/**/*
+
+# Documentation
+documentation:
+  - '**/*.md'
+  - docs/**/*
+
+# Configuration
+configuration:
+  - '**/*.yml'
+  - '**/*.yaml'
+  - '**/*.json'
+  - '**/*.properties'
+  - '**/*.xml'
+
+# Database
+database:
+  - '**/migrations/**/*'
+  - '**/schema/**/*
+  - backend/src/main/resources/db/**/*
+
+# Tests
+tests:
+  - '**/test/**/*'
+  - '**/*Test.java'
+  - '**/*Spec.java'
+
+# Dependencies
+dependencies:
+  - backend/pom.xml
+  - backend/package.json
+  - frontend/package.json
+
+# Security
+security:
+  - '**/SecurityConfig.java'
+  - terraform/modules/security/**/*

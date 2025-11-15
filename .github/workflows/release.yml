@@ -1,0 +1,389 @@
+# Release Workflow
+# Creates releases and tags with automatic changelog generation
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  # ===========================================================================
+  # JOB 1: VALIDATE RELEASE
+  # ===========================================================================
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog
+
+      - name: Validate version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+
+          echo "Release version: $VERSION"
+
+          # Validate semver format
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Expected: X.Y.Z"
+            exit 1
+          fi
+
+          echo "✅ Version format is valid"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Check if tag exists
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          TAG="v${{ inputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "❌ Tag $TAG already exists"
+            exit 1
+          fi
+          echo "✅ Tag is available"
+
+  # ===========================================================================
+  # JOB 2: BUILD RELEASE ARTIFACTS
+  # ===========================================================================
+  build:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Update version in pom.xml
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: ./backend
+        run: |
+          VERSION="${{ inputs.version }}"
+          mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false
+
+      - name: Build with Maven
+        working-directory: ./backend
+        run: |
+          mvn clean package -DskipTests
+          echo "✅ Build completed successfully"
+
+      - name: Run tests
+        working-directory: ./backend
+        run: mvn test
+
+      - name: Create release directory
+        run: mkdir -p release-artifacts
+
+      - name: Copy JAR artifact
+        run: |
+          cp backend/target/*.jar release-artifacts/
+          echo "✅ JAR artifact copied"
+
+      - name: Generate build info
+        run: |
+          cat > release-artifacts/build-info.txt << EOF
+          Build Information
+          ==================
+          Version: ${VERSION}
+          Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          Git Commit: ${GITHUB_SHA}
+          Git Branch: ${GITHUB_REF_NAME}
+          GitHub Run: ${GITHUB_RUN_NUMBER}
+          EOF
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+          retention-days: 30
+
+  # ===========================================================================
+  # JOB 3: BUILD & PUSH RELEASE DOCKER IMAGE
+  # ===========================================================================
+  docker-release:
+    name: Build Release Docker Image
+    runs-on: ubuntu-latest
+    needs: build
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build and push release image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/lockin-app:${{ steps.version.outputs.version }}
+            ${{ steps.login-ecr.outputs.registry }}/lockin-app:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+
+  # ===========================================================================
+  # JOB 4: GENERATE CHANGELOG
+  # ===========================================================================
+  changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: validate
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "First release - using all commits"
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "Generating changelog from $PREVIOUS_TAG to HEAD"
+            COMMITS=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Categorize commits
+          FEATURES=$(echo "$COMMITS" | grep -i "^- feat" || echo "")
+          FIXES=$(echo "$COMMITS" | grep -i "^- fix" || echo "")
+          DOCS=$(echo "$COMMITS" | grep -i "^- docs" || echo "")
+          CHORES=$(echo "$COMMITS" | grep -i "^- chore\|^- build\|^- ci" || echo "")
+
+          # Build changelog
+          CHANGELOG="## What's Changed\n\n"
+
+          if [ ! -z "$FEATURES" ]; then
+            CHANGELOG="${CHANGELOG}### ✨ New Features\n${FEATURES}\n\n"
+          fi
+
+          if [ ! -z "$FIXES" ]; then
+            CHANGELOG="${CHANGELOG}### 🐛 Bug Fixes\n${FIXES}\n\n"
+          fi
+
+          if [ ! -z "$DOCS" ]; then
+            CHANGELOG="${CHANGELOG}### 📚 Documentation\n${DOCS}\n\n"
+          fi
+
+          if [ ! -z "$CHORES" ]; then
+            CHANGELOG="${CHANGELOG}### 🔧 Maintenance\n${CHORES}\n\n"
+          fi
+
+          # Save changelog
+          echo "$CHANGELOG" > changelog.md
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat changelog.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: changelog.md
+
+  # ===========================================================================
+  # JOB 5: CREATE GITHUB RELEASE
+  # ===========================================================================
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build, docker-release, changelog]
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: ./artifacts
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: ./
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create or update tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body_path: changelog.md
+          draft: false
+          prerelease: ${{ inputs.prerelease || false }}
+          files: |
+            artifacts/*.jar
+            artifacts/build-info.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # JOB 6: DEPLOY TO PRODUCTION
+  # ===========================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: create-release
+    if: github.event_name == 'push' || !inputs.prerelease
+
+    environment:
+      name: production
+      url: https://app.lockin.com
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update ECS service
+        run: |
+          echo "Deploying version ${{ steps.version.outputs.version }} to production..."
+
+          # Update service with new image
+          aws ecs update-service \
+            --cluster lockin-cluster-prod \
+            --service lockin-service-prod \
+            --force-new-deployment
+
+          echo "✅ Production deployment initiated"
+
+      - name: Wait for deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster lockin-cluster-prod \
+            --services lockin-service-prod
+
+          echo "✅ Production deployment completed"
+
+  # ===========================================================================
+  # JOB 7: RELEASE SUMMARY
+  # ===========================================================================
+  release-summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [create-release]
+
+    steps:
+      - name: Release completed
+        run: |
+          echo "╔════════════════════════════════════════════════════════════╗"
+          echo "║          ✨ Release Created Successfully ✨                ║"
+          echo "╚════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "Version: v${{ needs.create-release.outputs.version }}"
+          echo "Tag: v${{ needs.create-release.outputs.version }}"
+          echo ""
+          echo "Artifacts:"
+          echo "  ✅ JAR file uploaded"
+          echo "  ✅ Docker image pushed to ECR"
+          echo "  ✅ GitHub Release created"
+          echo "  ✅ Production deployment initiated"
+          echo ""
+          echo "View release: ${{ github.server_url }}/${{ github.repository }}/releases"
