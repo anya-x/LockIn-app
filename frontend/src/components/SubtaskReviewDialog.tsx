@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -45,6 +45,11 @@ export const SubtaskReviewDialog: React.FC<SubtaskReviewDialogProps> = ({
   onConfirm,
 }) => {
   const [subtasks, setSubtasks] = useState(initialSubtasks);
+
+  // Sync state when props change
+  useEffect(() => {
+    setSubtasks(initialSubtasks);
+  }, [initialSubtasks]);
 
   const handleUpdate = (index: number, field: string, value: any) => {
     const updated = [...subtasks];
