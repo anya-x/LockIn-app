@@ -93,7 +93,7 @@ Use PostgreSQL as the primary database.
 - Need robust ecosystem for enterprise features
 
 **Decision:**
-Use Spring Boot (Java 17) as the backend framework.
+Use Spring Boot (Java 21) as the backend framework.
 
 **Alternatives Considered:**
 
