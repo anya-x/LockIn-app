@@ -35,3 +35,8 @@ build/
 # Environment
 .env
 .env.local
+.env.*.local
+
+# Never commit API keys!
+**/*api*key*
+**/*secret*
