@@ -8,14 +8,17 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Test controller for Claude API integration.
- * TODO: Remove before production!
+ *
+ * COMMENTED OUT - Using real endpoints now
+ * Keeping this code in case needed for debugging later
  */
-@Slf4j
-@RestController
-@RequestMapping("/api/test/ai")
-@RequiredArgsConstructor
+// @Slf4j
+// @RestController
+// @RequestMapping("/api/test/ai")
+// @RequiredArgsConstructor
 public class AITestController {
 
+    /*
     private final ClaudeAPIClient claudeAPIClient;
 
     @GetMapping("/hello")
@@ -35,4 +38,5 @@ public class AITestController {
             "Break down this task: " + task
         );
     }
+    */
 }
