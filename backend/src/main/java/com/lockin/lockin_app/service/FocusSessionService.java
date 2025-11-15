@@ -31,6 +31,7 @@ public class FocusSessionService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final GoalService goalService;
+    private final MetricsService metricsService;
 
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
@@ -91,6 +92,9 @@ public class FocusSessionService {
 
         FocusSession saved = sessionRepository.save(session);
 
+        // Record metric: focus session started
+        metricsService.incrementFocusSessionsStarted();
+
         log.info("Started session: {}", saved.getId());
 
         return FocusSessionResponseDTO.fromEntity(saved);
@@ -134,6 +138,13 @@ public class FocusSessionService {
 
         FocusSession updated = sessionRepository.save(session);
         FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
+
+        // Record metric: focus session completed with duration
+        java.time.Duration sessionDuration = java.time.Duration.between(
+            session.getStartedAt(),
+            session.getCompletedAt()
+        );
+        metricsService.recordFocusSessionCompleted(sessionDuration);
 
         goalService.updateGoalsFromSession(userId, response);
 

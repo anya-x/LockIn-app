@@ -12,8 +12,10 @@ import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.TaskRepository;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +36,7 @@ public class TaskService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final GoalService goalService;
+    private final MetricsService metricsService;
 
     /**
      * Creates a new task for the user
@@ -47,19 +50,34 @@ public class TaskService {
      */
     @Transactional
     public TaskResponseDTO createTask(Long userId, TaskRequestDTO request) {
-        log.info("Creating task for user: {}", userId);
+        // Add contextual information to logs using MDC
+        // This will be included in JSON logs automatically
+        MDC.put("userId", userId.toString());
+        MDC.put("operation", "createTask");
 
-        User user = userService.getUserById(userId);
+        try {
+            log.info("Creating task for user: {}", userId);
 
-        Task task = new Task();
-        task.setUser(user);
-        updateTaskFromRequest(task, request);
+            User user = userService.getUserById(userId);
 
-        Task saved = taskRepository.save(task);
+            Task task = new Task();
+            task.setUser(user);
+            updateTaskFromRequest(task, request);
 
-        log.info("Created task: {}", saved.getId());
+            Task saved = taskRepository.save(task);
 
-        return TaskResponseDTO.fromEntity(saved);
+            // Record metric: task created
+            metricsService.incrementTasksCreated();
+
+            // Add task ID to MDC after creation
+            MDC.put("taskId", saved.getId().toString());
+            log.info("Created task successfully");
+
+            return TaskResponseDTO.fromEntity(saved);
+        } finally {
+            // Always clear MDC to avoid memory leaks
+            MDC.clear();
+        }
     }
 
     // updates task fields from request DTO
@@ -89,6 +107,7 @@ public class TaskService {
         }
     }
 
+    @Timed(value = "lockin.database.getUserTasks", description = "Time spent fetching user tasks from database")
     @Transactional(readOnly = true)
     public List<TaskResponseDTO> getUserTasks(Long userId) {
         log.debug("Fetching tasks for user: {}", userId);
@@ -147,6 +166,9 @@ public class TaskService {
             LocalDateTime completionTime = LocalDateTime.now();
             task.setCompletedAt(completionTime);
 
+            // Record metric: task completed
+            metricsService.incrementTasksCompleted();
+
             log.debug("Task {} marked as completed, updating goals", taskId);
             goalService.updateGoalsFromTaskCompletion(userId, completionTime);
         } else if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {
@@ -173,6 +195,9 @@ public class TaskService {
         validateTaskOwnership(task, userId);
 
         taskRepository.delete(task);
+
+        // Record metric: task deleted
+        metricsService.incrementTasksDeleted();
 
         log.info("Deleted task: {}", taskId);
     }
@@ -276,6 +301,7 @@ public class TaskService {
      * @return statistics: counted by status, completion rate, category distribution and this week's
      *     activity
      */
+    @Timed(value = "lockin.statistics.calculate", description = "Time spent calculating task statistics")
     public TaskStatisticsDTO getStatistics(Long userId) {
         TaskStatisticsDTO stats = new TaskStatisticsDTO();
 
