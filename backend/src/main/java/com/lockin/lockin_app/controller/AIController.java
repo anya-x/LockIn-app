@@ -1,7 +1,9 @@
 package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.BreakdownRequest;
+import com.lockin.lockin_app.dto.EnhanceRequest;
 import com.lockin.lockin_app.dto.TaskBreakdownResult;
+import com.lockin.lockin_app.service.DescriptionEnhancementService;
 import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
 import com.lockin.lockin_app.service.UserService;
@@ -28,6 +30,7 @@ import java.util.Map;
 public class AIController {
 
     private final TaskBreakdownService taskBreakdownService;
+    private final DescriptionEnhancementService descriptionEnhancementService;
     private final UserService userService;
     private final RateLimitService rateLimitService;
 
@@ -81,5 +84,29 @@ public class AIController {
             log.error("Task breakdown failed", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PostMapping("/enhance-description")
+    public ResponseEntity<?> enhanceDescription(
+            @Valid @RequestBody EnhanceRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // Check rate limit
+        if (!rateLimitService.canMakeRequest(userId)) {
+            return ResponseEntity.status(429)
+                .body(Map.of("error", "Rate limit exceeded"));
+        }
+
+        DescriptionEnhancementService.EnhancementResult result =
+            descriptionEnhancementService.enhance(
+                request.getTitle(),
+                request.getDescription()
+            );
+
+        // TODO: Save usage record
+
+        return ResponseEntity.ok(result);
     }
 }
