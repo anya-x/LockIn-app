@@ -1,6 +1,9 @@
 package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.dto.AchievementDTO;
+import com.lockin.lockin_app.entity.FocusSession;
+import com.lockin.lockin_app.entity.Goal;
+import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.GoalRepository;
@@ -13,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,15 +53,14 @@ class AchievementServiceTest {
     @Test
     void shouldCalculateCenturyClubWhenUser100Tasks() {
         // Given: User has completed exactly 100 tasks
-        List<Object> completedTasks = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            completedTasks.add(new Object()); // Mock task objects
-        }
+        List<Task> completedTasks = Collections.nCopies(100, null);
 
         when(taskRepository.findByUserIdAndStatus(testUserId, TaskStatus.COMPLETED))
             .thenReturn(completedTasks);
-        when(sessionRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
-        when(goalRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
+        when(sessionRepository.findByUserIdOrderByStartedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
+        when(goalRepository.findByUserIdOrderByCreatedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
 
         // When: We get the user's achievements
         List<AchievementDTO> achievements = achievementService.getUserAchievements(testUserId);
@@ -79,15 +82,14 @@ class AchievementServiceTest {
     @Test
     void shouldNotUnlockCenturyClubBelow100Tasks() {
         // Given: User has only 99 tasks (so close!)
-        List<Object> completedTasks = new ArrayList<>();
-        for (int i = 0; i < 99; i++) {
-            completedTasks.add(new Object());
-        }
+        List<Task> completedTasks = Collections.nCopies(99, null);
 
         when(taskRepository.findByUserIdAndStatus(testUserId, TaskStatus.COMPLETED))
             .thenReturn(completedTasks);
-        when(sessionRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
-        when(goalRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
+        when(sessionRepository.findByUserIdOrderByStartedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
+        when(goalRepository.findByUserIdOrderByCreatedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<AchievementDTO> achievements = achievementService.getUserAchievements(testUserId);
@@ -106,15 +108,14 @@ class AchievementServiceTest {
     @Test
     void shouldAwardFocusMasterAt100Sessions() {
         // Given: User completed 100 focus sessions
-        List<Object> sessions = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            sessions.add(new Object());
-        }
+        List<FocusSession> sessions = Collections.nCopies(100, null);
 
-        when(sessionRepository.findByUserId(testUserId)).thenReturn(sessions);
+        when(sessionRepository.findByUserIdOrderByStartedAtDesc(testUserId))
+            .thenReturn(sessions);
         when(taskRepository.findByUserIdAndStatus(testUserId, TaskStatus.COMPLETED))
-            .thenReturn(new ArrayList<>());
-        when(goalRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
+            .thenReturn(Collections.emptyList());
+        when(goalRepository.findByUserIdOrderByCreatedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<AchievementDTO> achievements = achievementService.getUserAchievements(testUserId);
@@ -134,9 +135,12 @@ class AchievementServiceTest {
     @Test
     void shouldReturnAllAchievementCategories() {
         // Given: User with some activity
-        when(taskRepository.findByUserIdAndStatus(anyLong(), any())).thenReturn(new ArrayList<>());
-        when(sessionRepository.findByUserId(anyLong())).thenReturn(new ArrayList<>());
-        when(goalRepository.findByUserId(anyLong())).thenReturn(new ArrayList<>());
+        when(taskRepository.findByUserIdAndStatus(anyLong(), any()))
+            .thenReturn(Collections.emptyList());
+        when(sessionRepository.findByUserIdOrderByStartedAtDesc(anyLong()))
+            .thenReturn(Collections.emptyList());
+        when(goalRepository.findByUserIdOrderByCreatedAtDesc(anyLong()))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<AchievementDTO> achievements = achievementService.getUserAchievements(testUserId);
@@ -160,15 +164,14 @@ class AchievementServiceTest {
     @Test
     void shouldCapProgressAtTarget() {
         // Given: User has way more than 100 tasks (overachiever!)
-        List<Object> completedTasks = new ArrayList<>();
-        for (int i = 0; i < 250; i++) {
-            completedTasks.add(new Object());
-        }
+        List<Task> completedTasks = Collections.nCopies(250, null);
 
         when(taskRepository.findByUserIdAndStatus(testUserId, TaskStatus.COMPLETED))
             .thenReturn(completedTasks);
-        when(sessionRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
-        when(goalRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
+        when(sessionRepository.findByUserIdOrderByStartedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
+        when(goalRepository.findByUserIdOrderByCreatedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<AchievementDTO> achievements = achievementService.getUserAchievements(testUserId);
@@ -183,13 +186,14 @@ class AchievementServiceTest {
     @Test
     void shouldUnlockFirstTaskAchievementEarly() {
         // Given: User just completed their very first task!
-        List<Object> completedTasks = new ArrayList<>();
-        completedTasks.add(new Object()); // Just 1 task
+        List<Task> completedTasks = Collections.nCopies(1, null);
 
         when(taskRepository.findByUserIdAndStatus(testUserId, TaskStatus.COMPLETED))
             .thenReturn(completedTasks);
-        when(sessionRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
-        when(goalRepository.findByUserId(testUserId)).thenReturn(new ArrayList<>());
+        when(sessionRepository.findByUserIdOrderByStartedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
+        when(goalRepository.findByUserIdOrderByCreatedAtDesc(testUserId))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<AchievementDTO> achievements = achievementService.getUserAchievements(testUserId);
