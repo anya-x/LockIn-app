@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import type { Task } from "../../types/task";
 import CategorySelector from "../categories/CategorySelector";
+import { AITaskBreakdown } from "../AITaskBreakdown";
 
 interface TaskFormModalProps {
   open: boolean;
@@ -122,6 +123,19 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               rows={3}
               fullWidth
             />
+
+            {/* AI-Powered Task Breakdown */}
+            {!task && (
+              <AITaskBreakdown
+                title={formData.title || ""}
+                description={formData.description || ""}
+                onSubtasksGenerated={(subtasks) => {
+                  // TODO: Show review dialog
+                  console.log('Generated subtasks:', subtasks);
+                  // For now just log, will implement review UI next
+                }}
+              />
+            )}
 
             <CategorySelector
               value={formData.categoryId || null}
