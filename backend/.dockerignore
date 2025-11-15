@@ -1,0 +1,49 @@
+# Maven build artifacts
+target/
+!target/*.jar
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Test files (tests run in CI, not in Docker build)
+src/test/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Maven wrapper (we copy it explicitly in Dockerfile)
+# .mvn/
+# mvnw
+# mvnw.cmd
