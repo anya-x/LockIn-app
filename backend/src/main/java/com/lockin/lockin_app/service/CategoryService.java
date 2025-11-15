@@ -22,6 +22,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final MetricsService metricsService;
 
     @Transactional(readOnly = true)
     public List<Category> getUserCategories(Long userId) {
@@ -51,6 +52,9 @@ public class CategoryService {
 
         category.setUser(user);
         Category saved = categoryRepository.save(category);
+
+        // Record metric: category created
+        metricsService.incrementCategoriesCreated();
 
         log.info("Created category: {}", saved.getId());
 
