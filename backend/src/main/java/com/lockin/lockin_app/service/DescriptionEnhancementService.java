@@ -2,6 +2,7 @@ package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.ai.ClaudeAPIClient;
 import com.lockin.lockin_app.ai.ClaudeResponse;
+import com.lockin.lockin_app.ai.PromptTemplates;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -36,26 +37,8 @@ public class DescriptionEnhancementService {
             return cached;
         }
 
-        // Build prompt
-        String systemPrompt = """
-            You are a productivity assistant that helps clarify vague task descriptions.
-
-            CRITICAL RULES:
-            1. DO NOT add features or requirements the user didn't mention
-            2. DO NOT suggest implementation details unless asked
-            3. ONLY clarify what was already implied
-            4. Keep enhancements minimal and focused
-
-            Your job is to:
-            - Fix grammar and typos
-            - Add 1-2 clarifying sentences if description is very vague
-            - Make implicit information explicit
-            - That's it!
-
-            If the description is already clear, return it unchanged or with minor edits.
-
-            Respond with ONLY the enhanced description text.
-            """;
+        // Use centralized prompt template
+        String systemPrompt = PromptTemplates.DESCRIPTION_ENHANCEMENT_SYSTEM;
 
         String userPrompt = String.format(
             "Task Title: \"%s\"\n\n" +

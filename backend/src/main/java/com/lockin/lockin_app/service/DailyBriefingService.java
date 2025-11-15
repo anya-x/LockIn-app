@@ -2,6 +2,7 @@ package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.ai.ClaudeAPIClient;
 import com.lockin.lockin_app.ai.ClaudeResponse;
+import com.lockin.lockin_app.ai.PromptTemplates;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
@@ -70,17 +71,8 @@ public class DailyBriefingService {
             );
         }
 
-        // Build enriched prompt
-        String systemPrompt = """
-            You are a supportive productivity coach providing a personalized daily briefing.
-
-            Analyze the user's context and provide:
-            1. Brief overview considering their workload and history
-            2. Specific priority recommendation based on task details
-            3. One personalized insight based on their patterns
-
-            Keep it concise (100-150 words), empathetic, and actionable.
-            """;
+        // Use centralized prompt template
+        String systemPrompt = PromptTemplates.DAILY_BRIEFING_SYSTEM;
 
         String taskList = todayTasks.stream()
             .limit(10) // Don't overwhelm Claude

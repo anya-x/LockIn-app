@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lockin.lockin_app.ai.ClaudeAPIClient;
 import com.lockin.lockin_app.ai.ClaudeResponse;
+import com.lockin.lockin_app.ai.PromptTemplates;
 import com.lockin.lockin_app.dto.SubtaskDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResult;
 import com.lockin.lockin_app.entity.AIUsage;
@@ -55,29 +56,8 @@ public class TaskBreakdownService {
         // Cache miss - call Claude API
         log.info("Cache miss, calling Claude API for: {}", title);
 
-        // Improved system prompt with clear instructions
-        String systemPrompt = """
-            You are an expert at breaking down complex tasks into smaller, actionable steps.
-
-            When given a task, you should:
-            1. Break it into 3-7 concrete, actionable subtasks
-            2. Each subtask should be specific and achievable
-            3. Estimate time needed for each (in minutes)
-            4. Suggest priority (urgent/important/normal/low)
-
-            Respond ONLY with a JSON array of subtasks, no other text:
-            [
-              {
-                "title": "Specific action to take",
-                "description": "Brief details about this step",
-                "estimatedMinutes": 30,
-                "priority": "urgent"
-              }
-            ]
-
-            Priority levels: urgent, important, normal, low
-            Time estimates: Be realistic (15-120 minutes per subtask)
-            """;
+        // Use centralized prompt template
+        String systemPrompt = PromptTemplates.TASK_BREAKDOWN_SYSTEM;
 
         // User prompt with context
         String userPrompt = String.format(
