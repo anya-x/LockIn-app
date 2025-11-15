@@ -44,13 +44,13 @@ public class AchievementService {
         achievements.add(createTaskAchievement("task_100", "Century Club", "Complete 100 tasks", 100, completedTasks));
 
         // Calculate focus session achievements
-        int totalSessions = focusSessionRepository.findByUserId(userId).size();
+        int totalSessions = focusSessionRepository.findByUserIdOrderByStartedAtDesc(userId).size();
         achievements.add(createFocusAchievement("first_session", "First Focus", "Complete your first focus session", 1, totalSessions));
         achievements.add(createFocusAchievement("session_25", "Pomodoro Master", "Complete 25 focus sessions", 25, totalSessions));
         achievements.add(createFocusAchievement("session_100", "Focus Warrior", "Complete 100 focus sessions", 100, totalSessions));
 
         // Calculate goal achievements
-        int completedGoals = (int) goalRepository.findByUserId(userId).stream()
+        int completedGoals = (int) goalRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .filter(goal -> goal.getCompleted() != null && goal.getCompleted())
                 .count();
         achievements.add(createGoalAchievement("first_goal", "Goal Setter", "Complete your first goal", 1, completedGoals));

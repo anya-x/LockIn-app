@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 /**
  * Entity to store encrypted Google Calendar OAuth2 tokens
@@ -46,8 +46,8 @@ public class GoogleCalendarToken {
      * Token expiry time
      * Used to determine when to refresh the token
      */
-    @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
+    @Column(name = "token_expires_at", nullable = false)
+    private ZonedDateTime tokenExpiresAt;
 
     /**
      * Scope granted by user
@@ -56,34 +56,59 @@ public class GoogleCalendarToken {
     @Column(name = "scope", length = 500)
     private String scope;
 
+    /**
+     * Whether the calendar connection is active
+     */
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
+    /**
+     * When the user first connected their calendar
+     */
+    @Column(name = "connected_at")
+    private ZonedDateTime connectedAt;
+
+    /**
+     * When the calendar was last synced
+     */
+    @Column(name = "last_sync_at")
+    private ZonedDateTime lastSyncAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private ZonedDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private ZonedDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = ZonedDateTime.now();
+        updatedAt = ZonedDateTime.now();
+        if (connectedAt == null) {
+            connectedAt = ZonedDateTime.now();
+        }
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = ZonedDateTime.now();
     }
 
     /**
      * Check if the access token is expired
      */
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return ZonedDateTime.now().isAfter(tokenExpiresAt);
     }
 
     /**
      * Check if token needs refresh (expires within 5 minutes)
      */
     public boolean needsRefresh() {
-        return LocalDateTime.now().plusMinutes(5).isAfter(expiresAt);
+        return ZonedDateTime.now().plusMinutes(5).isAfter(tokenExpiresAt);
     }
 }
