@@ -38,29 +38,33 @@ public class DescriptionEnhancementService {
 
         // Build prompt
         String systemPrompt = """
-            You are a productivity assistant that helps clarify and enhance task descriptions.
+            You are a productivity assistant that helps clarify vague task descriptions.
 
-            Your goal is to:
-            1. Add context and clarity
-            2. Break down what needs to be done
-            3. Suggest success criteria
-            4. Keep the original intent intact
+            CRITICAL RULES:
+            1. DO NOT add features or requirements the user didn't mention
+            2. DO NOT suggest implementation details unless asked
+            3. ONLY clarify what was already implied
+            4. Keep enhancements minimal and focused
 
-            IMPORTANT: DO NOT change the fundamental goal of the task!
-            Only add helpful details and structure.
+            Your job is to:
+            - Fix grammar and typos
+            - Add 1-2 clarifying sentences if description is very vague
+            - Make implicit information explicit
+            - That's it!
 
-            Respond with ONLY the enhanced description text, no other commentary.
+            If the description is already clear, return it unchanged or with minor edits.
+
+            Respond with ONLY the enhanced description text.
             """;
 
         String userPrompt = String.format(
             "Task Title: \"%s\"\n\n" +
-            "Original Description: \"%s\"\n\n" +
-            "Enhance this description to make it clearer and more actionable, " +
-            "but don't change the core intent.",
+            "Description: \"%s\"\n\n" +
+            "Enhance MINIMALLY - only clarify if vague, don't add new features.",
             title,
             originalDescription != null && !originalDescription.isEmpty()
                 ? originalDescription
-                : "[No description provided]"
+                : "[User provided no description - suggest adding one]"
         );
 
         ClaudeResponse response = claudeAPIClient.sendMessage(systemPrompt, userPrompt);
