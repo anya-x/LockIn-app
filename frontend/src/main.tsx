@@ -11,10 +11,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: Infinity,
-      gcTime: 300000,
+      staleTime: 1000 * 60 * 60, // 1 hour (AI responses don't change)
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
       retry: 1,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: false, // Don't refetch AI responses
     },
   },
 });

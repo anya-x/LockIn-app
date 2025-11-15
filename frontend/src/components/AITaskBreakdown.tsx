@@ -4,70 +4,94 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Chip,
 } from '@mui/material';
-import { AutoAwesome } from '@mui/icons-material';
+import { AutoAwesome, Timer, AttachMoney } from '@mui/icons-material';
+import { useMutation } from '@tanstack/react-query';
 import api from '../services/api';
+
+interface Subtask {
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  priority: string;
+}
 
 interface AITaskBreakdownProps {
   title: string;
   description: string;
-  onSubtasksGenerated: (subtasks: any[]) => void;
+  onSubtasksGenerated: (subtasks: Subtask[]) => void;
 }
 
 /**
- * WIP: Component for AI-powered task breakdown
- *
- * TODOs:
- * - Add loading state properly
- * - Handle errors gracefully
- * - Show cost to user?
- * - Disable after usage limit
+ * Component for AI-powered task breakdown.
+ * Uses React Query for caching expensive AI calls.
  */
 export const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   title,
   description,
   onSubtasksGenerated,
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
 
-  const handleBreakdown = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
+  // Use React Query mutation (learned this in Month 3!)
+  const breakdownMutation = useMutation({
+    mutationFn: async () => {
       const response = await api.post('/ai/breakdown', {
         title,
         description,
       });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setResult(data);
+      onSubtasksGenerated(data.subtasks);
+    },
+  });
 
-      // TODO: Convert API response to Task objects
-      // TODO: Let user review before creating
-
-      onSubtasksGenerated(response.data.subtasks);
-    } catch (err: any) {
-      console.error('AI breakdown failed:', err);
-      setError(err.response?.data?.message || 'Failed to break down task');
-    } finally {
-      setLoading(false);
-    }
+  const handleBreakdown = () => {
+    breakdownMutation.mutate();
   };
 
   return (
     <Box sx={{ mt: 2 }}>
       <Button
         variant="outlined"
-        startIcon={loading ? <CircularProgress size={20} /> : <AutoAwesome />}
+        startIcon={
+          breakdownMutation.isPending ? (
+            <CircularProgress size={20} />
+          ) : (
+            <AutoAwesome />
+          )
+        }
         onClick={handleBreakdown}
-        disabled={loading || !title}
+        disabled={breakdownMutation.isPending || !title}
         fullWidth
       >
-        {loading ? 'AI is thinking...' : '✨ Break Down with AI'}
+        {breakdownMutation.isPending
+          ? 'AI is thinking...'
+          : '✨ Break Down with AI'}
       </Button>
 
-      {error && (
+      {result && (
+        <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+          <Chip
+            icon={<AttachMoney />}
+            label={`Cost: $${result.cost.toFixed(4)}`}
+            size="small"
+          />
+          <Chip
+            icon={<Timer />}
+            label={`${result.totalTokens} tokens`}
+            size="small"
+          />
+        </Box>
+      )}
+
+      {breakdownMutation.isError && (
         <Alert severity="error" sx={{ mt: 1 }}>
-          {error}
+          {(breakdownMutation.error as any)?.response?.data?.message ||
+            'Failed to break down task'}
         </Alert>
       )}
     </Box>
