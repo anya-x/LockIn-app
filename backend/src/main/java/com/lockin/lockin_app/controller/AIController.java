@@ -51,12 +51,12 @@ public class AIController {
 
         // Check rate limit
         if (!rateLimitService.canMakeRequest(userId)) {
-            int remaining = rateLimitService.getRemainingRequests(userId);
-            return ResponseEntity.status(429) // Too Many Requests
+            return ResponseEntity.status(429)
                 .body(Map.of(
                     "error", "Rate limit exceeded",
-                    "message", "You can make " + remaining + " more requests today",
-                    "limitResets", "in 24 hours"
+                    "message", "You've used all 10 AI requests for today. Limit resets in 24 hours.",
+                    "limit", 10,
+                    "resetTime", java.time.LocalDateTime.now().plusHours(24).toString()
                 ));
         }
 
