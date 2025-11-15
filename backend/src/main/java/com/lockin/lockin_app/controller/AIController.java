@@ -86,10 +86,15 @@ public class AIController {
         }
     }
 
+    /*
     @PostMapping("/enhance-description")
     public ResponseEntity<?> enhanceDescription(
             @Valid @RequestBody EnhanceRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
+
+        // DISABLED: Enhancement is too aggressive, changes user intent
+        // TODO: Improve prompt to be more conservative
+        // See commit 218 for implementation
 
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
 
@@ -109,4 +114,5 @@ public class AIController {
 
         return ResponseEntity.ok(result);
     }
+    */
 }
