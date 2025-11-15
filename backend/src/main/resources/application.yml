@@ -68,3 +68,12 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.hibernate.stat: DEBUG
     com.lockin.lockin_app: INFO
+
+# Security Configuration
+security:
+  encryption:
+    # AES-256 encryption key for Google Calendar tokens
+    # Generate with: openssl rand -base64 32
+    # IMPORTANT: Use environment variable in production!
+    # Example: ${ENCRYPTION_KEY:default-key-here}
+    key: ${ENCRYPTION_KEY:}
