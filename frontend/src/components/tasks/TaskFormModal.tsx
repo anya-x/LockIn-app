@@ -10,9 +10,14 @@ import {
   Checkbox,
   MenuItem,
   Box,
+  CircularProgress,
 } from "@mui/material";
+import { AutoAwesome } from "@mui/icons-material";
+import { useMutation } from "@tanstack/react-query";
 import type { Task } from "../../types/task";
 import CategorySelector from "../categories/CategorySelector";
+import { AITaskBreakdown } from "../AITaskBreakdown";
+import api from "../../services/api";
 
 interface TaskFormModalProps {
   open: boolean;
@@ -38,6 +43,23 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const enhanceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/ai/enhance-description', {
+        title: formData.title,
+        description: formData.description || '',
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Update description with enhanced version
+      setFormData({
+        ...formData,
+        description: data.enhancedDescription,
+      });
+    },
+  });
 
   useEffect(() => {
     if (task) {
@@ -122,6 +144,30 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               rows={3}
               fullWidth
             />
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={enhanceMutation.isPending ? <CircularProgress size={16} /> : <AutoAwesome />}
+              onClick={() => enhanceMutation.mutate()}
+              disabled={enhanceMutation.isPending || !formData.title}
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              {enhanceMutation.isPending ? 'Enhancing...' : '✨ Enhance Description'}
+            </Button>
+
+            {/* AI-Powered Task Breakdown */}
+            {!task && (
+              <AITaskBreakdown
+                title={formData.title || ""}
+                description={formData.description || ""}
+                onSubtasksGenerated={(subtasks) => {
+                  // TODO: Show review dialog
+                  console.log('Generated subtasks:', subtasks);
+                  // For now just log, will implement review UI next
+                }}
+              />
+            )}
 
             <CategorySelector
               value={formData.categoryId || null}
