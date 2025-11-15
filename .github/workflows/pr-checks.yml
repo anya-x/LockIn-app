@@ -1,0 +1,214 @@
+# Pull Request Checks
+# Comprehensive validation for pull requests
+
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # ===========================================================================
+  # JOB 1: PR VALIDATION
+  # ===========================================================================
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+
+      - name: Check branch name
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          VALID_PATTERN="^(feature|bugfix|hotfix|release|docs|chore)\/[a-z0-9-]+$"
+
+          if [[ ! $BRANCH_NAME =~ $VALID_PATTERN ]] && [[ $BRANCH_NAME != "develop" ]]; then
+            echo "⚠️  Branch name doesn't follow convention"
+            echo "Expected pattern: type/description"
+            echo "Types: feature, bugfix, hotfix, release, docs, chore"
+            echo "Example: feature/user-authentication"
+          else
+            echo "✓ Branch name follows convention"
+          fi
+
+      - name: Check file changes
+        run: |
+          echo "Files changed in this PR:"
+          git diff --name-only origin/${{ github.base_ref }}...HEAD
+
+      - name: Check for sensitive files
+        run: |
+          SENSITIVE_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(env|pem|key|p12|jks|keystore)$' || true)
+
+          if [ ! -z "$SENSITIVE_FILES" ]; then
+            echo "⚠️  WARNING: Sensitive files detected!"
+            echo "$SENSITIVE_FILES"
+            echo "Please review these files carefully"
+          else
+            echo "✓ No sensitive files detected"
+          fi
+
+  # ===========================================================================
+  # JOB 2: CODE SIZE ANALYSIS
+  # ===========================================================================
+  code-size:
+    name: Code Size Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze code size
+        run: |
+          echo "## Code Size Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count lines added/removed
+          STATS=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD)
+          echo "**Changes:** $STATS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Files by type
+          echo "**Files changed by type:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          git diff --name-only origin/${{ github.base_ref }}...HEAD | \
+            awk -F. '{print $NF}' | sort | uniq -c | sort -rn >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # JOB 3: DEPENDENCY REVIEW
+  # ===========================================================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+  # ===========================================================================
+  # JOB 4: LABEL MANAGEMENT
+  # ===========================================================================
+  auto-label:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Label based on files changed
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+
+      - name: Label by size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const additions = pr.data.additions;
+            const deletions = pr.data.deletions;
+            const total = additions + deletions;
+
+            let sizeLabel = '';
+            if (total < 10) sizeLabel = 'size/XS';
+            else if (total < 100) sizeLabel = 'size/S';
+            else if (total < 500) sizeLabel = 'size/M';
+            else if (total < 1000) sizeLabel = 'size/L';
+            else sizeLabel = 'size/XL';
+
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [sizeLabel]
+            });
+
+  # ===========================================================================
+  # JOB 5: PR SUMMARY
+  # ===========================================================================
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [pr-validation, code-size]
+
+    steps:
+      - name: Generate PR summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `
+            ## Pull Request Summary 📋
+
+            Thank you for your contribution! This PR has been automatically validated.
+
+            ### Automated Checks
+            - ✅ PR title follows semantic convention
+            - ✅ Branch name follows convention
+            - ✅ No sensitive files detected
+            - ✅ Code size analyzed
+
+            ### Next Steps
+            1. Wait for CI/CD checks to complete
+            2. Request review from team members
+            3. Address any feedback
+            4. Ensure all checks pass
+
+            ### Review Checklist
+            - [ ] Code follows project style guidelines
+            - [ ] Tests added/updated for new functionality
+            - [ ] Documentation updated if needed
+            - [ ] No breaking changes (or documented)
+            - [ ] Security considerations addressed
+
+            ---
+            *Automated PR checks powered by GitHub Actions*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

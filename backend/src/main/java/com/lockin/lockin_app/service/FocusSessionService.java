@@ -15,9 +15,11 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ public class FocusSessionService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final GoalService goalService;
+    private final MetricsService metricsService;
 
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
@@ -91,6 +94,9 @@ public class FocusSessionService {
 
         FocusSession saved = sessionRepository.save(session);
 
+        // Record metric: focus session started
+        metricsService.incrementFocusSessionsStarted();
+
         log.info("Started session: {}", saved.getId());
 
         return FocusSessionResponseDTO.fromEntity(saved);
@@ -102,9 +108,12 @@ public class FocusSessionService {
      * <p>Records actual minutes worked and completion timestamp, prevents completing an
      * already-completed session.
      *
+     * <p>Evicts analytics cache since session affects daily stats
+     *
      * @param actualMinutes actual time worked
      * @throws ResourceNotFoundException if session already completed or minutes negative
      */
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     @Transactional
     public FocusSessionResponseDTO completeSession(
             Long sessionId, Long userId, Integer actualMinutes) {
@@ -134,6 +143,13 @@ public class FocusSessionService {
 
         FocusSession updated = sessionRepository.save(session);
         FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
+
+        // Record metric: focus session completed with duration
+        java.time.Duration sessionDuration = java.time.Duration.between(
+            session.getStartedAt(),
+            session.getCompletedAt()
+        );
+        metricsService.recordFocusSessionCompleted(sessionDuration);
 
         goalService.updateGoalsFromSession(userId, response);
 

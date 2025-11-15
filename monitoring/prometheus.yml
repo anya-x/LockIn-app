@@ -1,0 +1,30 @@
+# Prometheus configuration for LockIn Task Manager
+# Scrapes metrics from the Spring Boot application's /actuator/prometheus endpoint
+
+global:
+  scrape_interval: 15s      # How often to scrape targets by default
+  evaluation_interval: 15s  # How often to evaluate alerting rules
+
+# Load alerting rules
+rule_files:
+  - "prometheus-rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # LockIn Spring Boot Application
+  - job_name: 'lockin-app'
+    metrics_path: '/actuator/prometheus'  # Spring Boot Actuator endpoint
+    static_configs:
+      - targets: ['host.docker.internal:8080']  # Spring Boot app running on host
+    scrape_interval: 5s  # Scrape more frequently for demo purposes
+
+    # Add labels to all metrics from this job
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'lockin-backend'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

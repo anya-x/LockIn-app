@@ -14,6 +14,7 @@ import {
   Alert,
   Typography,
 } from "@mui/material";
+import { GOAL_TEMPLATES } from "../../constants/goalTemplates";
 
 interface CreateGoalDialogProps {
   open: boolean;
@@ -51,6 +52,7 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("custom");
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -131,12 +133,69 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
   };
 
   const updateField = (field: keyof GoalFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      // Real-time date validation
+      if (field === "startDate" || field === "endDate") {
+        const startDate = field === "startDate" ? value : prev.startDate;
+        const endDate = field === "endDate" ? value : prev.endDate;
+
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            endDate: "End date must be after start date",
+          }));
+        } else if (errors.endDate === "End date must be after start date") {
+          setErrors((prevErrors) => {
+            const newErrors = { ...prevErrors };
+            delete newErrors.endDate;
+            return newErrors;
+          });
+        }
+      }
+
+      return updated;
+    });
+
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
+      });
+    }
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+
+    if (templateId === "custom") {
+      // Reset to empty
+      setFormData({
+        title: "",
+        description: "",
+        type: "WEEKLY",
+        startDate: "",
+        endDate: "",
+        targetTasks: undefined,
+        targetPomodoros: undefined,
+        targetFocusMinutes: undefined,
+      });
+      return;
+    }
+
+    const template = GOAL_TEMPLATES.find((t) => t.id === templateId);
+    if (template) {
+      setFormData({
+        title: template.title,
+        description: template.description,
+        type: template.type,
+        startDate: "",
+        endDate: "",
+        targetTasks: template.targetTasks,
+        targetPomodoros: template.targetPomodoros,
+        targetFocusMinutes: template.targetFocusMinutes,
       });
     }
   };
@@ -153,6 +212,33 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
           )}
 
           {errors.targets && <Alert severity="warning">{errors.targets}</Alert>}
+
+          {/* Template Selector */}
+          <FormControl fullWidth>
+            <InputLabel>Start From</InputLabel>
+            <Select
+              value={selectedTemplate}
+              label="Start From"
+              onChange={(e) => handleTemplateSelect(e.target.value)}
+            >
+              <MenuItem value="custom">Custom Goal</MenuItem>
+              <MenuItem disabled>──── Templates ────</MenuItem>
+              {GOAL_TEMPLATES.map((template) => (
+                <MenuItem key={template.id} value={template.id}>
+                  {template.title}
+                </MenuItem>
+              ))}
+            </Select>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, ml: 2 }}
+            >
+              {selectedTemplate === "custom"
+                ? "Create your own custom goal"
+                : "Customize template values below"}
+            </Typography>
+          </FormControl>
 
           <TextField
             label="Title"
@@ -209,6 +295,9 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
               inputLabel: {
                 shrink: true,
               },
+              htmlInput: {
+                min: new Date().toISOString().split("T")[0],
+              },
             }}
           />
 
@@ -220,10 +309,13 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
             fullWidth
             required
             error={!!errors.endDate}
-            helperText={errors.endDate}
+            helperText={errors.endDate || "Must be after start date"}
             slotProps={{
               inputLabel: {
                 shrink: true,
+              },
+              htmlInput: {
+                min: formData.startDate || new Date().toISOString().split("T")[0],
               },
             }}
           />

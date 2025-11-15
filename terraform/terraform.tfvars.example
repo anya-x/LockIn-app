@@ -1,0 +1,167 @@
+# Terraform Variables - Example Configuration
+# Copy this file to terraform.tfvars and customize for your environment
+#
+# cp terraform.tfvars.example terraform.tfvars
+# nano terraform.tfvars
+
+# ==============================================================================
+# GENERAL CONFIGURATION
+# ==============================================================================
+
+aws_region   = "us-east-1"
+environment  = "dev"  # dev, staging, or production
+project_name = "lockin"
+owner        = "DevOps Team"
+cost_center  = "Engineering"
+
+# ==============================================================================
+# NETWORKING
+# ==============================================================================
+
+vpc_cidr               = "10.0.0.0/16"
+availability_zones     = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs    = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs   = ["10.0.10.0/24", "10.0.11.0/24"]
+database_subnet_cidrs  = ["10.0.20.0/24", "10.0.21.0/24"]
+
+# NAT Gateway (required for private subnet internet access)
+# WARNING: Costs ~$32/month
+enable_nat_gateway     = true
+single_nat_gateway     = true  # false = one per AZ (more reliable but expensive)
+
+# ==============================================================================
+# DATABASE (RDS PostgreSQL)
+# ==============================================================================
+
+db_instance_class      = "db.t3.micro"  # 2 vCPU, 1GB RAM - good for dev
+db_allocated_storage   = 20             # GB
+db_max_allocated_storage = 100          # Auto-scale up to 100GB
+db_engine_version      = "15.4"
+db_name                = "lockin"
+db_username            = "lockin_admin"
+db_password            = "CHANGE_ME_STRONG_PASSWORD_16_CHARS"  # CHANGE THIS!
+
+# Backups and availability
+db_backup_retention_period = 7   # days (7 for dev, 35 for production)
+db_multi_az                = false  # true for production
+db_deletion_protection     = true   # ALWAYS true for production
+
+# ==============================================================================
+# ECS FARGATE
+# ==============================================================================
+
+# Container resources
+app_container_cpu    = 512   # 0.5 vCPU (256, 512, 1024, 2048, 4096)
+app_container_memory = 1024  # 1 GB RAM
+app_container_port   = 8080
+
+# Task scaling
+app_desired_count = 2  # Run 2 tasks
+app_min_count     = 1  # Minimum for autoscaling
+app_max_count     = 4  # Maximum for autoscaling
+
+# Docker image
+app_image_tag = "latest"
+
+# ==============================================================================
+# LOAD BALANCER
+# ==============================================================================
+
+# HTTPS Certificate ARN (leave empty for HTTP only)
+# Get from AWS Certificate Manager after requesting certificate
+alb_certificate_arn = ""  # Example: "arn:aws:acm:us-east-1:123456789:certificate/abc-123"
+
+# Health check configuration
+alb_health_check_path     = "/actuator/health"
+alb_health_check_interval = 30
+alb_health_check_timeout  = 5
+alb_healthy_threshold     = 2
+alb_unhealthy_threshold   = 3
+
+# ==============================================================================
+# MONITORING
+# ==============================================================================
+
+log_retention_days        = 7      # 7 for dev, 30+ for production
+enable_container_insights = false  # true for production (costs extra)
+alarm_email               = ""     # Email for CloudWatch alarms
+
+# ==============================================================================
+# SECRETS (DO NOT COMMIT THESE VALUES!)
+# ==============================================================================
+
+# JWT Secret (minimum 32 characters)
+# Generate with: openssl rand -base64 32
+jwt_secret = "CHANGE_ME_GENERATE_RANDOM_32_CHARS"
+
+# Google OAuth credentials (optional)
+google_client_id     = ""
+google_client_secret = ""
+
+# ==============================================================================
+# FEATURE FLAGS
+# ==============================================================================
+
+enable_prometheus    = false  # Deploy Prometheus on ECS
+enable_grafana       = false  # Deploy Grafana on ECS
+enable_vpc_endpoints = false  # VPC endpoints for S3, ECR (saves NAT costs)
+
+# ==============================================================================
+# DOMAIN AND DNS (OPTIONAL)
+# ==============================================================================
+
+domain_name      = ""  # Example: "app.example.com"
+route53_zone_id  = ""  # Example: "Z1234567890ABC"
+
+# ==============================================================================
+# ADDITIONAL TAGS
+# ==============================================================================
+
+additional_tags = {
+  Team        = "Backend"
+  CostProject = "LockIn"
+}
+
+# ==============================================================================
+# ENVIRONMENT-SPECIFIC EXAMPLES
+# ==============================================================================
+
+# DEVELOPMENT:
+# environment = "dev"
+# db_instance_class = "db.t3.micro"
+# db_multi_az = false
+# app_desired_count = 1
+# single_nat_gateway = true
+# enable_container_insights = false
+
+# PRODUCTION:
+# environment = "production"
+# db_instance_class = "db.t3.small"  # or larger
+# db_multi_az = true
+# db_backup_retention_period = 35
+# app_desired_count = 3
+# single_nat_gateway = false
+# enable_container_insights = true
+# alb_certificate_arn = "arn:aws:acm:..."
+
+# ==============================================================================
+# SECURITY REMINDERS
+# ==============================================================================
+
+# ❌ DO NOT:
+# - Commit terraform.tfvars to Git
+# - Use weak passwords
+# - Disable deletion protection in production
+# - Allow 0.0.0.0/0 access to RDS
+# - Use default secrets
+
+# ✅ DO:
+# - Use strong, unique passwords (16+ characters)
+# - Generate JWT secret with: openssl rand -base64 32
+# - Enable Multi-AZ for production databases
+# - Set up CloudWatch alarms
+# - Review security group rules
+# - Enable deletion protection
+# - Use HTTPS in production (get ACM certificate)
+
+# ==============================================================================

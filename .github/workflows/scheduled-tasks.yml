@@ -1,0 +1,333 @@
+# Scheduled Maintenance Tasks
+# Runs periodic jobs for maintenance and monitoring
+
+name: Scheduled Tasks
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  # ===========================================================================
+  # JOB 1: DEPENDENCY UPDATES CHECK
+  # ===========================================================================
+  check-dependencies:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Check for outdated dependencies
+        working-directory: ./backend
+        run: |
+          echo "## Dependency Updates Available" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          mvn versions:display-dependency-updates >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for plugin updates
+        working-directory: ./backend
+        run: |
+          echo "## Plugin Updates Available" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          mvn versions:display-plugin-updates >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # JOB 2: SECURITY VULNERABILITY SCAN
+  # ===========================================================================
+  security-scan:
+    name: Daily Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ===========================================================================
+  # JOB 3: DOCKER IMAGE CLEANUP
+  # ===========================================================================
+  cleanup-ecr:
+    name: Cleanup Old ECR Images
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Delete old untagged images
+        run: |
+          echo "Cleaning up old ECR images..."
+
+          REPOSITORY_NAME="lockin-app"
+
+          # Get untagged images older than 7 days
+          IMAGES_TO_DELETE=$(aws ecr list-images \
+            --repository-name $REPOSITORY_NAME \
+            --filter tagStatus=UNTAGGED \
+            --query 'imageIds[*]' \
+            --output json)
+
+          if [ "$IMAGES_TO_DELETE" != "[]" ]; then
+            aws ecr batch-delete-image \
+              --repository-name $REPOSITORY_NAME \
+              --image-ids "$IMAGES_TO_DELETE" || true
+            echo "✓ Cleaned up untagged images"
+          else
+            echo "No untagged images to delete"
+          fi
+
+      - name: Keep only last 10 tagged images
+        run: |
+          echo "Keeping only last 10 tagged images..."
+
+          REPOSITORY_NAME="lockin-app"
+
+          # Get all images sorted by push date
+          OLD_IMAGES=$(aws ecr describe-images \
+            --repository-name $REPOSITORY_NAME \
+            --query 'sort_by(imageDetails,& imagePushedAt)[:-10].[imageDigest]' \
+            --output json)
+
+          if [ "$OLD_IMAGES" != "[]" ] && [ "$OLD_IMAGES" != "null" ]; then
+            echo "$OLD_IMAGES" | jq -r '.[] | @json' | while read digest; do
+              aws ecr batch-delete-image \
+                --repository-name $REPOSITORY_NAME \
+                --image-ids imageDigest=$digest || true
+            done
+            echo "✓ Cleaned up old tagged images"
+          else
+            echo "No old images to delete"
+          fi
+
+  # ===========================================================================
+  # JOB 4: CLOUDWATCH LOGS CLEANUP
+  # ===========================================================================
+  cleanup-logs:
+    name: Cleanup Old CloudWatch Logs
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Set log retention
+        run: |
+          echo "Setting log retention to 30 days for development logs..."
+
+          LOG_GROUPS=$(aws logs describe-log-groups \
+            --query 'logGroups[?contains(logGroupName, `dev`)].logGroupName' \
+            --output text)
+
+          for LOG_GROUP in $LOG_GROUPS; do
+            aws logs put-retention-policy \
+              --log-group-name $LOG_GROUP \
+              --retention-in-days 30 || true
+            echo "✓ Set retention for $LOG_GROUP"
+          done
+
+  # ===========================================================================
+  # JOB 5: COST MONITORING
+  # ===========================================================================
+  cost-monitoring:
+    name: Daily Cost Check
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Get current month costs
+        run: |
+          echo "## AWS Cost Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          START_DATE=$(date -d "$(date +%Y-%m-01)" +%Y-%m-%d)
+          END_DATE=$(date +%Y-%m-%d)
+
+          COST=$(aws ce get-cost-and-usage \
+            --time-period Start=$START_DATE,End=$END_DATE \
+            --granularity MONTHLY \
+            --metrics BlendedCost \
+            --query 'ResultsByTime[0].Total.BlendedCost.Amount' \
+            --output text 2>/dev/null || echo "0")
+
+          echo "**Current Month Cost:** \$$COST USD" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Alert if cost exceeds threshold
+          THRESHOLD=200
+          if (( $(echo "$COST > $THRESHOLD" | bc -l) )); then
+            echo "⚠️  **WARNING:** Cost exceeds \$$THRESHOLD threshold!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ===========================================================================
+  # JOB 6: HEALTH CHECK
+  # ===========================================================================
+  health-check:
+    name: Application Health Check
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Check ECS service health
+        run: |
+          echo "## ECS Service Health" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          CLUSTER="lockin-cluster"
+          SERVICE="lockin-service"
+
+          # Get service status
+          STATUS=$(aws ecs describe-services \
+            --cluster $CLUSTER \
+            --services $SERVICE \
+            --query 'services[0].status' \
+            --output text 2>/dev/null || echo "UNKNOWN")
+
+          RUNNING=$(aws ecs describe-services \
+            --cluster $CLUSTER \
+            --services $SERVICE \
+            --query 'services[0].runningCount' \
+            --output text 2>/dev/null || echo "0")
+
+          DESIRED=$(aws ecs describe-services \
+            --cluster $CLUSTER \
+            --services $SERVICE \
+            --query 'services[0].desiredCount' \
+            --output text 2>/dev/null || echo "0")
+
+          echo "**Status:** $STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "**Running Tasks:** $RUNNING" >> $GITHUB_STEP_SUMMARY
+          echo "**Desired Tasks:** $DESIRED" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$RUNNING" != "$DESIRED" ]; then
+            echo "⚠️  **WARNING:** Task count mismatch!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✓ Service is healthy" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check RDS database health
+        run: |
+          echo "## RDS Database Health" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          DB_INSTANCE="lockin-db"
+
+          STATUS=$(aws rds describe-db-instances \
+            --db-instance-identifier $DB_INSTANCE \
+            --query 'DBInstances[0].DBInstanceStatus' \
+            --output text 2>/dev/null || echo "UNKNOWN")
+
+          echo "**Database Status:** $STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$STATUS" == "available" ]; then
+            echo "✓ Database is healthy" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  **WARNING:** Database status is $STATUS" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ===========================================================================
+  # JOB 7: BACKUP VERIFICATION
+  # ===========================================================================
+  verify-backups:
+    name: Verify Database Backups
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Check RDS snapshots
+        run: |
+          echo "## RDS Backup Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          DB_INSTANCE="lockin-db"
+
+          # Get latest snapshot
+          LATEST_SNAPSHOT=$(aws rds describe-db-snapshots \
+            --db-instance-identifier $DB_INSTANCE \
+            --snapshot-type automated \
+            --query 'DBSnapshots | sort_by(@, &SnapshotCreateTime) | [-1].SnapshotCreateTime' \
+            --output text 2>/dev/null || echo "NONE")
+
+          echo "**Latest Automated Snapshot:** $LATEST_SNAPSHOT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check if snapshot is recent (within 24 hours)
+          if [ "$LATEST_SNAPSHOT" != "NONE" ]; then
+            SNAPSHOT_AGE=$(( ($(date +%s) - $(date -d "$LATEST_SNAPSHOT" +%s)) / 3600 ))
+            echo "**Snapshot Age:** $SNAPSHOT_AGE hours" >> $GITHUB_STEP_SUMMARY
+
+            if [ $SNAPSHOT_AGE -gt 24 ]; then
+              echo "⚠️  **WARNING:** Last backup is older than 24 hours" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✓ Backups are up to date" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

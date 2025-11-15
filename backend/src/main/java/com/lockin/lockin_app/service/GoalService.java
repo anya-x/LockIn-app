@@ -27,6 +27,7 @@ public class GoalService {
 
     private final GoalRepository goalRepository;
     private final UserService userService;
+    private final MetricsService metricsService;
 
     /**
      * Creates a new goal for the user
@@ -59,6 +60,9 @@ public class GoalService {
         updateGoalFromRequest(goal, request);
 
         Goal saved = goalRepository.save(goal);
+
+        // Record metric: goal created
+        metricsService.incrementGoalsCreated();
 
         log.info("Created goal: {}", saved.getId());
 
@@ -192,6 +196,9 @@ public class GoalService {
         if (goal.getProgressPercentage() >= 100.0 && !goal.getCompleted()) {
             goal.setCompleted(true);
             goal.setCompletedDate(LocalDate.now());
+
+            // Record metric: goal achieved
+            metricsService.incrementGoalsAchieved();
         }
     }
 

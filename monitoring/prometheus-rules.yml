@@ -1,0 +1,91 @@
+# Prometheus alerting rules for LockIn Task Manager
+# These define conditions that should trigger alerts
+
+groups:
+  - name: lockin_application_alerts
+    rules:
+      # Alert when HTTP error rate is high
+      - alert: HighErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "High HTTP error rate detected"
+          description: "Error rate is {{ $value | humanize }} errors/second (threshold: 0.1/s)"
+          impact: "Users may be experiencing errors when using the application"
+
+      # Alert when API response times are slow
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "95th percentile response time exceeds 2 seconds"
+          description: "P95 latency is {{ $value | humanize }}s"
+          impact: "Application feels slow to users"
+
+      # Alert when focus session completion rate is low (users abandoning sessions)
+      - alert: LowFocusSessionCompletion
+        expr: |
+          (
+            rate(lockin_focus_sessions_completed_total[1h])
+            /
+            rate(lockin_focus_sessions_started_total[1h])
+          ) < 0.5
+        for: 30m
+        labels:
+          severity: warning
+          component: product
+        annotations:
+          summary: "Focus session completion rate below 50%"
+          description: "Only {{ $value | humanizePercentage }} of sessions are being completed"
+          impact: "Users are abandoning focus sessions - investigate UX issues"
+
+      # Alert when database connection pool is nearly exhausted
+      - alert: DatabaseConnectionPoolExhausted
+        expr: (hikaricp_connections_active / hikaricp_connections_max) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of connections are in use"
+          impact: "Application may start rejecting requests due to lack of DB connections"
+
+      # Alert when JVM heap memory usage is high
+      - alert: HighMemoryUsage
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "JVM heap memory usage above 90%"
+          description: "Heap memory usage is {{ $value | humanizePercentage }}"
+          impact: "Application may run out of memory and crash"
+
+  - name: lockin_business_metrics
+    rules:
+      # Alert when no tasks are being created (dead application indicator)
+      - alert: NoTaskActivityDetected
+        expr: rate(lockin_tasks_created_total[1h]) == 0
+        for: 2h
+        labels:
+          severity: info
+          component: product
+        annotations:
+          summary: "No task creation activity in the last 2 hours"
+          description: "No tasks have been created recently"
+          impact: "May indicate no active users or application issues"
+
+      # Track task completion ratio as a recording rule (for easier dashboard queries)
+      - record: lockin:task_completion_rate:1h
+        expr: |
+          rate(lockin_tasks_completed_total[1h])
+          /
+          rate(lockin_tasks_created_total[1h])

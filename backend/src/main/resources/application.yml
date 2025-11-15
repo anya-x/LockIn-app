@@ -1,0 +1,95 @@
+spring:
+  application:
+    name: lockin-app
+
+  # PostgreSQL Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lockin_db
+    username: lockin_user
+    password: password123
+    driver-class-name: org.postgresql.Driver
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        generate_statistics: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  # Flyway database migration
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+    enabled: true
+
+# Server Configuration
+server:
+  port: 8080
+
+# JWT Configuration
+jwt:
+  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A713474375367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+  expiration: 86400000
+
+# Anthropic Claude API Configuration
+anthropic:
+  api:
+    key: ${ANTHROPIC_API_KEY}
+    url: ${ANTHROPIC_API_URL:https://api.anthropic.com/v1/messages}
+    model: ${ANTHROPIC_MODEL:claude-3-5-sonnet-20241022}
+    max-tokens: ${ANTHROPIC_MAX_TOKENS:1000}
+    temperature: ${ANTHROPIC_TEMPERATURE:0.7}
+
+# AI Feature Controls
+ai:
+  requests:
+    per-user-per-day: ${AI_REQUESTS_PER_USER_PER_DAY:10}
+  cache:
+    ttl-hours: ${AI_CACHE_TTL_HOURS:24}
+
+# Actuator Configuration for Observability
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose prometheus, health, info, and metrics endpoints
+        include: health,info,prometheus,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      # Show detailed health information (database, disk space, etc.)
+      show-details: always
+  metrics:
+    tags:
+      # Add application tag to all metrics for easier filtering
+      application: lockin-task-manager
+    distribution:
+      # Enable histogram metrics for HTTP requests
+      percentiles-histogram:
+        http.server.requests: true
+      # Track 50th, 95th, and 99th percentile response times
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
+
+# Logging Configuration
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.stat: DEBUG
+    com.lockin.lockin_app: INFO
+
+# Security Configuration
+security:
+  encryption:
+    # AES-256 encryption key for Google Calendar tokens
+    # Generate with: openssl rand -base64 32
+    # IMPORTANT: Use environment variable in production!
+    # Example: ${ENCRYPTION_KEY:default-key-here}
+    key: ${ENCRYPTION_KEY:}
