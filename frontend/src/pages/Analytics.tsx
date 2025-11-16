@@ -19,6 +19,7 @@ import {
   Timer,
   EmojiEvents,
   Refresh as RefreshIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import {
   LineChart,
@@ -41,6 +42,7 @@ import {
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
 import CustomTooltip from "../components/analytics/CustomTooltip";
+import { exportToCSV } from "../utils/exportToCSV";
 import { useTimer } from "../context/TimerContext";
 import {
   useAnalyticsRange,
@@ -80,6 +82,37 @@ const AnalyticsPage: React.FC = () => {
 
   const handleRefresh = async () => {
     await refreshAnalytics();
+  };
+
+  const handleExportCSV = () => {
+    if (rangeData.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    const formattedData = rangeData.map((day) => ({
+      Date: new Date(day.date).toLocaleDateString(),
+      "Productivity Score": day.productivityScore,
+      "Focus Score": day.focusScore,
+      "Tasks Created": day.tasksCreated,
+      "Tasks Completed": day.tasksCompleted,
+      "Tasks Completed From Today": day.tasksCompletedFromToday,
+      "Completion Rate %": day.completionRate,
+      "Pomodoros Completed": day.pomodorosCompleted,
+      "Focus Minutes": day.focusMinutes,
+      "Break Minutes": day.breakMinutes,
+      "Interrupted Sessions": day.interruptedSessions,
+      "Late Night Sessions": day.lateNightSessions,
+      "Burnout Risk Score": day.burnoutRiskScore,
+      "Overwork Minutes": day.overworkMinutes,
+      "Urgent & Important": day.urgentImportantCount,
+      "Not Urgent & Important": day.notUrgentImportantCount,
+      "Urgent & Not Important": day.urgentNotImportantCount,
+      "Not Urgent & Not Important": day.notUrgentNotImportantCount,
+    }));
+
+    const today = new Date().toISOString().split("T")[0];
+    exportToCSV(formattedData, `analytics-${today}`);
   };
 
   // Calculate averages for tooltip comparisons
@@ -136,14 +169,24 @@ const AnalyticsPage: React.FC = () => {
             Analytics Dashboard
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
+            disabled={rangeData.length === 0}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+        </Box>
       </Box>
 
       {/* Burnout Alert */}
