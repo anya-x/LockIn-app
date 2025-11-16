@@ -369,7 +369,7 @@ public class AnalyticsCalculationService {
             dayCount++;
         }
 
-        // Calculate averages
+        // Calculate averages (with edge case handling)
         if (dayCount > 0) {
             average.setTasksCreated(totalTasksCreated / dayCount);
             average.setTasksCompleted(totalTasksCompleted / dayCount);
@@ -378,10 +378,23 @@ public class AnalyticsCalculationService {
             average.setBreakMinutes(totalBreakMinutes / dayCount);
             average.setProductivityScore(totalProductivity / dayCount);
             average.setBurnoutRiskScore(totalBurnout / dayCount);
+            // Edge case: Division by zero when no tasks created
             average.setCompletionRate(
                     totalTasksCreated > 0
                             ? (totalTasksCompleted / (double) totalTasksCreated) * 100
                             : 0.0);
+        } else {
+            // Edge case: New users with no data
+            // Return empty analytics instead of crashing
+            log.warn("No data found for period {} to {} for user {}", startDate, endDate, userId);
+            average.setTasksCreated(0);
+            average.setTasksCompleted(0);
+            average.setPomodorosCompleted(0);
+            average.setFocusMinutes(0);
+            average.setBreakMinutes(0);
+            average.setProductivityScore(0.0);
+            average.setBurnoutRiskScore(0.0);
+            average.setCompletionRate(0.0);
         }
 
         return DailyAnalyticsDTO.fromEntity(average);
