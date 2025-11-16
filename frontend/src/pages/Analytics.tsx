@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
+import CustomTooltip from "../components/analytics/CustomTooltip";
 import { useTimer } from "../context/TimerContext";
 import {
   useAnalyticsRange,
@@ -69,6 +70,23 @@ const AnalyticsPage: React.FC = () => {
   const handleRefresh = async () => {
     await refreshAnalytics();
   };
+
+  // Calculate averages for tooltip comparisons
+  const averageProductivity =
+    rangeData.length > 0
+      ? rangeData.reduce((sum, d) => sum + d.productivityScore, 0) /
+        rangeData.length
+      : 0;
+
+  const averageFocusScore =
+    rangeData.length > 0
+      ? rangeData.reduce((sum, d) => sum + d.focusScore, 0) / rangeData.length
+      : 0;
+
+  const averageFocusMinutes =
+    rangeData.length > 0
+      ? rangeData.reduce((sum, d) => sum + d.focusMinutes, 0) / rangeData.length
+      : 0;
 
   if (loading && !todayAnalytics) {
     return (
@@ -313,7 +331,9 @@ const AnalyticsPage: React.FC = () => {
                 />
                 <YAxis />
                 <Tooltip
-                  labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                  content={
+                    <CustomTooltip averageValue={averageProductivity} />
+                  }
                 />
                 <Legend />
                 <Line
@@ -355,8 +375,8 @@ const AnalyticsPage: React.FC = () => {
                     />
                     <YAxis />
                     <Tooltip
-                      labelFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
+                      content={
+                        <CustomTooltip averageValue={averageFocusMinutes} />
                       }
                     />
                     <Legend />
@@ -388,11 +408,7 @@ const AnalyticsPage: React.FC = () => {
                       }
                     />
                     <YAxis />
-                    <Tooltip
-                      labelFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
-                      }
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar
                       dataKey="tasksCompletedFromToday"
