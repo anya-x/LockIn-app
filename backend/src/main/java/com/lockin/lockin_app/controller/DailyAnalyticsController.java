@@ -101,7 +101,7 @@ public class DailyAnalyticsController {
     }
 
     @PostMapping("/compare")
-    public ResponseEntity<ComparisonDTO> comparePeriodsre(
+    public ResponseEntity<ComparisonDTO> comparePeriods(
             @RequestBody DateRangeDTO request, @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug("POST /api/analytics/compare: User: {}", userDetails.getUsername());
