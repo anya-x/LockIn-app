@@ -42,6 +42,12 @@ public class DailyAnalyticsDTO {
     private Integer urgentNotImportantCount;
     private Integer notUrgentNotImportantCount;
 
+    // Time of day productivity
+    private Integer morningFocusMinutes;
+    private Integer afternoonFocusMinutes;
+    private Integer eveningFocusMinutes;
+    private Integer nightFocusMinutes;
+
     public static DailyAnalyticsDTO fromEntity(DailyAnalytics analytics) {
         return DailyAnalyticsDTO.builder()
                 .date(analytics.getDate())
@@ -61,6 +67,10 @@ public class DailyAnalyticsDTO {
                 .notUrgentImportantCount(analytics.getNotUrgentImportantCount())
                 .urgentNotImportantCount(analytics.getUrgentNotImportantCount())
                 .notUrgentNotImportantCount(analytics.getNotUrgentNotImportantCount())
+                .morningFocusMinutes(analytics.getMorningFocusMinutes())
+                .afternoonFocusMinutes(analytics.getAfternoonFocusMinutes())
+                .eveningFocusMinutes(analytics.getEveningFocusMinutes())
+                .nightFocusMinutes(analytics.getNightFocusMinutes())
                 .build();
     }
 }
