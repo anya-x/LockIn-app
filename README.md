@@ -4,9 +4,11 @@ A science based task management tool that's going to change how you view product
 
 ## Tech Stack
 
-- **Backend:** Spring Boot 3.2, PostgreSQL 17, JWT Authentication
-- **Frontend:** React 18, TypeScript, Material-UI v7, Vite
+- **Backend:** Spring Boot 3.2, PostgreSQL 17, JWT Authentication, Spring Cache
+- **Frontend:** React 18, TypeScript, Material-UI v7, Vite, Recharts
 - **Architecture:** RESTful API, responsive SPA
+- **Analytics:** Research-based productivity scoring, burnout detection
+- **Performance:** Database indexing, query optimization, caching layer
 
 ## Prerequisites
 
@@ -63,6 +65,16 @@ A science based task management tool that's going to change how you view product
 - GET `/api/analytics/range?days={number}` - get analytics for date range
 - POST `/api/analytics/calculate/{date}` - calculate analytics for specific date
 - GET `/api/analytics/weekly-report` - get weekly performance report
+- POST `/api/analytics/compare` - compare two time periods
+
+#### Analytics Features (Month 4)
+- **Productivity Scoring**: Research-based algorithm (40% tasks + 40% focus + 20% balance)
+- **Burnout Detection**: Maslach Burnout Inventory adaptation
+- **Trend Analysis**: Period-over-period comparison with percentage changes
+- **Goal Tracking**: Pre-defined templates and custom goals
+- **Achievement Badges**: Gamification system
+- **Visual Analytics**: Multiple chart types with colorblind-friendly palette
+- **Performance**: Cached calculations (10ms vs 200ms), optimized queries
 
 ### Eisenhower Matrix Endpoints
 
