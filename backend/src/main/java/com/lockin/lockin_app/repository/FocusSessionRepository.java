@@ -41,4 +41,22 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
 
     List<FocusSession> findByUserAndStartedAtBetween(
             User user, LocalDateTime start, LocalDateTime end);
+
+    // WIP: Trying to add time-of-day productivity analysis
+    // This doesn't account for timezones properly!
+    // Object[] return is messy - need DTO
+    // Is this even useful? Maybe over-engineering...
+    /* TODO: Fix timezone handling
+    @Query("SELECT HOUR(fs.startedAt) as hour, " +
+           "COUNT(fs) as count, " +
+           "AVG(fs.workDuration) as avgDuration " +
+           "FROM FocusSession fs " +
+           "WHERE fs.user = :user " +
+           "AND fs.startedAt BETWEEN :start AND :end " +
+           "GROUP BY HOUR(fs.startedAt)")
+    List<Object[]> getHourlyDistribution(
+            @Param("user") User user,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+    */
 }
