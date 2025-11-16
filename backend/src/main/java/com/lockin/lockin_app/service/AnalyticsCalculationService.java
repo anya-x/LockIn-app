@@ -10,6 +10,8 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,10 +41,13 @@ public class AnalyticsCalculationService {
      * work-break balance - Burnout risk: Overwork, late night sessions, interruption rate - Focus:
      * Optimal range 240min, diminishing returns after 360min
      *
+     * <p>Results are cached for performance. Cache is invalidated when new data is added.
+     *
      * @param userId user to calculate analytics for
      * @param date specific date to analyze
      * @return daily analytics with scores and metrics
      */
+    @Cacheable(value = "dailyAnalytics", key = "#userId + '_' + #date")
     @Transactional
     public DailyAnalyticsDTO calculateDailyAnalytics(Long userId, LocalDate date) {
         User user =
@@ -330,6 +335,7 @@ public class AnalyticsCalculationService {
      * @param endDate end of period
      * @return averaged daily analytics for the period
      */
+    @Cacheable(value = "periodAnalytics", key = "#userId + '_' + #startDate + '_' + #endDate")
     public DailyAnalyticsDTO getAverageForPeriod(
             Long userId, LocalDate startDate, LocalDate endDate) {
         User user =
@@ -379,6 +385,19 @@ public class AnalyticsCalculationService {
         }
 
         return DailyAnalyticsDTO.fromEntity(average);
+    }
+
+    /**
+     * Invalidates analytics cache for a specific date
+     *
+     * <p>Called when new tasks or focus sessions are added
+     *
+     * @param userId user whose cache to invalidate
+     * @param date date to invalidate
+     */
+    @CacheEvict(value = {"dailyAnalytics", "periodAnalytics"}, allEntries = true)
+    public void invalidateCache(Long userId, LocalDate date) {
+        log.debug("Invalidating analytics cache for user {} on {}", userId, date);
     }
 
     // TODO: implement consecutive work days calculation
