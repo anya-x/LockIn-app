@@ -1,0 +1,57 @@
+/* Mobile responsive improvements for analytics dashboard */
+
+@media (max-width: 768px) {
+  .analytics-chart {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .chart-container {
+    overflow-x: auto;
+    padding: 10px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr; /* Stack on mobile */
+    gap: 15px;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-range-picker {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Better touch targets */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Responsive typography */
+  .chart-title {
+    font-size: 16px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-card {
+    padding: 12px;
+  }
+
+  .chart-title {
+    font-size: 14px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+}
