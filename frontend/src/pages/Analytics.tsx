@@ -533,30 +533,27 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               When are you most productive?
             </Typography>
-            <Typography variant="caption" color="warning.main" sx={{ mb: 2, display: "block" }}>
-              TODO: Backend doesn't track this yet! Using placeholder data.
-            </Typography>
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
                 data={[
                   {
                     period: "Morning\n(6 AM - 12 PM)",
-                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.3),
+                    minutes: todayAnalytics.morningFocusMinutes || 0,
                     color: "#ff9800",
                   },
                   {
                     period: "Afternoon\n(12 PM - 6 PM)",
-                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.4),
+                    minutes: todayAnalytics.afternoonFocusMinutes || 0,
                     color: "#2196f3",
                   },
                   {
                     period: "Evening\n(6 PM - 12 AM)",
-                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.25),
+                    minutes: todayAnalytics.eveningFocusMinutes || 0,
                     color: "#9c27b0",
                   },
                   {
                     period: "Night\n(12 AM - 6 AM)",
-                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.05),
+                    minutes: todayAnalytics.nightFocusMinutes || 0,
                     color: "#f44336",
                   },
                 ]}

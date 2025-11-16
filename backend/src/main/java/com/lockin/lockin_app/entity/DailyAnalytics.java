@@ -42,6 +42,12 @@ public class DailyAnalytics {
     @Builder.Default private Integer breakMinutes = 0;
     @Builder.Default private Integer interruptedSessions = 0;
 
+    // Time of day productivity (focus minutes)
+    @Builder.Default private Integer morningFocusMinutes = 0; // 6 AM - 12 PM
+    @Builder.Default private Integer afternoonFocusMinutes = 0; // 12 PM - 6 PM
+    @Builder.Default private Integer eveningFocusMinutes = 0; // 6 PM - 12 AM
+    @Builder.Default private Integer nightFocusMinutes = 0; // 12 AM - 6 AM
+
     // Eisenhower distributions
     @Builder.Default private Integer urgentImportantCount = 0;
     @Builder.Default private Integer notUrgentImportantCount = 0;
