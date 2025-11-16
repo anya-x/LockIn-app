@@ -56,10 +56,16 @@ public class DailyAnalytics {
     @Builder.Default private Double burnoutRiskScore = 0.0;
 
     // Burnout indicators
-    @Builder.Default 
+    @Builder.Default
     private Integer overworkMinutes = 0;
     @Builder.Default private Integer consecutiveWorkDays = 0;
     @Builder.Default private Integer lateNightSessions = 0;
+
+    // Time of day productivity tracking
+    @Builder.Default private Integer morningFocusMinutes = 0; // 6 AM - 12 PM
+    @Builder.Default private Integer afternoonFocusMinutes = 0; // 12 PM - 6 PM
+    @Builder.Default private Integer eveningFocusMinutes = 0; // 6 PM - 12 AM
+    @Builder.Default private Integer nightFocusMinutes = 0; // 12 AM - 6 AM
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

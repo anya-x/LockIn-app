@@ -131,10 +131,30 @@ public class AnalyticsCalculationService {
         int interrupted = 0;
         int lateNight = 0;
 
+        // Time of day tracking
+        int morningFocus = 0;
+        int afternoonFocus = 0;
+        int eveningFocus = 0;
+        int nightFocus = 0;
+
         for (FocusSession session : sessions) {
+            int hour = session.getStartedAt().getHour();
+            int duration = session.getWorkDuration();
+
             if (session.getCompleted()) {
                 completed++;
-                totalFocusMinutes += session.getWorkDuration();
+                totalFocusMinutes += duration;
+
+                // Track time of day productivity
+                if (hour >= 6 && hour < 12) {
+                    morningFocus += duration;
+                } else if (hour >= 12 && hour < 18) {
+                    afternoonFocus += duration;
+                } else if (hour >= 18 && hour < 24) {
+                    eveningFocus += duration;
+                } else {
+                    nightFocus += duration;
+                }
 
                 if (session.getBreakMinutes() != null) {
                     totalBreakMinutes += session.getBreakMinutes();
@@ -143,7 +163,7 @@ public class AnalyticsCalculationService {
                 interrupted++;
             }
 
-            if (session.getStartedAt().getHour() >= LATE_NIGHT_HOUR) {
+            if (hour >= LATE_NIGHT_HOUR) {
                 lateNight++;
             }
         }
@@ -153,6 +173,12 @@ public class AnalyticsCalculationService {
         analytics.setBreakMinutes(totalBreakMinutes);
         analytics.setInterruptedSessions(interrupted);
         analytics.setLateNightSessions(lateNight);
+
+        // Set time of day metrics
+        analytics.setMorningFocusMinutes(morningFocus);
+        analytics.setAfternoonFocusMinutes(afternoonFocus);
+        analytics.setEveningFocusMinutes(eveningFocus);
+        analytics.setNightFocusMinutes(nightFocus);
 
         int overwork = Math.max(0, totalFocusMinutes - MAX_HEALTHY_MINUTES);
         analytics.setOverworkMinutes(overwork);
