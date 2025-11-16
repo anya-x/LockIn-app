@@ -136,21 +136,31 @@ const AnalyticsPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={1}>
                 <CheckCircle color="success" />
-                <Typography variant="subtitle2">Tasks</Typography>
+                <Typography variant="subtitle2">Tasks Completed</Typography>
               </Box>
               <Typography variant="h3">
                 {todayAnalytics.tasksCompleted}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                of {todayAnalytics.tasksCreated} created
+                {todayAnalytics.tasksCompletedFromToday} from today's {todayAnalytics.tasksCreated}
               </Typography>
               {todayAnalytics.tasksCreated > 0 && (
                 <Chip
-                  label={`${todayAnalytics.completionRate.toFixed(0)}%`}
+                  label={`${todayAnalytics.completionRate.toFixed(0)}% daily completion`}
                   color="success"
                   size="small"
                   sx={{ mt: 1 }}
                 />
+              )}
+              {todayAnalytics.tasksCompleted > todayAnalytics.tasksCompletedFromToday && (
+                <Typography
+                  variant="caption"
+                  color="info.main"
+                  display="block"
+                  sx={{ mt: 0.5 }}
+                >
+                  +{todayAnalytics.tasksCompleted - todayAnalytics.tasksCompletedFromToday} from backlog
+                </Typography>
               )}
             </CardContent>
           </Card>
@@ -378,9 +388,15 @@ const AnalyticsPage: React.FC = () => {
                     />
                     <Legend />
                     <Bar
-                      dataKey="tasksCompleted"
+                      dataKey="tasksCompletedFromToday"
+                      stackId="a"
                       fill="#4caf50"
-                      name="Tasks Completed"
+                      name="Created Today"
+                    />
+                    <Bar
+                      dataKey="tasksCompleted"
+                      fill="#2196f3"
+                      name="Total Completed"
                     />
                   </BarChart>
                 </ResponsiveContainer>

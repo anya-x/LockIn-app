@@ -31,9 +31,10 @@ public class DailyAnalytics {
 
     // Task metrics
     @Builder.Default private Integer tasksCreated = 0;
-    @Builder.Default private Integer tasksCompleted = 0;
+    @Builder.Default private Integer tasksCompleted = 0; // All tasks completed today
+    @Builder.Default private Integer tasksCompletedFromToday = 0; // Tasks created today and completed today
     @Builder.Default private Integer tasksDeleted = 0;
-    @Builder.Default private Double completionRate = 0.0;
+    @Builder.Default private Double completionRate = 0.0; // Research-based: tasksCompletedFromToday / tasksCreated
 
     // Pomodoro metrics
     @Builder.Default private Integer pomodorosCompleted = 0;

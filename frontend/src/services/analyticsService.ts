@@ -4,8 +4,9 @@ export interface Analytics {
   date: string; // LocalDate from backend
 
   tasksCreated: number;
-  tasksCompleted: number;
-  completionRate: number;
+  tasksCompleted: number; // All tasks completed today (includes old tasks)
+  tasksCompletedFromToday: number; // Tasks created today and completed today
+  completionRate: number; // Based on tasksCompletedFromToday / tasksCreated
 
   pomodorosCompleted: number;
   focusMinutes: number;
