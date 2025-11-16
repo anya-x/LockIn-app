@@ -26,6 +26,10 @@ export function useRefreshAnalytics() {
   const queryClient = useQueryClient();
 
   return async () => {
+    // First, invalidate the backend cache
+    await analyticsService.refreshCache();
+
+    // Then, invalidate the frontend React Query cache to trigger refetch
     await queryClient.invalidateQueries({ queryKey: ["analytics"] });
   };
 }

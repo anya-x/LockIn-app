@@ -140,6 +140,22 @@ public class DailyAnalyticsController {
         return ResponseEntity.ok(comparison);
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<Void> refreshAnalytics(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("POST /api/analytics/refresh: User: {}", userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // Invalidate the backend cache to force recalculation
+        calculationService.invalidateCache(userId, LocalDate.now());
+
+        log.info("Analytics cache invalidated for user {}", userId);
+
+        return ResponseEntity.ok().build();
+    }
+
     private Double calculatePercentageChange(Number oldValue, Number newValue) {
         if (oldValue == null || newValue == null) {
             return 0.0;
