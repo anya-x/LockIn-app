@@ -88,19 +88,19 @@ public class AnalyticsCalculationService {
         int completed = 0;
 
         for (Task task : allTasks) {
+            // Count tasks created today
             if (task.getCreatedAt() != null
                     && task.getCreatedAt().isAfter(startOfDay)
                     && task.getCreatedAt().isBefore(endOfDay)) {
-
                 created++;
+            }
 
-                if (task.getStatus() == TaskStatus.COMPLETED
-                        && task.getUpdatedAt() != null
-                        && task.getUpdatedAt().isAfter(startOfDay)
-                        && task.getUpdatedAt().isBefore(endOfDay)) {
-
-                    completed++;
-                }
+            // Count all tasks completed today (regardless of when they were created)
+            if (task.getStatus() == TaskStatus.COMPLETED
+                    && task.getUpdatedAt() != null
+                    && task.getUpdatedAt().isAfter(startOfDay)
+                    && task.getUpdatedAt().isBefore(endOfDay)) {
+                completed++;
             }
         }
 
