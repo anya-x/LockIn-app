@@ -43,4 +43,14 @@ export const analyticsService = {
     const response = await api.post<Analytics>(`/analytics/calculate/${date}`);
     return response.data;
   },
+
+  comparePerio ds: async (request: {
+    currentStart: string;
+    currentEnd: string;
+    previousStart: string;
+    previousEnd: string;
+  }): Promise<any> => {
+    const response = await api.post("/analytics/compare", request);
+    return response.data;
+  },
 };
