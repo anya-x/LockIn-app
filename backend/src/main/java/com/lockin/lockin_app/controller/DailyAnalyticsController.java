@@ -1,6 +1,5 @@
 package com.lockin.lockin_app.controller;
 
-import com.lockin.lockin_app.dto.ComparisonDTO;
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.User;
@@ -97,41 +96,5 @@ public class DailyAnalyticsController {
         }
 
         return ResponseEntity.ok(report);
-    }
-
-    // WIP: Trying to add comparison analytics
-    // Date math is confusing - need to think through this more
-    @PostMapping("/compare")
-    public ResponseEntity<ComparisonDTO> compareAnalytics(
-            @RequestParam int days, @AuthenticationPrincipal UserDetails userDetails) {
-
-        log.debug("POST /api/analytics/compare?days={}: User: {}", days, userDetails.getUsername());
-
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
-
-        // Current period
-        LocalDate currentEnd = LocalDate.now();
-        LocalDate currentStart = currentEnd.minusDays(days);
-
-        // Previous period - trying to calculate "equivalent" period
-        // TODO: This logic is confusing! What if days span different weeks?
-        // TODO: What if user joined mid-period?
-        LocalDate previousEnd = currentStart.minusDays(1);
-        LocalDate previousStart = previousEnd.minusDays(days);
-
-        // Get averages for both periods (need to implement this method...)
-        // DailyAnalyticsDTO current = calculationService.getAverageForPeriod(userId, currentStart,
-        // currentEnd);
-        // DailyAnalyticsDTO previous = calculationService.getAverageForPeriod(userId, previousStart,
-        // previousEnd);
-
-        ComparisonDTO comparison = new ComparisonDTO();
-
-        // TODO: Calculate percentage changes
-        // TODO: Handle division by zero
-        // TODO: This approach feels too complicated
-
-        // Returning empty for now - need to rethink architecture
-        return ResponseEntity.ok(comparison);
     }
 }
