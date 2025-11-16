@@ -79,39 +79,33 @@ public class AnalyticsCalculationService {
 
     // counts tasks created and completed on the given date
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
-        List<Task> allTasks = taskRepository.findByUserIdWithCategory(user.getId());
-
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        int created = 0;
-        int completedTotal = 0;
-        int completedFromToday = 0;
+        // Fetch only tasks created today (with JOIN FETCH to avoid N+1)
+        List<Task> tasksCreatedToday =
+                taskRepository.findByUserIdAndCreatedAtBetween(
+                        user.getId(), startOfDay, endOfDay);
 
-        for (Task task : allTasks) {
-            boolean createdToday =
-                    task.getCreatedAt() != null
-                            && task.getCreatedAt().isAfter(startOfDay)
-                            && task.getCreatedAt().isBefore(endOfDay);
+        // Fetch only tasks completed today (with JOIN FETCH to avoid N+1)
+        List<Task> tasksCompletedToday =
+                taskRepository.findByUserIdAndStatusAndUpdatedAtBetween(
+                        user.getId(), TaskStatus.COMPLETED, startOfDay, endOfDay);
 
-            boolean completedToday =
-                    task.getStatus() == TaskStatus.COMPLETED
-                            && task.getUpdatedAt() != null
-                            && task.getUpdatedAt().isAfter(startOfDay)
-                            && task.getUpdatedAt().isBefore(endOfDay);
+        int created = tasksCreatedToday.size();
+        int completedTotal = tasksCompletedToday.size();
 
-            if (createdToday) {
-                created++;
-
-                if (completedToday) {
-                    completedFromToday++;
-                }
-            }
-
-            if (completedToday) {
-                completedTotal++;
-            }
-        }
+        // Count tasks that were both created AND completed today
+        int completedFromToday =
+                (int)
+                        tasksCreatedToday.stream()
+                                .filter(
+                                        t ->
+                                                t.getStatus() == TaskStatus.COMPLETED
+                                                        && t.getUpdatedAt() != null
+                                                        && t.getUpdatedAt().isAfter(startOfDay)
+                                                        && t.getUpdatedAt().isBefore(endOfDay))
+                                .count();
 
         analytics.setTasksCreated(created);
         analytics.setTasksCompleted(completedTotal);
@@ -172,25 +166,25 @@ public class AnalyticsCalculationService {
     // counts current tasks by Eisenhower matrix quadrant
     private void calculateEisenhowerDistribution(
             DailyAnalytics analytics, User user, LocalDate date) {
-        List<Task> allTasks = taskRepository.findByUserIdWithCategory(user.getId());
+        // Fetch only incomplete tasks (with JOIN FETCH to avoid N+1)
+        List<Task> incompleteTasks =
+                taskRepository.findByUserIdAndStatusNotWithCategory(
+                        user.getId(), TaskStatus.COMPLETED);
 
         int urgentImportant = 0;
         int notUrgentImportant = 0;
         int urgentNotImportant = 0;
         int notUrgentNotImportant = 0;
 
-        for (Task task : allTasks) {
-            if (task.getStatus() != TaskStatus.COMPLETED) {
-
-                if (task.getIsUrgent() && task.getIsImportant()) {
-                    urgentImportant++;
-                } else if (!task.getIsUrgent() && task.getIsImportant()) {
-                    notUrgentImportant++;
-                } else if (task.getIsUrgent() && !task.getIsImportant()) {
-                    urgentNotImportant++;
-                } else {
-                    notUrgentNotImportant++;
-                }
+        for (Task task : incompleteTasks) {
+            if (task.getIsUrgent() && task.getIsImportant()) {
+                urgentImportant++;
+            } else if (!task.getIsUrgent() && task.getIsImportant()) {
+                notUrgentImportant++;
+            } else if (task.getIsUrgent() && !task.getIsImportant()) {
+                urgentNotImportant++;
+            } else {
+                notUrgentNotImportant++;
             }
         }
 
