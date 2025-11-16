@@ -525,6 +525,60 @@ const AnalyticsPage: React.FC = () => {
             </ResponsiveContainer>
           </Paper>
 
+          {/* Time of Day Productivity */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Time of Day Productivity
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              When are you most productive?
+            </Typography>
+            <Typography variant="caption" color="warning.main" sx={{ mb: 2, display: "block" }}>
+              TODO: Backend doesn't track this yet! Using placeholder data.
+            </Typography>
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart
+                data={[
+                  {
+                    period: "Morning\n(6 AM - 12 PM)",
+                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.3),
+                    color: "#ff9800",
+                  },
+                  {
+                    period: "Afternoon\n(12 PM - 6 PM)",
+                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.4),
+                    color: "#2196f3",
+                  },
+                  {
+                    period: "Evening\n(6 PM - 12 AM)",
+                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.25),
+                    color: "#9c27b0",
+                  },
+                  {
+                    period: "Night\n(12 AM - 6 AM)",
+                    minutes: Math.floor(todayAnalytics.focusMinutes * 0.05),
+                    color: "#f44336",
+                  },
+                ]}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="period" />
+                <YAxis label={{ value: "Minutes", angle: -90, position: "insideLeft" }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="minutes" name="Focus Minutes">
+                  {[
+                    { fill: "#ff9800" },
+                    { fill: "#2196f3" },
+                    { fill: "#9c27b0" },
+                    { fill: "#f44336" },
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Paper>
+
           {/* Pomodoros Pie Chart */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
