@@ -32,4 +32,15 @@ public class CategoryResponseDTO {
                 .createdAt(category.getCreatedAt())
                 .build();
     }
+
+    public static CategoryResponseDTO fromEntity(Category category, Long taskCount) {
+        return CategoryResponseDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .color(category.getColor())
+                .icon(category.getIcon())
+                .taskCount(taskCount)
+                .createdAt(category.getCreatedAt())
+                .build();
+    }
 }
