@@ -21,6 +21,8 @@ import {
 import {
   LineChart,
   Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   PieChart,
@@ -32,6 +34,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceArea,
 } from "recharts";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
@@ -426,6 +429,50 @@ const AnalyticsPage: React.FC = () => {
               </Paper>
             </Grid>
           </Grid>
+
+          {/* Burnout Risk Trend */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Burnout Risk Trend
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Risk scores above 50 indicate potential burnout
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={rangeData}>
+                <defs>
+                  <linearGradient id="burnoutGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f44336" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#f44336" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) =>
+                    new Date(date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  }
+                />
+                <YAxis domain={[0, 100]} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                {/* Danger zone (50-100) */}
+                <ReferenceArea y1={50} y2={100} fill="#f44336" fillOpacity={0.1} />
+                <Area
+                  type="monotone"
+                  dataKey="burnoutRiskScore"
+                  stroke="#f44336"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#burnoutGradient)"
+                  name="Burnout Risk Score"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Paper>
 
           {/* Pomodoros Pie Chart */}
           <Paper sx={{ p: 3, mb: 3 }}>
