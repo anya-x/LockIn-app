@@ -10,7 +10,8 @@ export function useTodayAnalytics() {
 
       return await analyticsService.getTodayAnalytics();
     },
-    staleTime: 3600000,
+    staleTime: 0, // Always consider data stale to allow immediate refetch
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 }
 
@@ -18,7 +19,8 @@ export function useAnalyticsRange(days: number = 7) {
   return useQuery({
     queryKey: ["analytics", "range", days],
     queryFn: () => analyticsService.getAnalyticsRange(days),
-    staleTime: 3600000, // 1 hour, same as today analytics
+    staleTime: 0, // Always consider data stale to allow immediate refetch
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 }
 
@@ -26,7 +28,16 @@ export function useRefreshAnalytics() {
   const queryClient = useQueryClient();
 
   return async () => {
-    await queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    // Invalidate and refetch all analytics queries
+    await queryClient.invalidateQueries({
+      queryKey: ["analytics"],
+      refetchType: "active"
+    });
+    // Force immediate refetch of active queries
+    await queryClient.refetchQueries({
+      queryKey: ["analytics"],
+      type: "active"
+    });
   };
 }
 
@@ -46,6 +57,7 @@ export function useComparisonAnalytics(
       previousEnd,
     }),
     enabled,
-    staleTime: 3600000, // 1 hour
+    staleTime: 0, // Always consider data stale to allow immediate refetch
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 }
