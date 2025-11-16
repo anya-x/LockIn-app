@@ -5,6 +5,7 @@ import com.lockin.lockin_app.entity.TaskStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,7 @@ import java.util.List;
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByUserId(Long userId);
 
+    @EntityGraph(attributePaths = {"category"})
     Page<Task> findByUserId(Long userId, Pageable pageable);
 
     List<Task> findByUserIdAndStatus(Long userId, TaskStatus status);
@@ -70,7 +72,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("isImportant") Boolean isImportant);
 
     @Query(
-            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+            value = "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND (:status IS NULL OR t.status = :status) "
+                    + "AND (:categoryId IS NULL OR t.category.id = :categoryId) "
+                    + "AND (:isUrgent IS NULL OR t.isUrgent = :isUrgent) "
+                    + "AND (:isImportant IS NULL OR t.isImportant = :isImportant)",
+            countQuery = "SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId "
                     + "AND (:status IS NULL OR t.status = :status) "
                     + "AND (:categoryId IS NULL OR t.category.id = :categoryId) "
                     + "AND (:isUrgent IS NULL OR t.isUrgent = :isUrgent) "
