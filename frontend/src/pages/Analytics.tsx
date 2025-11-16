@@ -102,6 +102,10 @@ const AnalyticsPage: React.FC = () => {
       "Focus Minutes": day.focusMinutes,
       "Break Minutes": day.breakMinutes,
       "Interrupted Sessions": day.interruptedSessions,
+      "Morning Focus (6AM-12PM)": day.morningFocusMinutes || 0,
+      "Afternoon Focus (12PM-6PM)": day.afternoonFocusMinutes || 0,
+      "Evening Focus (6PM-12AM)": day.eveningFocusMinutes || 0,
+      "Night Focus (12AM-6AM)": day.nightFocusMinutes || 0,
       "Late Night Sessions": day.lateNightSessions,
       "Burnout Risk Score": day.burnoutRiskScore,
       "Overwork Minutes": day.overworkMinutes,
@@ -543,32 +547,27 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               When are you most productive?
             </Typography>
-            <Typography
-              variant="caption"
-              color="warning.main"
-              sx={{ mb: 2, display: "block" }}
-            ></Typography>
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
                 data={[
                   {
                     period: "6 AM - 12 PM",
-                    minutes: 200,
+                    minutes: todayAnalytics.morningFocusMinutes || 0,
                     color: "#ff9800",
                   },
                   {
                     period: "12 PM - 6 PM",
-                    minutes: 0,
+                    minutes: todayAnalytics.afternoonFocusMinutes || 0,
                     color: "#2196f3",
                   },
                   {
                     period: "6 PM - 12 AM",
-                    minutes: 120,
+                    minutes: todayAnalytics.eveningFocusMinutes || 0,
                     color: "#9c27b0",
                   },
                   {
                     period: "12 AM - 6 AM",
-                    minutes: 300,
+                    minutes: todayAnalytics.nightFocusMinutes || 0,
                     color: "#f44336",
                   },
                 ]}

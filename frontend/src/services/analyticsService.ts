@@ -21,6 +21,11 @@ export interface Analytics {
   overworkMinutes: number;
   consecutiveWorkDays: number;
 
+  morningFocusMinutes: number; // 6 AM - 12 PM
+  afternoonFocusMinutes: number; // 12 PM - 6 PM
+  eveningFocusMinutes: number; // 6 PM - 12 AM
+  nightFocusMinutes: number; // 12 AM - 6 AM
+
   urgentImportantCount: number;
   notUrgentImportantCount: number;
   urgentNotImportantCount: number;
