@@ -44,7 +44,7 @@ export const analyticsService = {
     return response.data;
   },
 
-  comparePerio ds: async (request: {
+  comparePeriods: async (request: {
     currentStart: string;
     currentEnd: string;
     previousStart: string;
