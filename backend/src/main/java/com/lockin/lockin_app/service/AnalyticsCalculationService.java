@@ -75,31 +75,27 @@ public class AnalyticsCalculationService {
     }
 
     // counts tasks created and completed on the given date
-    // TODO: This is loading ALL user tasks - N+1 problem!
-    // Trying to fix with JOIN FETCH but getting MultipleBagFetchException
+    // FIXED: Now only querying tasks we actually need!
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
-        List<Task> allTasks = taskRepository.findByUserId(user.getId());
 
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        int created = 0;
+        // Optimized: Only fetch tasks created in this date range
+        List<Task> tasksCreatedToday =
+                taskRepository.findByUserAndCreatedBetween(user.getId(), startOfDay, endOfDay);
+
+        int created = tasksCreatedToday.size();
         int completed = 0;
 
-        for (Task task : allTasks) {
-            if (task.getCreatedAt() != null
-                    && task.getCreatedAt().isAfter(startOfDay)
-                    && task.getCreatedAt().isBefore(endOfDay)) {
+        // Count completed tasks (completed on the same day they were created)
+        for (Task task : tasksCreatedToday) {
+            if (task.getStatus() == TaskStatus.COMPLETED
+                    && task.getUpdatedAt() != null
+                    && task.getUpdatedAt().isAfter(startOfDay)
+                    && task.getUpdatedAt().isBefore(endOfDay)) {
 
-                created++;
-
-                if (task.getStatus() == TaskStatus.COMPLETED
-                        && task.getUpdatedAt() != null
-                        && task.getUpdatedAt().isAfter(startOfDay)
-                        && task.getUpdatedAt().isBefore(endOfDay)) {
-
-                    completed++;
-                }
+                completed++;
             }
         }
 

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -70,4 +71,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             Pageable pageable);
 
     List<Task> findByUserIdAndStatusNotOrderByCreatedAtDesc(Long userId, TaskStatus taskStatus);
+
+    // Optimized query for analytics - only fetch tasks in date range
+    @Query(
+            "SELECT t FROM Task t WHERE t.user.id = :userId "
+                    + "AND t.createdAt BETWEEN :start AND :end")
+    List<Task> findByUserAndCreatedBetween(
+            @Param("userId") Long userId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }
