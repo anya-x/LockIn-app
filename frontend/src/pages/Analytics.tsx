@@ -10,6 +10,8 @@ import {
   Alert,
   Button,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   TrendingUp,
@@ -49,6 +51,12 @@ import PeriodComparison from "../components/analytics/PeriodComparison";
 
 const AnalyticsPage: React.FC = () => {
   const { timer } = useTimer();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Responsive chart heights
+  const chartHeight = isMobile ? 200 : 300;
+  const smallChartHeight = isMobile ? 180 : 250;
 
   const {
     data: todayAnalytics,
@@ -320,7 +328,7 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               7-Day Productivity Trend
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <LineChart data={rangeData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
@@ -364,7 +372,7 @@ const AnalyticsPage: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   Focus Time (Minutes)
                 </Typography>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={smallChartHeight}>
                   <BarChart data={rangeData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
@@ -398,7 +406,7 @@ const AnalyticsPage: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   Tasks Completed
                 </Typography>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={smallChartHeight}>
                   <BarChart data={rangeData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
@@ -438,7 +446,7 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Risk scores above 50 indicate potential burnout
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <AreaChart data={rangeData}>
                 <defs>
                   <linearGradient id="burnoutGradient" x1="0" y1="0" x2="0" y2="1">
@@ -479,7 +487,7 @@ const AnalyticsPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Session Distribution (Today)
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <PieChart>
                 <Pie
                   data={[
