@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Box,
   Button,
@@ -453,7 +453,7 @@ const PomodoroTimer: React.FC = () => {
             minHeight: 16,
           }}
         >
-          {Array.from({ length: dotCount }).map((_, i) => {
+          {useMemo(() => {
             const totalDots = dotCount;
             const totalSeconds = timer.plannedMinutes * 60;
             const percentComplete = Math.max(
@@ -465,47 +465,49 @@ const PomodoroTimer: React.FC = () => {
               (percentComplete / 100) * totalDots
             );
 
-            let isFilled: boolean;
+            return Array.from({ length: dotCount }).map((_, i) => {
+              let isFilled: boolean;
 
-            if (timer.sessionType === "WORK") {
-              isFilled = i < totalDots - dotsAffected;
-            } else {
-              isFilled = i < dotsAffected;
-            }
-
-            let dotColor: string;
-            if (isFilled) {
-              switch (timer.sessionType) {
-                case "WORK":
-                  dotColor = selectedProfile.color;
-                  break;
-                case "SHORT_BREAK":
-                  dotColor = "rgba(46, 125, 50, 0.5)";
-                  break;
-                case "LONG_BREAK":
-                  dotColor = "rgba(123, 31, 162, 0.5)";
-                  break;
-                default:
-                  dotColor = "#757575";
+              if (timer.sessionType === "WORK") {
+                isFilled = i < totalDots - dotsAffected;
+              } else {
+                isFilled = i < dotsAffected;
               }
-            } else {
-              dotColor = "#e0e0e0";
-            }
 
-            return (
-              <Box
-                key={i}
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  backgroundColor: dotColor,
-                  transition: "background-color 0.3s ease",
-                }}
-              />
-            );
-          })}
+              let dotColor: string;
+              if (isFilled) {
+                switch (timer.sessionType) {
+                  case "WORK":
+                    dotColor = selectedProfile.color;
+                    break;
+                  case "SHORT_BREAK":
+                    dotColor = "rgba(46, 125, 50, 0.5)";
+                    break;
+                  case "LONG_BREAK":
+                    dotColor = "rgba(123, 31, 162, 0.5)";
+                    break;
+                  default:
+                    dotColor = "#757575";
+                }
+              } else {
+                dotColor = "#e0e0e0";
+              }
+
+              return (
+                <Box
+                  key={i}
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    backgroundColor: dotColor,
+                    transition: "background-color 0.3s ease",
+                  }}
+                />
+              );
+            });
+          }, [dotCount, timer.plannedMinutes, timer.sessionType, totalElapsedSeconds, selectedProfile.color])}
         </Box>
 
         <Box display="flex" gap={1} mb={4}>

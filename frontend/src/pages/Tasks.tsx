@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Button,
@@ -96,7 +96,7 @@ const Tasks: React.FC = () => {
     }
     fetchCategories();
     fetchStatistics();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, filters]);
 
   const fetchStatistics = async () => {
     try {
@@ -162,33 +162,34 @@ const Tasks: React.FC = () => {
     }
   };
 
-  const debouncedSearch = useCallback(
-    debounce(async (term: string) => {
-      if (!term.trim()) {
-        setIsSearching(false);
-        setCurrentPage(0);
-        if (hasActiveFilters()) {
-          fetchFilteredTasks(0);
-        } else {
-          fetchTasks();
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (term: string) => {
+        if (!term.trim()) {
+          setIsSearching(false);
+          setCurrentPage(0);
+          if (hasActiveFilters()) {
+            fetchFilteredTasks(0);
+          } else {
+            fetchTasks();
+          }
+          return;
         }
-        return;
-      }
 
-      setIsSearching(true);
-      try {
-        const results = await taskService.searchTasks(term);
-        setTasks(results);
-        setTotalPages(1);
-        setTotalElements(results.length);
-        setError("");
-      } catch (err: any) {
-        setError("Search failed");
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300),
-    [filters]
+        setIsSearching(true);
+        try {
+          const results = await taskService.searchTasks(term);
+          setTasks(results);
+          setTotalPages(1);
+          setTotalElements(results.length);
+          setError("");
+        } catch (err: any) {
+          setError("Search failed");
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300),
+    []
   );
 
   const handleSearch = (term: string) => {
@@ -330,30 +331,34 @@ const Tasks: React.FC = () => {
 
   const { start, end } = getPageRange();
 
-  const sortedTasks = [...tasks].sort((a, b) => {
-    switch (sortBy) {
-      case "date":
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+  const sortedTasks = useMemo(
+    () =>
+      [...tasks].sort((a, b) => {
+        switch (sortBy) {
+          case "date":
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
 
-      case "priority":
-        const getPriority = (task: Task) => {
-          if (task.isUrgent && task.isImportant) return 4;
-          if (task.isUrgent) return 3;
-          if (task.isImportant) return 2;
-          return 1;
-        };
-        return getPriority(b) - getPriority(a);
+          case "priority":
+            const getPriority = (task: Task) => {
+              if (task.isUrgent && task.isImportant) return 4;
+              if (task.isUrgent) return 3;
+              if (task.isImportant) return 2;
+              return 1;
+            };
+            return getPriority(b) - getPriority(a);
 
-      case "status":
-        const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
-        return statusOrder[a.status] - statusOrder[b.status];
+          case "status":
+            const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
+            return statusOrder[a.status] - statusOrder[b.status];
 
-      default:
-        return 0;
-    }
-  });
+          default:
+            return 0;
+        }
+      }),
+    [tasks, sortBy]
+  );
 
   const statCards = [
     {

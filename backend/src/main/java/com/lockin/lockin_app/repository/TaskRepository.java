@@ -11,13 +11,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByUserId(Long userId);
 
-    Page<Task> findByUserId(Long userId, Pageable pageable);
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId")
+    Page<Task> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
     List<Task> findByUserIdAndStatus(Long userId, TaskStatus status);
 
@@ -92,4 +94,28 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Modifying
     @Query("UPDATE Task t SET t.category = null WHERE t.category.id = :categoryId")
     void removeCategoryFromTasks(@Param("categoryId") Long categoryId);
+
+    // Count queries for statistics
+    Long countByUserId(Long userId);
+
+    Long countByUserIdAndStatus(Long userId, TaskStatus status);
+
+    Long countByUserIdAndIsUrgent(Long userId, Boolean isUrgent);
+
+    Long countByUserIdAndIsImportant(Long userId, Boolean isImportant);
+
+    Long countByUserIdAndIsUrgentAndIsImportant(
+            Long userId, Boolean isUrgent, Boolean isImportant);
+
+    @Query(
+            "SELECT t.category.name, COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.category IS NOT NULL GROUP BY t.category.name")
+    List<Object[]> countTasksByCategory(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.createdAt > :date")
+    Long countByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("date") LocalDateTime date);
+
+    @Query(
+            "SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.completedAt IS NOT NULL AND t.completedAt > :date")
+    Long countByUserIdAndCompletedAtAfter(
+            @Param("userId") Long userId, @Param("date") LocalDateTime date);
 }
