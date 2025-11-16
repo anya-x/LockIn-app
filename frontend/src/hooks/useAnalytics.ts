@@ -10,8 +10,7 @@ export function useTodayAnalytics() {
 
       return await analyticsService.getTodayAnalytics();
     },
-    staleTime: 0, // Always consider data stale to allow immediate refetch
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: 60000, // 1 minute - balance between freshness and avoiding unnecessary calls
   });
 }
 
@@ -19,8 +18,7 @@ export function useAnalyticsRange(days: number = 7) {
   return useQuery({
     queryKey: ["analytics", "range", days],
     queryFn: () => analyticsService.getAnalyticsRange(days),
-    staleTime: 0, // Always consider data stale to allow immediate refetch
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: 60000, // 1 minute - balance between freshness and avoiding unnecessary calls
   });
 }
 
@@ -28,15 +26,9 @@ export function useRefreshAnalytics() {
   const queryClient = useQueryClient();
 
   return async () => {
-    // Invalidate and refetch all analytics queries
-    await queryClient.invalidateQueries({
-      queryKey: ["analytics"],
-      refetchType: "active"
-    });
-    // Force immediate refetch of active queries
+    // Force refetch all analytics queries, bypassing staleTime
     await queryClient.refetchQueries({
       queryKey: ["analytics"],
-      type: "active"
     });
   };
 }
@@ -57,7 +49,6 @@ export function useComparisonAnalytics(
       previousEnd,
     }),
     enabled,
-    staleTime: 0, // Always consider data stale to allow immediate refetch
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: 60000, // 1 minute - balance between freshness and avoiding unnecessary calls
   });
 }
