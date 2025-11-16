@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
+import PeriodComparison from "../components/analytics/PeriodComparison";
 import { useTimer } from "../context/TimerContext";
 import {
   useAnalyticsRange,
@@ -124,6 +125,9 @@ const AnalyticsPage: React.FC = () => {
           overworkMinutes={todayAnalytics.overworkMinutes}
         />
       )}
+
+      {/* Period Comparison */}
+      <PeriodComparison />
 
       {/* Today's Stats */}
       <Typography variant="h6" sx={{ mb: 2 }}>

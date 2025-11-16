@@ -26,6 +26,19 @@ export interface Analytics {
   notUrgentNotImportantCount: number;
 }
 
+export interface ComparisonData {
+  current: Analytics;
+  previous: Analytics;
+  tasksChange: number;
+  productivityChange: number;
+  focusChange: number;
+  burnoutChange: number;
+  tasksTrend: "up" | "down" | "stable";
+  productivityTrend: "up" | "down" | "stable";
+  focusTrend: "up" | "down" | "stable";
+  burnoutTrend: "up" | "down" | "stable";
+}
+
 export const analyticsService = {
   getTodayAnalytics: async (): Promise<Analytics> => {
     const response = await api.get<Analytics>("/analytics/today");
@@ -49,8 +62,8 @@ export const analyticsService = {
     currentEnd: string;
     previousStart: string;
     previousEnd: string;
-  }): Promise<any> => {
-    const response = await api.post("/analytics/compare", request);
+  }): Promise<ComparisonData> => {
+    const response = await api.post<ComparisonData>("/analytics/compare", request);
     return response.data;
   },
 };
