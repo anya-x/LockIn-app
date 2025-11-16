@@ -75,6 +75,8 @@ public class AnalyticsCalculationService {
     }
 
     // counts tasks created and completed on the given date
+    // TODO: This is loading ALL user tasks - N+1 problem!
+    // Trying to fix with JOIN FETCH but getting MultipleBagFetchException
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
         List<Task> allTasks = taskRepository.findByUserId(user.getId());
 
