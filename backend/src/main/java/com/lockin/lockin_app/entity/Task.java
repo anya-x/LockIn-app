@@ -10,7 +10,14 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tasks")
+@Table(
+        name = "tasks",
+        indexes = {
+            @Index(name = "idx_tasks_user_status", columnList = "user_id, status"),
+            @Index(name = "idx_tasks_user_created", columnList = "user_id, created_at"),
+            @Index(name = "idx_tasks_user_due_date", columnList = "user_id, due_date"),
+            @Index(name = "idx_tasks_category", columnList = "category_id")
+        })
 @Getter
 @Setter
 public class Task {
