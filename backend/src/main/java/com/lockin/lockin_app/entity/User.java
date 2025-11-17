@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -40,6 +41,16 @@ public class User {
     @NotBlank
     @Size(min = 8)
     private String password;
+
+    // Streak tracking
+    @Column(name = "current_streak")
+    private Integer currentStreak = 0;
+
+    @Column(name = "longest_streak")
+    private Integer longestStreak = 0;
+
+    @Column(name = "last_activity_date")
+    private LocalDate lastActivityDate;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

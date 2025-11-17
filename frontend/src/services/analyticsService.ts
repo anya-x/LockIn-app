@@ -45,6 +45,12 @@ export interface ComparisonData {
   burnoutTrend: "up" | "down" | "stable";
 }
 
+export interface StreakStats {
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate: string | null;
+}
+
 export const analyticsService = {
   getTodayAnalytics: async (): Promise<Analytics> => {
     const response = await api.get<Analytics>("/analytics/today");
@@ -75,5 +81,10 @@ export const analyticsService = {
 
   refreshCache: async (): Promise<void> => {
     await api.post("/analytics/refresh");
+  },
+
+  getStreak: async (): Promise<StreakStats> => {
+    const response = await api.get<StreakStats>("/analytics/streak");
+    return response.data;
   },
 };

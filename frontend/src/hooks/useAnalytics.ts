@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { analyticsService, type Analytics } from "../services/analyticsService";
+import { analyticsService, type Analytics, type StreakStats } from "../services/analyticsService";
 
 export function useTodayAnalytics() {
   return useQuery({
@@ -150,5 +150,13 @@ export function useProductivityInsights() {
     },
     enabled: !!rangeData && rangeData.length > 0,
     staleTime: 3600000,
+  });
+}
+
+export function useStreak() {
+  return useQuery({
+    queryKey: ["analytics", "streak"],
+    queryFn: () => analyticsService.getStreak(),
+    staleTime: 60000, // 1 minute - streak can change frequently
   });
 }
