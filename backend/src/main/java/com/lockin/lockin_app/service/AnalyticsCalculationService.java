@@ -267,20 +267,27 @@ public class AnalyticsCalculationService {
     private void calculateBurnoutRisk(DailyAnalytics analytics) {
         double riskScore = 0;
 
+        // Edge case: ensure values are not null before calculations
+        int overworkMinutes = analytics.getOverworkMinutes() != null ? analytics.getOverworkMinutes() : 0;
+        int lateNightSessions = analytics.getLateNightSessions() != null ? analytics.getLateNightSessions() : 0;
+        int pomodorosCompleted = analytics.getPomodorosCompleted() != null ? analytics.getPomodorosCompleted() : 0;
+        int interruptedSessions = analytics.getInterruptedSessions() != null ? analytics.getInterruptedSessions() : 0;
+        int consecutiveWorkDays = analytics.getConsecutiveWorkDays() != null ? analytics.getConsecutiveWorkDays() : 0;
+
         // overwork indicator (0-40 points)
-        if (analytics.getOverworkMinutes() > 60) {
-            riskScore += Math.min(40, analytics.getOverworkMinutes() / 6.0);
+        if (overworkMinutes > 60) {
+            riskScore += Math.min(40, overworkMinutes / 6.0);
         }
 
         // late night work (0-30 points)
-        if (analytics.getLateNightSessions() >= 2) {
-            riskScore += Math.min(30, (analytics.getLateNightSessions() - 1) * 10);
+        if (lateNightSessions >= 2) {
+            riskScore += Math.min(30, (lateNightSessions - 1) * 10);
         }
 
-        // interrupted sessions (0-20 points)
-        int totalSessions = analytics.getPomodorosCompleted() + analytics.getInterruptedSessions();
+        // interrupted sessions (0-20 points) - edge case: check for division by zero
+        int totalSessions = pomodorosCompleted + interruptedSessions;
         if (totalSessions > 0) {
-            double interruptRate = analytics.getInterruptedSessions() / (double) totalSessions;
+            double interruptRate = interruptedSessions / (double) totalSessions;
             if (interruptRate > 0.5) {
                 riskScore += (interruptRate - 0.5) * 40;
             }
@@ -292,11 +299,12 @@ public class AnalyticsCalculationService {
         }
 
         // consecutive work days (0-10 points)
-        if (analytics.getConsecutiveWorkDays() >= 7) {
-            riskScore += Math.min(10, (analytics.getConsecutiveWorkDays() - 6) * 2);
+        if (consecutiveWorkDays >= 7) {
+            riskScore += Math.min(10, (consecutiveWorkDays - 6) * 2);
         }
 
-        analytics.setBurnoutRiskScore(Math.min(100, riskScore));
+        // Edge case: ensure non-negative burnout score
+        analytics.setBurnoutRiskScore(Math.max(0, Math.min(100, riskScore)));
 
         log.debug("Burnout risk calculated: {} points", riskScore);
     }
@@ -480,8 +488,9 @@ public class AnalyticsCalculationService {
                         "evening", analytics.getEveningFocusMinutes(), Integer::sum);
                 timeOfDayMinutes.merge("night", analytics.getNightFocusMinutes(), Integer::sum);
 
-                // Track session lengths
-                if (analytics.getPomodorosCompleted() > 0) {
+                // Track session lengths - edge case: prevent division by zero
+                if (analytics.getPomodorosCompleted() != null && analytics.getPomodorosCompleted() > 0
+                        && analytics.getFocusMinutes() != null && analytics.getFocusMinutes() > 0) {
                     int avgSessionLength =
                             analytics.getFocusMinutes() / analytics.getPomodorosCompleted();
                     sessionLengths.add(avgSessionLength);
