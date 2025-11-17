@@ -274,6 +274,20 @@ export const TimerProvider: React.FC<{
     localStorage.setItem("timerState", JSON.stringify(timer));
   }, [timer]);
 
+  // Prevent accidental navigation when session is running
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (timer.isRunning && timer.sessionId) {
+        e.preventDefault();
+        e.returnValue = '';
+        return 'You have an active focus session running. Exit anyway?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [timer.isRunning, timer.sessionId]);
+
   const startTimer = async (taskId: number | null, notes?: string) => {
     try {
       const plannedMinutes = getMinutesForProfile(

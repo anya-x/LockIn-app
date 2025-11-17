@@ -8,6 +8,7 @@ import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.event.TaskCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.TaskRepository;
@@ -15,6 +16,7 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,7 @@ public class TaskService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final GoalService goalService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Creates a new task for the user
@@ -150,6 +153,10 @@ public class TaskService {
 
             log.debug("Task {} marked as completed, updating goals", taskId);
             goalService.updateGoalsFromTaskCompletion(userId, completionTime);
+
+            // Publish event for badge system
+            log.debug("Publishing TaskCompletedEvent for task {} and user {}", taskId, userId);
+            eventPublisher.publishEvent(new TaskCompletedEvent(this, userId, taskId));
         } else if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {
             task.setCompletedAt(null);
         }

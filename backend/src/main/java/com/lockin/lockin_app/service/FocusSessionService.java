@@ -6,6 +6,8 @@ import com.lockin.lockin_app.entity.FocusSession;
 import com.lockin.lockin_app.entity.SessionType;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.event.PomodoroCompletedEvent;
+import com.lockin.lockin_app.exception.BadRequestException;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
@@ -15,6 +17,7 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ public class FocusSessionService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final GoalService goalService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<FocusSessionResponseDTO> getUserSessions(Long userId) {
@@ -137,6 +141,10 @@ public class FocusSessionService {
         FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
 
         goalService.updateGoalsFromSession(userId, response);
+
+        // Publish event for badge system
+        log.debug("Publishing PomodoroCompletedEvent for session {} and user {}", sessionId, userId);
+        eventPublisher.publishEvent(new PomodoroCompletedEvent(this, userId, sessionId));
 
         log.info("Completed session: {}", updated.getId());
 
