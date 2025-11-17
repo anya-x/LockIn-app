@@ -61,6 +61,17 @@ const AnalyticsPage: React.FC = () => {
   const chartHeight = isMobile ? 200 : 300;
   const smallChartHeight = isMobile ? 180 : 250;
 
+  // Theme-aware chart colors
+  const isDarkMode = theme.palette.mode === "dark";
+  const chartColors = {
+    primary: isDarkMode ? "#90caf9" : "#2196f3",
+    secondary: isDarkMode ? "#81c784" : "#4caf50",
+    warning: isDarkMode ? "#ffb74d" : "#ff9800",
+    error: isDarkMode ? "#e57373" : "#f44336",
+    gridColor: isDarkMode ? "#444" : "#e0e0e0",
+    textColor: isDarkMode ? "#fff" : "#666",
+  };
+
   const {
     data: todayAnalytics,
     isLoading: todayLoading,
@@ -380,7 +391,7 @@ const AnalyticsPage: React.FC = () => {
             </Typography>
             <ResponsiveContainer width="100%" height={chartHeight}>
               <LineChart data={rangeData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.gridColor} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) =>
@@ -389,23 +400,28 @@ const AnalyticsPage: React.FC = () => {
                       day: "numeric",
                     })
                   }
+                  stroke={chartColors.textColor}
                 />
-                <YAxis />
+                <YAxis stroke={chartColors.textColor} />
                 <Tooltip
                   content={<CustomTooltip averageValue={averageProductivity} />}
+                  contentStyle={{
+                    backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+                    border: `1px solid ${chartColors.gridColor}`,
+                  }}
                 />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="productivityScore"
-                  stroke="#2196f3"
+                  stroke={chartColors.primary}
                   strokeWidth={2}
                   name="Productivity Score"
                 />
                 <Line
                   type="monotone"
                   dataKey="focusScore"
-                  stroke="#4caf50"
+                  stroke={chartColors.secondary}
                   strokeWidth={2}
                   name="Focus Score"
                 />
@@ -422,7 +438,7 @@ const AnalyticsPage: React.FC = () => {
                 </Typography>
                 <ResponsiveContainer width="100%" height={smallChartHeight}>
                   <BarChart data={rangeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.gridColor} />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(date) =>
@@ -431,17 +447,22 @@ const AnalyticsPage: React.FC = () => {
                           day: "numeric",
                         })
                       }
+                      stroke={chartColors.textColor}
                     />
-                    <YAxis />
+                    <YAxis stroke={chartColors.textColor} />
                     <Tooltip
                       content={
                         <CustomTooltip averageValue={averageFocusMinutes} />
                       }
+                      contentStyle={{
+                        backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+                        border: `1px solid ${chartColors.gridColor}`,
+                      }}
                     />
                     <Legend />
                     <Bar
                       dataKey="focusMinutes"
-                      fill="#2196f3"
+                      fill={chartColors.primary}
                       name="Focus Minutes"
                     />
                   </BarChart>
@@ -456,7 +477,7 @@ const AnalyticsPage: React.FC = () => {
                 </Typography>
                 <ResponsiveContainer width="100%" height={smallChartHeight}>
                   <BarChart data={rangeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.gridColor} />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(date) =>
@@ -465,19 +486,23 @@ const AnalyticsPage: React.FC = () => {
                           day: "numeric",
                         })
                       }
+                      stroke={chartColors.textColor}
                     />
-                    <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
+                    <YAxis stroke={chartColors.textColor} />
+                    <Tooltip content={<CustomTooltip />} contentStyle={{
+                      backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+                      border: `1px solid ${chartColors.gridColor}`,
+                    }} />
                     <Legend />
                     <Bar
                       dataKey="tasksCompletedFromToday"
                       stackId="a"
-                      fill="#4caf50"
+                      fill={chartColors.secondary}
                       name="Created Today"
                     />
                     <Bar
                       dataKey="tasksCompleted"
-                      fill="#2196f3"
+                      fill={chartColors.primary}
                       name="Total Completed"
                     />
                   </BarChart>
@@ -504,11 +529,11 @@ const AnalyticsPage: React.FC = () => {
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="5%" stopColor="#4caf50" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#4caf50" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor={chartColors.secondary} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={chartColors.secondary} stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.gridColor} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) =>
@@ -517,21 +542,25 @@ const AnalyticsPage: React.FC = () => {
                       day: "numeric",
                     })
                   }
+                  stroke={chartColors.textColor}
                 />
-                <YAxis domain={[0, 100]} />
-                <Tooltip content={<CustomTooltip />} />
+                <YAxis domain={[0, 100]} stroke={chartColors.textColor} />
+                <Tooltip content={<CustomTooltip />} contentStyle={{
+                  backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+                  border: `1px solid ${chartColors.gridColor}`,
+                }} />
                 <Legend />
                 {/* Danger zone (50-100) */}
                 <ReferenceArea
                   y1={50}
                   y2={100}
-                  fill="#f44336"
+                  fill={chartColors.error}
                   fillOpacity={0.1}
                 />
                 <Area
                   type="monotone"
                   dataKey="burnoutRiskScore"
-                  stroke="#4caf50"
+                  stroke={chartColors.secondary}
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#burnoutGradient)"
@@ -554,41 +583,41 @@ const AnalyticsPage: React.FC = () => {
                   {
                     period: "6 AM - 12 PM",
                     minutes: todayAnalytics.morningFocusMinutes || 0,
-                    color: "#ff9800",
                   },
                   {
                     period: "12 PM - 6 PM",
                     minutes: todayAnalytics.afternoonFocusMinutes || 0,
-                    color: "#2196f3",
                   },
                   {
                     period: "6 PM - 12 AM",
                     minutes: todayAnalytics.eveningFocusMinutes || 0,
-                    color: "#9c27b0",
                   },
                   {
                     period: "12 AM - 6 AM",
                     minutes: todayAnalytics.nightFocusMinutes || 0,
-                    color: "#f44336",
                   },
                 ]}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.gridColor} />
+                <XAxis dataKey="period" stroke={chartColors.textColor} />
                 <YAxis
+                  stroke={chartColors.textColor}
                   label={{
                     value: "Minutes",
                     angle: -90,
                     position: "insideLeft",
                   }}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip />} contentStyle={{
+                  backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+                  border: `1px solid ${chartColors.gridColor}`,
+                }} />
                 <Bar dataKey="minutes" name="Focus Minutes">
                   {[
-                    { fill: "#ff9800" },
-                    { fill: "#2196f3" },
-                    { fill: "#9c27b0" },
-                    { fill: "#f44336" },
+                    { fill: chartColors.warning },
+                    { fill: chartColors.primary },
+                    { fill: isDarkMode ? "#ba68c8" : "#9c27b0" },
+                    { fill: chartColors.error },
                   ].map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
@@ -609,12 +638,10 @@ const AnalyticsPage: React.FC = () => {
                     {
                       name: "Focus Time",
                       value: todayAnalytics.focusMinutes,
-                      color: "#2196f3",
                     },
                     {
                       name: "Break Time",
                       value: todayAnalytics.breakMinutes,
-                      color: "#4caf50",
                     },
                   ]}
                   cx="50%"
@@ -625,13 +652,16 @@ const AnalyticsPage: React.FC = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {[{ color: "#2196f3" }, { color: "#4caf50" }].map(
-                    (entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                  {[chartColors.primary, chartColors.secondary].map(
+                    (color, index) => (
+                      <Cell key={`cell-${index}`} fill={color} />
                     )
                   )}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{
+                  backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+                  border: `1px solid ${chartColors.gridColor}`,
+                }} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
