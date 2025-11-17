@@ -292,7 +292,7 @@ const Dashboard: React.FC = () => {
       </Box>
 
       {/* Navigation Groups */}
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', px: 1.5, pr: 1 }}>
         {navigationGroups.map((group) => (
           <Box key={group.section} sx={{ mb: 3 }}>
             <Typography
@@ -539,10 +539,7 @@ const Dashboard: React.FC = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          pt: { xs: 2, md: 2 },
-          pr: { xs: 2, md: 2 },
-          pb: { xs: 2, md: 2 },
-          pl: { xs: 2, md: 0 },
+          p: { xs: 2, md: 2.5 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
           maxWidth: { md: `calc(100vw - ${drawerWidth}px)` },
