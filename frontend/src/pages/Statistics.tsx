@@ -65,13 +65,8 @@ interface Statistics {
 const Statistics: React.FC = () => {
   const { timer } = useTimer();
   const queryClient = useQueryClient();
-  console.log("statistics component mounted");
 
   const { data, isLoading: loading, refetch } = useStatisticsData();
-  console.log("statistics query state:", {
-    hasData: !!data,
-    loading,
-  });
 
   const getSavedDateRange = ():
     | "Today"
@@ -241,14 +236,6 @@ const Statistics: React.FC = () => {
         if (!session.startedAt) return false;
         const sessionDate = new Date(session.startedAt);
         return sessionDate >= filterDate;
-      });
-
-      console.log("📅 Date filtering:", {
-        dateRange,
-        filterDate: filterDate.toISOString(),
-        now: new Date().toISOString(),
-        totalSessions: allSessions.length,
-        filteredSessions: recentSessions.length,
       });
     }
 
