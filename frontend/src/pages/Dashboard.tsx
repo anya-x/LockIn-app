@@ -544,7 +544,6 @@ const Dashboard: React.FC = () => {
           pb: { xs: 2, md: 2.5 },
           pl: { xs: 2, md: 1.5 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
           maxWidth: { md: `calc(100vw - ${drawerWidth}px)` },
         }}
       >
