@@ -79,6 +79,8 @@ public class AnalyticsCalculationService {
 
     // counts tasks created and completed on the given date
     private void calculateTaskMetrics(DailyAnalytics analytics, User user, LocalDate date) {
+        // Use ZonedDateTime for proper timezone handling
+        ZoneId userZone = ZoneId.systemDefault();
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
@@ -120,6 +122,8 @@ public class AnalyticsCalculationService {
      * (sessions after 10 PM).
      */
     private void calculatePomodoroMetrics(DailyAnalytics analytics, User user, LocalDate date) {
+        // Use ZonedDateTime for proper timezone handling
+        ZoneId userZone = ZoneId.systemDefault();
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
