@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { createAppTheme, ThemeColor, ThemeMode, getThemeName } from '../themes/themeConfig';
+import { createAppTheme, type ThemeColor, type ThemeMode, getThemeName } from '../themes/themeConfig';
 
 interface ThemeContextType {
   themeColor: ThemeColor;

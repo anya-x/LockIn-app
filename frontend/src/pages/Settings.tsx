@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid2 as Grid,
   Switch,
   FormControlLabel,
   Paper,
@@ -19,7 +18,7 @@ import {
   Check as CheckIcon,
 } from '@mui/icons-material';
 import { useAppTheme } from '../context/ThemeContext';
-import { ThemeColor } from '../themes/themeConfig';
+import type { ThemeColor } from '../themes/themeConfig';
 import PageHeader from '../components/shared/PageHeader';
 
 const Settings: React.FC = () => {
@@ -78,9 +77,9 @@ const Settings: React.FC = () => {
             </Box>
           </Box>
 
-          <Grid container spacing={2}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
             {themeOptions.map((option) => (
-              <Grid key={option.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Box key={option.id}>
                 <Paper
                   onClick={() => setThemeColor(option.id)}
                   sx={{
@@ -129,9 +128,9 @@ const Settings: React.FC = () => {
 
                   <Box sx={{ width: '100%', height: 24, borderRadius: 1, backgroundColor: option.backgroundColor, border: '1px solid', borderColor: alpha(option.primaryColor, 0.2) }} />
                 </Paper>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
         </CardContent>
       </Card>
 

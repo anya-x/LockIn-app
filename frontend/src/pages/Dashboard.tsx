@@ -32,12 +32,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTimer } from "../context/TimerContext";
-import TaskList from "./Tasks";
-import CategoryList from "./Categories";
-import EisenhowerMatrix from "./Matrix";
-import FocusStatistics from "./Statistics";
 import PomodoroTimer from "./PomodoroTimer";
-import TaskLinkingDiagnostic from "../components/TaskLinkingDiagnosic";
 import Categories from "./Categories";
 import Matrix from "./Matrix";
 import Statistics from "./Statistics";

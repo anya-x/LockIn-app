@@ -1,4 +1,4 @@
-import { createTheme, Theme, ThemeOptions } from '@mui/material/styles';
+import { createTheme, type Theme } from '@mui/material/styles';
 
 export type ThemeMode = 'light' | 'dark';
 export type ThemeColor = 'indigo' | 'pink' | 'sage';
