@@ -36,7 +36,6 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserService userService;
     private final CategoryService categoryService;
-    private final GoalService goalService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -151,10 +150,7 @@ public class TaskService {
             LocalDateTime completionTime = LocalDateTime.now();
             task.setCompletedAt(completionTime);
 
-            log.debug("Task {} marked as completed, updating goals", taskId);
-            goalService.updateGoalsFromTaskCompletion(userId, completionTime);
-
-            // Publish event for badge system
+            // Publish event for asynchronous goal and badge updates
             log.debug("Publishing TaskCompletedEvent for task {} and user {}", taskId, userId);
             eventPublisher.publishEvent(new TaskCompletedEvent(this, userId, taskId));
         } else if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {

@@ -33,7 +33,6 @@ public class FocusSessionService {
     private final FocusSessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
-    private final GoalService goalService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
@@ -138,17 +137,14 @@ public class FocusSessionService {
         session.setCompleted(true);
 
         FocusSession updated = sessionRepository.save(session);
-        FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
 
-        goalService.updateGoalsFromSession(userId, response);
-
-        // Publish event for badge system
+        // Publish event for asynchronous goal and badge updates
         log.debug("Publishing PomodoroCompletedEvent for session {} and user {}", sessionId, userId);
         eventPublisher.publishEvent(new PomodoroCompletedEvent(this, userId, sessionId));
 
         log.info("Completed session: {}", updated.getId());
 
-        return response;
+        return FocusSessionResponseDTO.fromEntity(updated);
     }
 
     @Transactional
@@ -173,9 +169,6 @@ public class FocusSessionService {
         session.setActualMinutes(actualMinutes);
 
         FocusSession updated = sessionRepository.save(session);
-        FocusSessionResponseDTO response = FocusSessionResponseDTO.fromEntity(updated);
-
-        goalService.updateGoalsFromSession(userId, response);
 
         log.info("Updated session: {} with {} minutes", updated.getId(), actualMinutes);
 
