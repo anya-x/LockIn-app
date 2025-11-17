@@ -115,7 +115,7 @@ public class BadgeService {
             DailyAnalyticsDTO analytics = analyticsService.calculateDailyAnalytics(userId, date);
 
             // Burnout score should be low (< 40 out of 100)
-            if (analytics.getBurnoutScore() >= 40) {
+            if (analytics.getBurnoutRiskScore() >= 40) {
                 return false;
             }
         }
