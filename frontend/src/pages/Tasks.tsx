@@ -18,6 +18,8 @@ import {
   InputAdornment,
   Pagination,
   Grid,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -34,6 +36,7 @@ import { taskService, type TaskStatistics } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
 import TaskFilters from "../components/tasks/TaskFilters";
 import StatCard from "../components/shared/StatCard";
+import PageHeader from "../components/shared/PageHeader";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 
@@ -46,6 +49,7 @@ interface PaginatedResponse<T> {
 }
 
 const Tasks: React.FC = () => {
+  const theme = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -401,58 +405,56 @@ const Tasks: React.FC = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
-        <Typography variant="h4">My Tasks</Typography>
-        <Box display="flex" gap={2} alignItems="center">
-          <TextField
-            placeholder="Search tasks..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment: isSearching ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={16} />
-                  </InputAdornment>
-                ) : null,
-              },
-            }}
-            size="small"
-            sx={{ minWidth: 250 }}
-          />
-          <TextField
-            select
-            size="small"
-            label="Sort by"
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as "date" | "priority" | "status")
-            }
-            sx={{ minWidth: 150 }}
-          >
-            <MenuItem value="date">Due Date</MenuItem>
-            <MenuItem value="priority">Priority</MenuItem>
-            <MenuItem value="status">Status</MenuItem>
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenModal()}
-          >
-            Add Task
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title="My Tasks"
+        subtitle="Organize and track your tasks efficiently"
+        action={
+          <Box display="flex" gap={2} alignItems="center">
+            <TextField
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: isSearching ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={16} />
+                    </InputAdornment>
+                  ) : null,
+                },
+              }}
+              size="small"
+              sx={{ minWidth: 250 }}
+            />
+            <TextField
+              select
+              size="small"
+              label="Sort by"
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(e.target.value as "date" | "priority" | "status")
+              }
+              sx={{ minWidth: 150 }}
+            >
+              <MenuItem value="date">Due Date</MenuItem>
+              <MenuItem value="priority">Priority</MenuItem>
+              <MenuItem value="status">Status</MenuItem>
+            </TextField>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenModal()}
+            >
+              Add Task
+            </Button>
+          </Box>
+        }
+      />
 
       <Box mb={3}>
         <Grid container spacing={2}>
@@ -506,15 +508,31 @@ const Tasks: React.FC = () => {
       )}
 
       {sortedTasks.length === 0 ? (
-        <Typography>
-          {searchTerm || hasActiveFilters()
-            ? "No tasks match your search or filters"
-            : "No tasks yet. Create your first task!"}
-        </Typography>
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            {searchTerm || hasActiveFilters()
+              ? "No tasks match your search or filters"
+              : "No tasks yet"}
+          </Typography>
+          {!searchTerm && !hasActiveFilters() && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Create your first task to get started!
+            </Typography>
+          )}
+        </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {sortedTasks.map((task) => (
-            <Card key={task.id}>
+            <Card
+              key={task.id}
+              sx={{
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+                  transform: "translateY(-2px)",
+                },
+              }}
+            >
               <CardContent>
                 <Box
                   display="flex"
@@ -522,8 +540,10 @@ const Tasks: React.FC = () => {
                   alignItems="start"
                 >
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6">{task.title}</Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      {task.title}
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2" sx={{ mb: 1.5 }}>
                       {task.description}
                     </Typography>
                     {task.dueDate && (
@@ -531,7 +551,7 @@ const Tasks: React.FC = () => {
                         variant="caption"
                         color="text.secondary"
                         display="block"
-                        mt={1}
+                        sx={{ mb: 2, fontSize: '0.8125rem' }}
                       >
                         Due:{" "}
                         {new Date(task.dueDate).toLocaleString(undefined, {
@@ -548,12 +568,31 @@ const Tasks: React.FC = () => {
                         label={task.status.replace("_", " ")}
                         color={getStatusColor(task.status)}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                       />
                       {task.isUrgent && (
-                        <Chip label="Urgent" color="error" size="small" />
+                        <Chip
+                          label="Urgent"
+                          size="small"
+                          sx={{
+                            backgroundColor: alpha("#EF4444", 0.1),
+                            color: "#EF4444",
+                            fontWeight: 500,
+                            border: `1px solid ${alpha("#EF4444", 0.3)}`,
+                          }}
+                        />
                       )}
                       {task.isImportant && (
-                        <Chip label="Important" color="warning" size="small" />
+                        <Chip
+                          label="Important"
+                          size="small"
+                          sx={{
+                            backgroundColor: alpha("#F59E0B", 0.1),
+                            color: "#F59E0B",
+                            fontWeight: 500,
+                            border: `1px solid ${alpha("#F59E0B", 0.3)}`,
+                          }}
+                        />
                       )}
                       {task.category && (
                         <Chip
@@ -561,20 +600,35 @@ const Tasks: React.FC = () => {
                             task.category.name
                           }`}
                           size="small"
-                          variant="outlined"
                           sx={{
-                            borderColor: task.category.color,
+                            backgroundColor: alpha(task.category.color, 0.1),
                             color: task.category.color,
+                            fontWeight: 500,
+                            border: `1px solid ${alpha(task.category.color, 0.3)}`,
                           }}
                         />
                       )}
                     </Box>
                   </Box>
-                  <Box>
-                    <IconButton onClick={() => handleOpenModal(task)}>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                      onClick={() => handleOpenModal(task)}
+                      size="small"
+                      sx={{
+                        color: theme.palette.primary.main,
+                        '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.1) },
+                      }}
+                    >
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDeleteClick(task.id!)}>
+                    <IconButton
+                      onClick={() => handleDeleteClick(task.id!)}
+                      size="small"
+                      sx={{
+                        color: '#EF4444',
+                        '&:hover': { backgroundColor: alpha('#EF4444', 0.1) },
+                      }}
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </Box>

@@ -15,6 +15,7 @@ import {
   useTheme,
   useMediaQuery,
   Chip,
+  alpha,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -246,67 +247,88 @@ const Dashboard: React.FC = () => {
   }, [navigate]);
 
   const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Toolbar sx={{ px: 2.5, py: 2 }}>
+        <Typography variant="h5" noWrap sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
           Lockin
         </Typography>
       </Toolbar>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
+      <Divider sx={{ borderColor: alpha(theme.palette.primary.main, 0.1) }} />
+      <List sx={{ px: 1.5, pt: 2 }}>
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             onClick={() => handleMenuItemClick("tasks")}
             selected={currentView === "tasks"}
+            sx={{
+              borderRadius: 2,
+              mb: 0.5,
+              '&.Mui-selected': {
+                backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.18),
+                },
+                '& .MuiListItemIcon-root': {
+                  color: theme.palette.primary.main,
+                },
+              },
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              },
+            }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <TaskIcon />
             </ListItemIcon>
-            <ListItemText primary="Tasks" />
+            <ListItemText primary="Tasks" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("categories")}
-            selected={currentView === "categories"}
-          >
-            <ListItemIcon>
-              <CategoryIcon />
-            </ListItemIcon>
-            <ListItemText primary="Categories" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("matrix")}
-            selected={currentView === "matrix"}
-          >
-            <ListItemIcon>
-              <GridOnIcon />
-            </ListItemIcon>
-            <ListItemText primary="Matrix" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("statistics")}
-            selected={currentView === "statistics"}
-          >
-            <ListItemIcon>
-              <StatsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Statistics" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
+        {[
+          { view: "categories", icon: <CategoryIcon />, label: "Categories" },
+          { view: "matrix", icon: <GridOnIcon />, label: "Matrix" },
+          { view: "statistics", icon: <StatsIcon />, label: "Statistics" },
+        ].map(({ view, icon, label }) => (
+          <ListItem key={view} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleMenuItemClick(view as any)}
+              selected={currentView === view}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+                '&.Mui-selected': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
+                  '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+                },
+                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
+              <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             onClick={() => handleMenuItemClick("timer")}
             selected={currentView === "timer"}
+            sx={{
+              borderRadius: 2,
+              mb: 0.5,
+              '&.Mui-selected': {
+                backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                color: theme.palette.primary.main,
+                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
+                '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+              },
+              '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+            }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <TimerIcon />
             </ListItemIcon>
-            <ListItemText primary="Timer" />
+            <ListItemText primary="Timer" primaryTypographyProps={{ fontWeight: 500 }} />
             <SidebarTimerIndicator
               isRunning={timer.isRunning}
               sessionType={timer.sessionType}
@@ -314,65 +336,77 @@ const Dashboard: React.FC = () => {
             />
           </ListItemButton>
         </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("analytics")}
-            selected={currentView === "analytics"}
-          >
-            <ListItemIcon>
-              <AnalyticsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Analytics" />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("goals")}
-            selected={currentView === "goals"}
-          >
-            <ListItemIcon>
-              <GoalsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Goals" />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("badges")}
-            selected={currentView === "badges"}
-          >
-            <ListItemIcon>
-              <BadgesIcon />
-            </ListItemIcon>
-            <ListItemText primary="Badges" />
-          </ListItemButton>
-        </ListItem>
+        {[
+          { view: "analytics", icon: <AnalyticsIcon />, label: "Analytics" },
+          { view: "goals", icon: <GoalsIcon />, label: "Goals" },
+          { view: "badges", icon: <BadgesIcon />, label: "Badges" },
+        ].map(({ view, icon, label }) => (
+          <ListItem key={view} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleMenuItemClick(view as any)}
+              selected={currentView === view}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+                '&.Mui-selected': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
+                  '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+                },
+                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
+              <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
+            </ListItemButton>
+          </ListItem>
+        ))}
       </List>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
+      <Divider sx={{ my: 1.5, borderColor: alpha(theme.palette.primary.main, 0.1) }} />
+      <List sx={{ px: 1.5, pb: 2 }}>
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             onClick={() => handleMenuItemClick("settings")}
             selected={currentView === "settings"}
+            sx={{
+              borderRadius: 2,
+              mb: 0.5,
+              '&.Mui-selected': {
+                backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                color: theme.palette.primary.main,
+                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
+                '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
+              },
+              '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+            }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <SettingsIcon />
             </ListItemIcon>
-            <ListItemText primary="Settings" />
+            <ListItemText primary="Settings" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton onClick={logout}>
-            <ListItemIcon>
+          <ListItemButton
+            onClick={logout}
+            sx={{
+              borderRadius: 2,
+              '&:hover': {
+                backgroundColor: alpha('#EF4444', 0.08),
+                color: '#EF4444',
+                '& .MuiListItemIcon-root': { color: '#EF4444' },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText primary="Logout" />
+            <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
       </List>
-    </div>
+    </Box>
   );
 
   const renderContent = useMemo(() => {
@@ -404,21 +438,34 @@ const Dashboard: React.FC = () => {
     <Box sx={{ display: "flex" }}>
       <AppBar
         position="fixed"
+        elevation={0}
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
+          backgroundColor: theme.palette.background.paper,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          boxShadow: `0 1px 3px ${alpha(theme.palette.primary.main, 0.05)}`,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ py: 1.5 }}>
           <IconButton
-            color="inherit"
+            color="primary"
             edge="start"
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { md: "none" } }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+            }}
+          >
             Welcome, {user?.firstName || user?.email || "User"}
           </Typography>
 

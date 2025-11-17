@@ -13,6 +13,8 @@ import {
   Tab,
   Alert,
   CircularProgress,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -28,6 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import PageHeader from "../components/shared/PageHeader";
 
 const Goals: React.FC = () => {
+  const theme = useTheme();
   const {
     data: allGoals = [],
     isLoading: loading,
@@ -136,7 +139,14 @@ const Goals: React.FC = () => {
       <Tabs
         value={tabValue}
         onChange={(_, value) => setTabValue(value)}
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+          '& .MuiTab-root': {
+            fontWeight: 500,
+            textTransform: 'none',
+            fontSize: '0.9375rem',
+          },
+        }}
       >
         <Tab label="Active" value="active" />
         <Tab label="Completed" value="completed" />
@@ -186,7 +196,16 @@ const Goals: React.FC = () => {
         <Grid container spacing={3}>
           {displayedGoals.map((goal) => (
             <Grid key={goal.id} size={{ xs: 12, sm: 6 }}>
-              <Card>
+              <Card
+                sx={{
+                  height: '100%',
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+                    transform: "translateY(-2px)",
+                  },
+                }}
+              >
                 <CardContent>
                   {/* Header */}
                   <Box
@@ -198,7 +217,7 @@ const Goals: React.FC = () => {
                     }}
                   >
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" component="h3" gutterBottom>
+                      <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600 }}>
                         {goal.title}
                       </Typography>
                       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -206,13 +225,19 @@ const Goals: React.FC = () => {
                           label={goal.type}
                           size="small"
                           color={getTypeColor(goal.type)}
+                          sx={{ fontWeight: 500 }}
                         />
                         {goal.completed && (
                           <Chip
                             icon={<CheckCircleIcon />}
                             label="Completed"
                             size="small"
-                            color="success"
+                            sx={{
+                              backgroundColor: alpha("#10B981", 0.1),
+                              color: "#10B981",
+                              fontWeight: 500,
+                              border: `1px solid ${alpha("#10B981", 0.3)}`,
+                            }}
                           />
                         )}
                       </Box>
@@ -220,8 +245,11 @@ const Goals: React.FC = () => {
                     <IconButton
                       size="small"
                       onClick={() => handleDeleteGoal(goal.id)}
-                      color="error"
                       aria-label="delete goal"
+                      sx={{
+                        color: '#EF4444',
+                        '&:hover': { backgroundColor: alpha('#EF4444', 0.1) },
+                      }}
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -245,10 +273,10 @@ const Goals: React.FC = () => {
                         mb: 1,
                       }}
                     >
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                         Progress
                       </Typography>
-                      <Typography variant="body2" fontWeight="bold">
+                      <Typography variant="body2" fontWeight={600} color="text.primary">
                         {Math.round(goal.progressPercentage)}%
                       </Typography>
                     </Box>
@@ -256,7 +284,14 @@ const Goals: React.FC = () => {
                       variant="determinate"
                       value={Math.min(goal.progressPercentage, 100)}
                       color={getProgressColor(goal.progressPercentage)}
-                      sx={{ height: 8, borderRadius: 1 }}
+                      sx={{
+                        height: 10,
+                        borderRadius: 2,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 2,
+                        },
+                      }}
                     />
                   </Box>
 

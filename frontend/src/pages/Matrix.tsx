@@ -10,6 +10,8 @@ import {
   InputLabel,
   Skeleton,
   Chip,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import type { Task } from "../types/task";
 import {
@@ -26,8 +28,10 @@ import { CSS } from "@dnd-kit/utilities";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { useCategories } from "../hooks/useCategories";
 import { useMatrix, useUpdateTaskQuadrant } from "../hooks/useMatrix";
+import PageHeader from "../components/shared/PageHeader";
 
 const Matrix: React.FC = () => {
+  const theme = useTheme();
   const { data: matrix, isLoading: loading } = useMatrix();
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories();
@@ -148,24 +152,29 @@ const Matrix: React.FC = () => {
       <Paper
         ref={setNodeRef}
         sx={{
-          p: 2,
-          minHeight: { xs: 200, md: 300 },
-          backgroundColor: isOver ? "#e0e0e0" : color,
-          borderLeft: `4px solid ${borderColor}`,
-          transition: "background-color 0.2s",
+          p: 3,
+          minHeight: { xs: 200, md: 320 },
+          backgroundColor: isOver ? alpha(borderColor, 0.15) : alpha(borderColor, 0.04),
+          border: `2px solid ${isOver ? borderColor : alpha(borderColor, 0.2)}`,
+          borderRadius: 3,
+          transition: "all 0.3s ease",
+          '&:hover': {
+            borderColor: alpha(borderColor, 0.4),
+            boxShadow: `0 4px 12px ${alpha(borderColor, 0.15)}`,
+          },
         }}
       >
         <Box
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          mb={2}
+          mb={2.5}
         >
           <Box>
-            <Typography variant="h6" sx={{ mb: 0 }}>
+            <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600 }}>
               {title}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
               {subtitle}
             </Typography>
           </Box>
@@ -175,13 +184,14 @@ const Matrix: React.FC = () => {
               backgroundColor: borderColor,
               color: "white",
               borderRadius: "50%",
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontWeight: "bold",
+              fontWeight: 600,
               fontSize: "0.875rem",
+              boxShadow: `0 2px 8px ${alpha(borderColor, 0.3)}`,
             }}
           >
             {tasks.length}
@@ -190,9 +200,20 @@ const Matrix: React.FC = () => {
 
         <Box>
           {tasks.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No tasks in this quadrant
-            </Typography>
+            <Box
+              sx={{
+                py: 4,
+                textAlign: 'center',
+                color: 'text.secondary',
+                borderRadius: 2,
+                backgroundColor: alpha(borderColor, 0.02),
+                border: `1px dashed ${alpha(borderColor, 0.2)}`,
+              }}
+            >
+              <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                No tasks in this quadrant
+              </Typography>
+            </Box>
           ) : (
             tasks.map((task) => <DraggableTask key={task.id} task={task} />)
           )}
@@ -213,7 +234,7 @@ const Matrix: React.FC = () => {
 
     const style = {
       transform: CSS.Translate.toString(transform),
-      opacity: isDragging ? 0.5 : 1,
+      opacity: isDragging ? 0.6 : 1,
     };
 
     return (
@@ -223,23 +244,29 @@ const Matrix: React.FC = () => {
         {...listeners}
         {...attributes}
         sx={{
-          p: 1.5,
-          mb: 1,
+          p: 2,
+          mb: 1.5,
           cursor: isDragging ? "grabbing" : "grab",
+          backgroundColor: theme.palette.background.paper,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          borderRadius: 2,
+          transition: "all 0.2s ease-in-out",
           "&:hover": {
-            boxShadow: 3,
-            transform: "translateY(-3px)",
-            transition: "all 0.2s ease-in-out",
+            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+            transform: "translateY(-2px)",
+            borderColor: alpha(theme.palette.primary.main, 0.3),
           },
         }}
       >
-        <Typography variant="body2" fontWeight="medium">
+        <Typography variant="body2" fontWeight={600} sx={{ mb: task.dueDate ? 0.5 : 0 }}>
           {task.title}
         </Typography>
         {task.dueDate && (
-          <Typography variant="caption" color="text.secondary">
-            Due: {new Date(task.dueDate).toLocaleDateString()}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              Due: {new Date(task.dueDate).toLocaleDateString()}
+            </Typography>
+          </Box>
         )}
       </Paper>
     );
@@ -274,21 +301,21 @@ const Matrix: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box>
         <Box
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          mb={3}
+          mb={4}
         >
           <Box>
             <Skeleton variant="text" width={250} height={48} />
             <Skeleton variant="text" width={300} height={24} />
           </Box>
-          <Skeleton variant="rectangular" width={200} height={56} />
+          <Skeleton variant="rectangular" width={220} height={40} />
         </Box>
 
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {[1, 2, 3, 4].map((i) => (
             <Grid size={{ xs: 12, md: 6 }} key={i}>
               <MatrixSkeleton />
@@ -309,32 +336,32 @@ const Matrix: React.FC = () => {
       title: "🔥 Do First",
       subtitle: "Urgent & Important",
       tasks: filterByCategory(matrix.doFirst),
-      color: "#ffebee",
-      borderColor: "#f44336",
+      color: alpha("#EF4444", 0.05),
+      borderColor: "#EF4444",
     },
     {
       id: "schedule",
       title: "📅 Schedule",
       subtitle: "Not Urgent & Important",
       tasks: filterByCategory(matrix.schedule),
-      color: "#e3f2fd",
-      borderColor: "#2196f3",
+      color: alpha("#3B82F6", 0.05),
+      borderColor: "#3B82F6",
     },
     {
       id: "delegate",
       title: "👥 Delegate",
       subtitle: "Urgent & Not Important",
       tasks: filterByCategory(matrix.delegate),
-      color: "#fff3e0",
-      borderColor: "#ff9800",
+      color: alpha("#F59E0B", 0.05),
+      borderColor: "#F59E0B",
     },
     {
       id: "eliminate",
       title: "🗑️ Eliminate",
       subtitle: "Not Urgent & Not Important",
       tasks: filterByCategory(matrix.eliminate),
-      color: "#f3e5f5",
-      borderColor: "#9c27b0",
+      color: alpha("#8B5CF6", 0.05),
+      borderColor: "#8B5CF6",
     },
   ];
 
@@ -345,59 +372,50 @@ const Matrix: React.FC = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <Box sx={{ p: 3 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={3}
-        >
-          <Box>
-            <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
-              Eisenhower Matrix
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2" color="text.secondary">
-                Organise your tasks by urgency and importance
-              </Typography>
+      <Box>
+        <PageHeader
+          title="Eisenhower Matrix"
+          subtitle="Organize your tasks by urgency and importance"
+          action={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Chip
                 label="Showing incomplete tasks only"
                 size="small"
                 color="info"
                 variant="outlined"
+                sx={{ fontWeight: 500 }}
               />
+              <FormControl sx={{ minWidth: 220 }} size="small">
+                <InputLabel id="category-filter-label">
+                  Filter by Category
+                </InputLabel>
+                <Select
+                  labelId="category-filter-label"
+                  value={selectedCategory}
+                  label="Filter by Category"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedCategory(value === "all" ? "all" : Number(value));
+                  }}
+                  disabled={categoriesLoading}
+                >
+                  <MenuItem value="all">All Categories</MenuItem>
+                  {categoriesLoading ? (
+                    <MenuItem disabled>Loading categories...</MenuItem>
+                  ) : (
+                    categories.map((cat) => (
+                      <MenuItem key={cat.id} value={cat.id}>
+                        {cat.icon} {cat.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
             </Box>
-          </Box>
+          }
+        />
 
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel id="category-filter-label">
-              Filter by Category
-            </InputLabel>
-            <Select
-              labelId="category-filter-label"
-              value={selectedCategory}
-              label="Filter by Category"
-              onChange={(e) => {
-                const value = e.target.value;
-                setSelectedCategory(value === "all" ? "all" : Number(value));
-              }}
-              disabled={categoriesLoading}
-            >
-              <MenuItem value="all">All Categories</MenuItem>
-              {categoriesLoading ? (
-                <MenuItem disabled>Loading categories...</MenuItem>
-              ) : (
-                categories.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
-        </Box>
-
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {quadrants.map((quadrant) => (
             <Grid size={{ xs: 12, md: 6 }} key={quadrant.id}>
               <DroppableQuadrant
@@ -417,18 +435,20 @@ const Matrix: React.FC = () => {
         {activeId ? (
           <Paper
             sx={{
-              p: 1.5,
-              opacity: 0.5,
+              p: 2,
+              opacity: 0.8,
               cursor: "grabbing",
-              boxShadow: 4,
-              backgroundColor: "white",
+              boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.25)}`,
+              backgroundColor: theme.palette.background.paper,
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              borderRadius: 2,
             }}
           >
-            <Typography variant="body2" fontWeight="medium">
+            <Typography variant="body2" fontWeight={600} sx={{ mb: getActiveTask()?.dueDate ? 0.5 : 0 }}>
               {getActiveTask()?.title || "Task"}
             </Typography>
             {getActiveTask()?.dueDate && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                 Due: {new Date(getActiveTask()?.dueDate!).toLocaleDateString()}
               </Typography>
             )}
