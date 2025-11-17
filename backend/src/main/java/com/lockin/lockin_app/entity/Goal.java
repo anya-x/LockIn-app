@@ -72,26 +72,32 @@ public class Goal {
         int targetCount = 0;
         double achievedScore = 0;
 
+        // Edge case: Handle null current values
+        Integer safeCurrentTasks = (currentTasks != null) ? currentTasks : 0;
+        Integer safeCurrentPomodoros = (currentPomodoros != null) ? currentPomodoros : 0;
+        Integer safeCurrentFocusMinutes = (currentFocusMinutes != null) ? currentFocusMinutes : 0;
+
         if (targetTasks != null && targetTasks > 0) {
             targetCount++;
-            double taskProgress = Math.min(100, (currentTasks / (double) targetTasks) * 100);
+            double taskProgress = Math.min(100, (safeCurrentTasks / (double) targetTasks) * 100);
             achievedScore += taskProgress;
         }
 
         if (targetPomodoros != null && targetPomodoros > 0) {
             targetCount++;
             double pomodoroProgress =
-                    Math.min(100, (currentPomodoros / (double) targetPomodoros) * 100);
+                    Math.min(100, (safeCurrentPomodoros / (double) targetPomodoros) * 100);
             achievedScore += pomodoroProgress;
         }
 
         if (targetFocusMinutes != null && targetFocusMinutes > 0) {
             targetCount++;
             double focusProgress =
-                    Math.min(100, (currentFocusMinutes / (double) targetFocusMinutes) * 100);
+                    Math.min(100, (safeCurrentFocusMinutes / (double) targetFocusMinutes) * 100);
             achievedScore += focusProgress;
         }
 
+        // Edge case: Goals with only one metric get proper percentage
         return targetCount > 0 ? achievedScore / targetCount : 0;
     }
 }
