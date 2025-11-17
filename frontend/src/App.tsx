@@ -105,6 +105,14 @@ function App() {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/badges"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
