@@ -537,7 +537,10 @@ const Dashboard: React.FC = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, md: 3 },
+          pt: { xs: 2, md: 2 },
+          pr: { xs: 2, md: 2 },
+          pb: { xs: 2, md: 2 },
+          pl: { xs: 2, md: 1 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
           maxWidth: { md: `calc(100vw - ${drawerWidth}px)` },
