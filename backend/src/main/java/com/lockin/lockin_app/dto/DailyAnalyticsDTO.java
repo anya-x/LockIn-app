@@ -42,7 +42,7 @@ public class DailyAnalyticsDTO {
     // Burnout indicators
     private Integer lateNightSessions;
     private Integer overworkMinutes;
-    // private Integer consecutiveWorkDays; // UNUSED - never calculated
+    private Integer consecutiveWorkDays; // Used in burnout calculation
 
     // Eisenhower distribution
     private Integer urgentImportantCount;
@@ -70,7 +70,7 @@ public class DailyAnalyticsDTO {
                 .burnoutRiskScore(analytics.getBurnoutRiskScore())
                 .lateNightSessions(analytics.getLateNightSessions())
                 .overworkMinutes(analytics.getOverworkMinutes())
-                // .consecutiveWorkDays(analytics.getConsecutiveWorkDays()) // UNUSED
+                .consecutiveWorkDays(analytics.getConsecutiveWorkDays())
                 .urgentImportantCount(analytics.getUrgentImportantCount())
                 .notUrgentImportantCount(analytics.getNotUrgentImportantCount())
                 .urgentNotImportantCount(analytics.getUrgentNotImportantCount())

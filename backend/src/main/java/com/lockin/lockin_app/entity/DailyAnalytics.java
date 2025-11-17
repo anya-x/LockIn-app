@@ -61,7 +61,7 @@ public class DailyAnalytics {
 
     // Burnout indicators
     @Builder.Default private Integer overworkMinutes = 0;
-    // @Builder.Default private Integer consecutiveWorkDays = 0; // UNUSED - never calculated, always 0
+    @Builder.Default private Integer consecutiveWorkDays = 0; // Used in burnout calculation
     @Builder.Default private Integer lateNightSessions = 0;
 
     private LocalDateTime createdAt;

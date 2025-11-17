@@ -70,6 +70,7 @@ public class AnalyticsCalculationService {
         calculateTaskMetrics(analytics, user, date);
         calculatePomodoroMetrics(analytics, user, date);
         calculateEisenhowerDistribution(analytics, user, date);
+        calculateConsecutiveWorkDays(analytics, user, date);
         calculateScores(analytics);
 
         DailyAnalytics saved = dailyAnalyticsRepository.save(analytics);
@@ -107,7 +108,6 @@ public class AnalyticsCalculationService {
         analytics.setTasksCreated(created);
         analytics.setTasksCompleted(completedTotal);
         analytics.setTasksCompletedFromToday(completedFromToday);
-        analytics.setTasksDeleted(0);
 
         double completionRate = created > 0 ? (completedFromToday / (double) created) * 100 : 0.0;
         analytics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
@@ -210,6 +210,49 @@ public class AnalyticsCalculationService {
         analytics.setNotUrgentImportantCount(notUrgentImportant);
         analytics.setUrgentNotImportantCount(urgentNotImportant);
         analytics.setNotUrgentNotImportantCount(notUrgentNotImportant);
+    }
+
+    /**
+     * Calculates consecutive work days by looking backwards at previous days
+     * A "work day" is defined as: >30 minutes focus time OR >1 task completed
+     */
+    private void calculateConsecutiveWorkDays(DailyAnalytics analytics, User user, LocalDate date) {
+        // Check if current day is productive
+        boolean isProductiveDay = analytics.getFocusMinutes() >= 30 ||
+                                 analytics.getTasksCompleted() >= 1;
+
+        if (!isProductiveDay) {
+            analytics.setConsecutiveWorkDays(0);
+            return;
+        }
+
+        int consecutiveDays = 1; // Today counts
+        LocalDate checkDate = date.minusDays(1);
+
+        // Look backwards up to 30 days to find consecutive work days
+        for (int i = 0; i < 30; i++) {
+            DailyAnalytics previousDay = dailyAnalyticsRepository.findByUserAndDate(user, checkDate)
+                    .orElse(null);
+
+            if (previousDay == null) {
+                // No data for this day, break the streak
+                break;
+            }
+
+            boolean wasPreviousDayProductive = previousDay.getFocusMinutes() >= 30 ||
+                                               previousDay.getTasksCompleted() >= 1;
+
+            if (wasPreviousDayProductive) {
+                consecutiveDays++;
+                checkDate = checkDate.minusDays(1);
+            } else {
+                // Streak broken
+                break;
+            }
+        }
+
+        analytics.setConsecutiveWorkDays(consecutiveDays);
+        log.debug("Consecutive work days for {}: {}", date, consecutiveDays);
     }
 
     private void calculateScores(DailyAnalytics analytics) {
