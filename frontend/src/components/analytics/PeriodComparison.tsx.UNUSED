@@ -1,3 +1,13 @@
+/**
+ * UNUSED COMPONENT - Archived on 2025-11-17
+ *
+ * This component was never imported or used anywhere in the application.
+ * It duplicates functionality already present in Analytics.tsx (period comparison
+ * is now integrated directly into the metric cards).
+ *
+ * Kept for reference only. Can be safely deleted or restored if needed.
+ */
+
 import React, { useState } from "react";
 import {
   Box,

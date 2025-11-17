@@ -48,6 +48,7 @@ import {
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
 import ProductivityInsights from "../components/analytics/ProductivityInsights";
+import ProductivityHeatmap from "../components/analytics/ProductivityHeatmap";
 // import CustomTooltip from "../components/analytics/CustomTooltip"; // UNUSED - removed
 import { exportToCSV } from "../utils/exportToCSV";
 import { useTimer } from "../context/TimerContext";
@@ -57,6 +58,7 @@ import {
   useTodayAnalytics,
   useComparisonAnalytics,
   useStreak,
+  useTaskVelocity,
 } from "../hooks/useAnalytics";
 
 type PeriodType = "week" | "month";
@@ -96,6 +98,7 @@ const AnalyticsPage: React.FC = () => {
     useAnalyticsRange(days);
 
   const { data: streakData } = useStreak();
+  const { data: velocityData } = useTaskVelocity();
 
   const getDateRanges = () => {
     const today = new Date();
@@ -814,8 +817,55 @@ const AnalyticsPage: React.FC = () => {
               </Grid>
             </Paper>
           )}
+
+          {/* Task Velocity */}
+          {velocityData && velocityData.current > 0 && (
+            <Paper sx={{ p: 3, mb: 3, bgcolor: 'info.lighter', border: '1px solid', borderColor: 'info.main' }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+                <Box>
+                  <Typography variant="overline" color="text.secondary">
+                    Task Velocity (7-day avg)
+                  </Typography>
+                  <Box display="flex" alignItems="baseline" gap={1} mt={0.5}>
+                    <Typography variant="h4" color="info.dark" fontWeight="bold">
+                      {velocityData.current} tasks/day
+                    </Typography>
+                    {velocityData.trend !== "stable" && (
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        {velocityData.trend === "up" ? (
+                          <TrendingUp color="success" fontSize="small" />
+                        ) : (
+                          <TrendingDown color="error" fontSize="small" />
+                        )}
+                        <Typography
+                          variant="body2"
+                          color={velocityData.trend === "up" ? "success.main" : "error.main"}
+                          fontWeight="bold"
+                        >
+                          {velocityData.change > 0 ? "+" : ""}{velocityData.change}%
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Previous week: {velocityData.previous} tasks/day
+                  </Typography>
+                </Box>
+                <Box textAlign="right">
+                  <Typography variant="body2" color="text.secondary">
+                    {velocityData.trend === "up" && "📈 Accelerating productivity"}
+                    {velocityData.trend === "down" && "📉 Slowing down - take a break?"}
+                    {velocityData.trend === "stable" && "➡️ Steady pace"}
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          )}
         </>
       )}
+
+      {/* Productivity Heatmap */}
+      <ProductivityHeatmap />
 
       {/* Insights Section */}
       <Paper sx={{ mb: 3 }}>
