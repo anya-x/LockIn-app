@@ -2,6 +2,7 @@ package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
+import com.lockin.lockin_app.dto.GoalTemplateDTO;
 import com.lockin.lockin_app.service.GoalService;
 import com.lockin.lockin_app.service.UserService;
 
@@ -100,5 +101,25 @@ public class GoalController {
         goalService.deleteGoal(id, userId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/templates")
+    public ResponseEntity<List<GoalTemplateDTO>> getGoalTemplates() {
+        log.debug("GET /api/goals/templates");
+        List<GoalTemplateDTO> templates = goalService.getGoalTemplates();
+        return ResponseEntity.ok(templates);
+    }
+
+    @PostMapping("/templates/{templateType}")
+    public ResponseEntity<GoalResponseDTO> createGoalFromTemplate(
+            @PathVariable String templateType,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("POST /api/goals/templates/{} : User: {}", templateType, userDetails.getUsername());
+
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        GoalResponseDTO created = goalService.createGoalFromTemplate(userId, templateType);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }

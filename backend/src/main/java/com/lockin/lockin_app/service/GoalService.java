@@ -3,7 +3,9 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
+import com.lockin.lockin_app.dto.GoalTemplateDTO;
 import com.lockin.lockin_app.entity.Goal;
+import com.lockin.lockin_app.entity.GoalTemplate;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -320,6 +323,58 @@ public class GoalService {
                 }
             }
         }
+    }
+
+    /**
+     * Get all available goal templates
+     *
+     * @return list of goal templates
+     */
+    public List<GoalTemplateDTO> getGoalTemplates() {
+        log.debug("Getting goal templates");
+        return Arrays.stream(GoalTemplate.values())
+                .map(GoalTemplateDTO::fromTemplate)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Create a goal from a template
+     *
+     * @param userId user creating the goal
+     * @param templateType type of template to use
+     * @return created goal
+     */
+    @Transactional
+    public GoalResponseDTO createGoalFromTemplate(Long userId, String templateType) {
+        log.info("Creating goal from template {} for user {}", templateType, userId);
+
+        GoalTemplate template;
+        try {
+            template = GoalTemplate.valueOf(templateType);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid template type: " + templateType);
+        }
+
+        User user = userService.getUserById(userId);
+
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusDays(template.getDurationDays());
+
+        Goal goal = new Goal();
+        goal.setUser(user);
+        goal.setTitle(template.getName());
+        goal.setDescription(template.getDescription());
+        goal.setStartDate(startDate);
+        goal.setEndDate(endDate);
+        goal.setTasksTarget(template.getTasksTarget());
+        goal.setPomodorosTarget(template.getPomodorosTarget());
+        goal.setFocusMinutesTarget(template.getFocusMinutesTarget());
+        goal.setCompleted(false);
+
+        Goal saved = goalRepository.save(goal);
+        log.info("Created goal from template: {}", saved.getId());
+
+        return GoalResponseDTO.fromEntity(saved);
     }
 
     /**
