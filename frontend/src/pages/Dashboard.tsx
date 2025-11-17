@@ -360,7 +360,7 @@ const Dashboard: React.FC = () => {
       </Box>
 
       {/* User Profile at Bottom */}
-      <Box sx={{ p: 2, borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+      <Box sx={{ p: 2, pt: 3 }}>
         <Box
           sx={{
             display: 'flex',
@@ -466,7 +466,8 @@ const Dashboard: React.FC = () => {
               boxSizing: "border-box",
               width: drawerWidth,
               backgroundColor: theme.palette.background.paper,
-              borderRight: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+              borderRight: 'none',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
             },
           }}
         >
@@ -481,7 +482,8 @@ const Dashboard: React.FC = () => {
               boxSizing: "border-box",
               width: drawerWidth,
               backgroundColor: theme.palette.background.paper,
-              borderRight: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+              borderRight: 'none',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
             },
           }}
           open
@@ -540,7 +542,7 @@ const Dashboard: React.FC = () => {
           pt: { xs: 2, md: 2 },
           pr: { xs: 2, md: 2 },
           pb: { xs: 2, md: 2 },
-          pl: { xs: 2, md: 1 },
+          pl: { xs: 2, md: 0 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
           maxWidth: { md: `calc(100vw - ${drawerWidth}px)` },
