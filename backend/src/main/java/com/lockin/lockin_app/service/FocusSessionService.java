@@ -6,8 +6,10 @@ import com.lockin.lockin_app.entity.FocusSession;
 import com.lockin.lockin_app.entity.SessionType;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.InvalidStateException;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
+import com.lockin.lockin_app.exception.ValidationException;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
@@ -122,11 +124,11 @@ public class FocusSessionService {
         validateSessionOwnership(session, userId);
 
         if (session.getCompleted()) {
-            throw new ResourceNotFoundException("Session is already completed");
+            throw new InvalidStateException("FocusSession", "completed", "complete again");
         }
 
         if (actualMinutes != null && actualMinutes < 0) {
-            throw new ResourceNotFoundException("Actual minutes cannot be negative");
+            throw new ValidationException("actualMinutes", "cannot be negative");
         }
 
         session.setActualMinutes(actualMinutes);
@@ -159,7 +161,7 @@ public class FocusSessionService {
         validateSessionOwnership(session, userId);
 
         if (actualMinutes != null && actualMinutes < 0) {
-            throw new ResourceNotFoundException("Actual minutes cannot be negative");
+            throw new ValidationException("actualMinutes", "cannot be negative");
         }
 
         session.setActualMinutes(actualMinutes);

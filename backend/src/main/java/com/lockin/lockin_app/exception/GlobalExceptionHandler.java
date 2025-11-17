@@ -141,6 +141,78 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDuplicateResource(
+            DuplicateResourceException ex, WebRequest request) {
+
+        log.warn("Duplicate resource: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.CONFLICT.value())
+                        .error(HttpStatus.CONFLICT.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleValidationException(
+            ValidationException ex, WebRequest request) {
+
+        log.warn("Business validation failed: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(InvalidStateException.class)
+    public ResponseEntity<ErrorResponseDTO> handleInvalidState(
+            InvalidStateException ex, WebRequest request) {
+
+        log.warn("Invalid state transition: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.CONFLICT.value())
+                        .error(HttpStatus.CONFLICT.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(AnalyticsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAnalyticsException(
+            AnalyticsException ex, WebRequest request) {
+
+        log.error("Analytics operation failed: {}", ex.getMessage(), ex);
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                        .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }

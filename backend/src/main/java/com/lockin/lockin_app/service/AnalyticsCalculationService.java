@@ -3,6 +3,7 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.dto.ProductivityInsightsDTO;
 import com.lockin.lockin_app.entity.*;
+import com.lockin.lockin_app.exception.AnalyticsException;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;

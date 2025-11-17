@@ -2,6 +2,7 @@ package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.DuplicateResourceException;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.CategoryRepository;
@@ -47,8 +48,7 @@ public class CategoryService {
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (categoryRepository.existsByUserIdAndName(userId, category.getName())) {
-            throw new ResourceNotFoundException(
-                    "Category with name '" + category.getName() + "' already exists");
+            throw new DuplicateResourceException("Category", "name", category.getName());
         }
 
         category.setUser(user);
@@ -84,8 +84,7 @@ public class CategoryService {
         // check for duplicate name only if name is being changed
         if (!category.getName().equals(updatedCategory.getName())
                 && categoryRepository.existsByUserIdAndName(userId, updatedCategory.getName())) {
-            throw new ResourceNotFoundException(
-                    "Category with name '" + updatedCategory.getName() + "' already exists");
+            throw new DuplicateResourceException("Category", "name", updatedCategory.getName());
         }
 
         category.setName(updatedCategory.getName());
