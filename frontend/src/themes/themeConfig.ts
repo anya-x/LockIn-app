@@ -81,6 +81,7 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
 
 export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
   const paletteConfig = themeConfigs[color].palette[mode];
+  const isDark = mode === 'dark';
 
   return createTheme({
     palette: {
@@ -89,13 +90,48 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
     },
     typography: baseTypography,
     shape: { borderRadius: 12 },
+    shadows: [
+      'none',
+      '0 1px 2px rgba(0,0,0,0.04)',
+      '0 1px 3px rgba(0,0,0,0.06)',
+      '0 2px 4px rgba(0,0,0,0.06)',
+      '0 4px 6px rgba(0,0,0,0.06)',
+      '0 6px 8px rgba(0,0,0,0.06)',
+      '0 8px 16px rgba(0,0,0,0.08)',
+      '0 12px 24px rgba(0,0,0,0.08)',
+      '0 16px 32px rgba(0,0,0,0.08)',
+      '0 20px 40px rgba(0,0,0,0.1)',
+      '0 24px 48px rgba(0,0,0,0.1)',
+      ...Array(14).fill('0 24px 48px rgba(0,0,0,0.1)'),
+    ] as any,
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: isDark ? '#0A0E14' : '#FAFBFC',
+          },
+        },
+      },
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
           root: {
             borderRadius: 10,
             padding: '10px 20px',
+            fontSize: '0.9375rem',
+            fontWeight: 500,
+            textTransform: 'none',
+          },
+          contained: {
+            '&:hover': {
+              transform: 'translateY(-1px)',
+            },
+          },
+          outlined: {
+            borderWidth: '1.5px',
+            '&:hover': {
+              borderWidth: '1.5px',
+            },
           },
         },
       },
@@ -104,6 +140,101 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
         styleOverrides: {
           root: {
             borderRadius: 16,
+            border: 'none',
+            boxShadow: isDark
+              ? '0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)'
+              : '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+            transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            borderRadius: 8,
+            fontWeight: 500,
+            fontSize: '0.8125rem',
+          },
+          filled: {
+            border: 'none',
+          },
+        },
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 10,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+              '& fieldset': {
+                borderWidth: '1.5px',
+              },
+              '&:hover fieldset': {
+                borderWidth: '1.5px',
+              },
+              '&.Mui-focused fieldset': {
+                borderWidth: '2px',
+              },
+            },
+          },
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          root: {
+            borderRadius: 10,
+          },
+        },
+      },
+      MuiPaper: {
+        defaultProps: { elevation: 0 },
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            boxShadow: isDark
+              ? '0 1px 3px rgba(0,0,0,0.3)'
+              : '0 1px 3px rgba(0,0,0,0.04)',
+          },
+        },
+      },
+      MuiAppBar: {
+        defaultProps: { elevation: 0 },
+      },
+      MuiTab: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 500,
+            fontSize: '0.9375rem',
+          },
+        },
+      },
+      MuiLinearProgress: {
+        styleOverrides: {
+          root: {
+            borderRadius: 10,
+            height: 10,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          },
+          bar: {
+            borderRadius: 10,
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            borderRadius: 16,
+            boxShadow: isDark
+              ? '0 12px 24px rgba(0,0,0,0.5)'
+              : '0 12px 24px rgba(0,0,0,0.12)',
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            backgroundImage: 'none',
           },
         },
       },

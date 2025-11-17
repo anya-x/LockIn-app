@@ -246,166 +246,181 @@ const Dashboard: React.FC = () => {
     navigate("/timer");
   }, [navigate]);
 
+  const navigationGroups = [
+    {
+      section: 'MAIN',
+      items: [
+        { view: "tasks", icon: <TaskIcon />, label: "Tasks" },
+        { view: "matrix", icon: <GridOnIcon />, label: "Matrix" },
+        { view: "timer", icon: <TimerIcon />, label: "Focus Timer", hasIndicator: true },
+      ],
+    },
+    {
+      section: 'INSIGHTS',
+      items: [
+        { view: "statistics", icon: <StatsIcon />, label: "Statistics" },
+        { view: "analytics", icon: <AnalyticsIcon />, label: "Analytics" },
+        { view: "goals", icon: <GoalsIcon />, label: "Goals" },
+        { view: "badges", icon: <BadgesIcon />, label: "Achievements" },
+      ],
+    },
+    {
+      section: 'MANAGE',
+      items: [
+        { view: "categories", icon: <CategoryIcon />, label: "Categories" },
+        { view: "settings", icon: <SettingsIcon />, label: "Settings" },
+      ],
+    },
+  ];
+
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Toolbar sx={{ px: 2.5, py: 2 }}>
-        <Typography variant="h5" noWrap sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: theme.palette.background.paper }}>
+      {/* Logo/Brand */}
+      <Box sx={{ p: 3, pb: 2 }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 700,
+            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            color: 'transparent',
+          }}
+        >
           Lockin
         </Typography>
-      </Toolbar>
-      <Divider sx={{ borderColor: alpha(theme.palette.primary.main, 0.1) }} />
-      <List sx={{ px: 1.5, pt: 2 }}>
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("tasks")}
-            selected={currentView === "tasks"}
-            sx={{
-              borderRadius: 2,
-              mb: 0.5,
-              '&.Mui-selected': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.18),
-                },
-                '& .MuiListItemIcon-root': {
-                  color: theme.palette.primary.main,
-                },
-              },
-              '&:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.08),
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <TaskIcon />
-            </ListItemIcon>
-            <ListItemText primary="Tasks" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
-        </ListItem>
-        {[
-          { view: "categories", icon: <CategoryIcon />, label: "Categories" },
-          { view: "matrix", icon: <GridOnIcon />, label: "Matrix" },
-          { view: "statistics", icon: <StatsIcon />, label: "Statistics" },
-        ].map(({ view, icon, label }) => (
-          <ListItem key={view} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(view as any)}
-              selected={currentView === view}
+      </Box>
+
+      {/* Navigation Groups */}
+      <Box sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+        {navigationGroups.map((group) => (
+          <Box key={group.section} sx={{ mb: 3 }}>
+            <Typography
+              variant="caption"
               sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&.Mui-selected': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                  color: theme.palette.primary.main,
-                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
-                  '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-                },
-                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+                px: 1.5,
+                py: 1,
+                display: 'block',
+                color: alpha(theme.palette.text.secondary, 0.6),
+                fontWeight: 600,
+                letterSpacing: '0.05em',
               }}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
-              <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
-            </ListItemButton>
-          </ListItem>
+              {group.section}
+            </Typography>
+            <List disablePadding>
+              {group.items.map((item) => {
+                const isActive = currentView === item.view;
+                return (
+                  <ListItem key={item.view} disablePadding sx={{ mb: 0.5 }}>
+                    <ListItemButton
+                      onClick={() => handleMenuItemClick(item.view as any)}
+                      sx={{
+                        borderRadius: 2,
+                        py: 1.25,
+                        px: 1.5,
+                        backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+                        color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+                        '&:hover': {
+                          backgroundColor: isActive
+                            ? alpha(theme.palette.primary.main, 0.12)
+                            : alpha(theme.palette.action.hover, 0.04),
+                        },
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 36,
+                          color: isActive ? theme.palette.primary.main : alpha(theme.palette.text.secondary, 0.6),
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.label}
+                        primaryTypographyProps={{
+                          fontSize: '0.9375rem',
+                          fontWeight: isActive ? 600 : 500,
+                        }}
+                      />
+                      {item.hasIndicator && (
+                        <SidebarTimerIndicator
+                          isRunning={timer.isRunning}
+                          sessionType={timer.sessionType}
+                          profileColor={selectedProfile.color}
+                        />
+                      )}
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+            </List>
+          </Box>
         ))}
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("timer")}
-            selected={currentView === "timer"}
+      </Box>
+
+      {/* User Profile at Bottom */}
+      <Box sx={{ p: 2, borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            p: 1.5,
+            borderRadius: 2,
+            backgroundColor: alpha(theme.palette.primary.main, 0.04),
+            mb: 1,
+          }}
+        >
+          <Box
             sx={{
-              borderRadius: 2,
-              mb: 0.5,
-              '&.Mui-selected': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                color: theme.palette.primary.main,
-                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
-                '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-              },
-              '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              backgroundColor: theme.palette.primary.main,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.875rem',
             }}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <TimerIcon />
-            </ListItemIcon>
-            <ListItemText primary="Timer" primaryTypographyProps={{ fontWeight: 500 }} />
-            <SidebarTimerIndicator
-              isRunning={timer.isRunning}
-              sessionType={timer.sessionType}
-              profileColor={selectedProfile.color}
-            />
-          </ListItemButton>
-        </ListItem>
-        {[
-          { view: "analytics", icon: <AnalyticsIcon />, label: "Analytics" },
-          { view: "goals", icon: <GoalsIcon />, label: "Goals" },
-          { view: "badges", icon: <BadgesIcon />, label: "Badges" },
-        ].map(({ view, icon, label }) => (
-          <ListItem key={view} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(view as any)}
-              selected={currentView === view}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                '&.Mui-selected': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                  color: theme.palette.primary.main,
-                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
-                  '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-                },
-                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
-              <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider sx={{ my: 1.5, borderColor: alpha(theme.palette.primary.main, 0.1) }} />
-      <List sx={{ px: 1.5, pb: 2 }}>
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            onClick={() => handleMenuItemClick("settings")}
-            selected={currentView === "settings"}
-            sx={{
-              borderRadius: 2,
-              mb: 0.5,
-              '&.Mui-selected': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                color: theme.palette.primary.main,
-                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.18) },
-                '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-              },
-              '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Settings" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={logout}
-            sx={{
-              borderRadius: 2,
-              '&:hover': {
-                backgroundColor: alpha('#EF4444', 0.08),
-                color: '#EF4444',
-                '& .MuiListItemIcon-root': { color: '#EF4444' },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
-        </ListItem>
-      </List>
+            {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+              {user?.firstName || user?.email || 'User'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.7) }}>
+              {user?.email || 'user@lockin.app'}
+            </Typography>
+          </Box>
+        </Box>
+
+        <ListItemButton
+          onClick={logout}
+          sx={{
+            borderRadius: 2,
+            py: 1,
+            px: 1.5,
+            color: theme.palette.text.secondary,
+            '&:hover': {
+              backgroundColor: alpha('#EF4444', 0.08),
+              color: '#EF4444',
+              '& .MuiListItemIcon-root': { color: '#EF4444' },
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 36, color: alpha(theme.palette.text.secondary, 0.6) }}>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText
+            primary="Logout"
+            primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }}
+          />
+        </ListItemButton>
+      </Box>
     </Box>
   );
 
@@ -435,52 +450,7 @@ const Dashboard: React.FC = () => {
   }, [currentView]);
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <AppBar
-        position="fixed"
-        elevation={0}
-        sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
-          backgroundColor: theme.palette.background.paper,
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-          boxShadow: `0 1px 3px ${alpha(theme.palette.primary.main, 0.05)}`,
-        }}
-      >
-        <Toolbar sx={{ py: 1.5 }}>
-          <IconButton
-            color="primary"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontWeight: 600,
-              color: theme.palette.text.primary,
-            }}
-          >
-            Welcome, {user?.firstName || user?.email || "User"}
-          </Typography>
-
-          <TimerChip
-            isRunning={timer.isRunning}
-            sessionType={timer.sessionType}
-            profileColor={selectedProfile.color}
-            sessionStartedAt={timer.sessionStartedAt}
-            plannedMinutes={timer.plannedMinutes}
-            pausedElapsedMs={timer.pausedElapsedMs || 0}
-            onNavigate={handleTimerNavigate}
-            currentView={currentView}
-          />
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ display: "flex", backgroundColor: theme.palette.background.default, minHeight: '100vh' }}>
       <Box
         component="nav"
         sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
@@ -495,6 +465,8 @@ const Dashboard: React.FC = () => {
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: drawerWidth,
+              backgroundColor: theme.palette.background.paper,
+              borderRight: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
             },
           }}
         >
@@ -508,6 +480,8 @@ const Dashboard: React.FC = () => {
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: drawerWidth,
+              backgroundColor: theme.palette.background.paper,
+              borderRight: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
             },
           }}
           open
@@ -515,14 +489,58 @@ const Dashboard: React.FC = () => {
           {drawer}
         </Drawer>
       </Box>
-      {/*        <TaskLinkingDiagnostic /> */}
+
+      {/* Mobile Menu Button - only visible on mobile */}
+      <IconButton
+        color="primary"
+        onClick={handleDrawerToggle}
+        sx={{
+          position: 'fixed',
+          top: 16,
+          left: 16,
+          zIndex: 1200,
+          display: { xs: 'flex', md: 'none' },
+          backgroundColor: theme.palette.background.paper,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          '&:hover': {
+            backgroundColor: theme.palette.background.paper,
+          },
+        }}
+      >
+        <MenuIcon />
+      </IconButton>
+
+      {/* Timer Chip - fixed position when running */}
+      {timer.sessionStartedAt && currentView !== "timer" && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: { xs: 16, md: 24 },
+            right: { xs: 16, md: 24 },
+            zIndex: 1100,
+          }}
+        >
+          <TimerChip
+            isRunning={timer.isRunning}
+            sessionType={timer.sessionType}
+            profileColor={selectedProfile.color}
+            sessionStartedAt={timer.sessionStartedAt}
+            plannedMinutes={timer.plannedMinutes}
+            pausedElapsedMs={timer.pausedElapsedMs || 0}
+            onNavigate={handleTimerNavigate}
+            currentView={currentView}
+          />
+        </Box>
+      )}
+
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 3, md: 5 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
+          ml: { md: `${drawerWidth}px` },
+          maxWidth: { md: `calc(100vw - ${drawerWidth}px)` },
         }}
       >
         {renderContent}
