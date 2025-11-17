@@ -9,9 +9,9 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 
@@ -25,8 +25,7 @@ public class GoalEventListener {
     private final FocusSessionRepository focusSessionRepository;
     private final TaskRepository taskRepository;
 
-    @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onTaskCompleted(TaskCompletedEvent event) {
         log.debug(
                 "TaskCompletedEvent received for user {} and task {}",
@@ -55,8 +54,7 @@ public class GoalEventListener {
     }
 
 
-    @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onPomodoroCompleted(PomodoroCompletedEvent event) {
         log.debug(
                 "PomodoroCompletedEvent received for user {} and session {}",
@@ -85,8 +83,7 @@ public class GoalEventListener {
         }
     }
 
-    @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onGoalCompleted(GoalCompletedEvent event) {
         log.info(
                 "GoalCompletedEvent received for user {} and goal {}",
