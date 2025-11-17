@@ -48,7 +48,7 @@ import {
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
 import ProductivityInsights from "../components/analytics/ProductivityInsights";
-import CustomTooltip from "../components/analytics/CustomTooltip";
+// import CustomTooltip from "../components/analytics/CustomTooltip"; // UNUSED - removed
 import { exportToCSV } from "../utils/exportToCSV";
 import { useTimer } from "../context/TimerContext";
 import {
@@ -348,9 +348,13 @@ const AnalyticsPage: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {todayAnalytics.pomodorosCompleted} sessions today
-                {todayAnalytics.interruptedSessions > 0 &&
-                  ` (${todayAnalytics.interruptedSessions} interrupted)`}
               </Typography>
+              {todayAnalytics.interruptedSessions > 0 && (
+                <Typography variant="caption" color="warning.main" display="block">
+                  {todayAnalytics.interruptedSessions} interrupted (
+                  {((todayAnalytics.pomodorosCompleted / (todayAnalytics.pomodorosCompleted + todayAnalytics.interruptedSessions)) * 100).toFixed(0)}% completion)
+                </Typography>
+              )}
               {comparisonData && (
                 <Box display="flex" alignItems="center" gap={1}>
                   {getTrendIcon(comparisonData.focusTrend)}

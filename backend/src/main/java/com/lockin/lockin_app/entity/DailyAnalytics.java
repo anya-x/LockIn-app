@@ -33,7 +33,7 @@ public class DailyAnalytics {
     @Builder.Default private Integer tasksCreated = 0;
     @Builder.Default private Integer tasksCompleted = 0;
     @Builder.Default private Integer tasksCompletedFromToday = 0;
-    @Builder.Default private Integer tasksDeleted = 0;
+    // @Builder.Default private Integer tasksDeleted = 0; // UNUSED - always 0, never incremented
     @Builder.Default private Double completionRate = 0.0;
 
     // Pomodoro metrics
@@ -61,7 +61,7 @@ public class DailyAnalytics {
 
     // Burnout indicators
     @Builder.Default private Integer overworkMinutes = 0;
-    @Builder.Default private Integer consecutiveWorkDays = 0;
+    // @Builder.Default private Integer consecutiveWorkDays = 0; // UNUSED - never calculated, always 0
     @Builder.Default private Integer lateNightSessions = 0;
 
     private LocalDateTime createdAt;

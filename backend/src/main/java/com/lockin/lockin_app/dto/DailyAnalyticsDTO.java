@@ -26,6 +26,7 @@ public class DailyAnalyticsDTO {
     private Integer pomodorosCompleted;
     private Integer focusMinutes;
     private Integer breakMinutes;
+    private Integer interruptedSessions;
 
     // Time of day productivity
     private Integer morningFocusMinutes;
@@ -41,7 +42,7 @@ public class DailyAnalyticsDTO {
     // Burnout indicators
     private Integer lateNightSessions;
     private Integer overworkMinutes;
-    private Integer consecutiveWorkDays;
+    // private Integer consecutiveWorkDays; // UNUSED - never calculated
 
     // Eisenhower distribution
     private Integer urgentImportantCount;
@@ -59,6 +60,7 @@ public class DailyAnalyticsDTO {
                 .pomodorosCompleted(analytics.getPomodorosCompleted())
                 .focusMinutes(analytics.getFocusMinutes())
                 .breakMinutes(analytics.getBreakMinutes())
+                .interruptedSessions(analytics.getInterruptedSessions())
                 .morningFocusMinutes(analytics.getMorningFocusMinutes())
                 .afternoonFocusMinutes(analytics.getAfternoonFocusMinutes())
                 .eveningFocusMinutes(analytics.getEveningFocusMinutes())
@@ -68,7 +70,7 @@ public class DailyAnalyticsDTO {
                 .burnoutRiskScore(analytics.getBurnoutRiskScore())
                 .lateNightSessions(analytics.getLateNightSessions())
                 .overworkMinutes(analytics.getOverworkMinutes())
-                .consecutiveWorkDays(analytics.getConsecutiveWorkDays())
+                // .consecutiveWorkDays(analytics.getConsecutiveWorkDays()) // UNUSED
                 .urgentImportantCount(analytics.getUrgentImportantCount())
                 .notUrgentImportantCount(analytics.getNotUrgentImportantCount())
                 .urgentNotImportantCount(analytics.getUrgentNotImportantCount())
