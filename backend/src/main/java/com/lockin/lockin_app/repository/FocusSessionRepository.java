@@ -66,4 +66,6 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             @Param("user") User user,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    long countByUserIdAndCompleted(Long userId, Boolean completed);
 }
