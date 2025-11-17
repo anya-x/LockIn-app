@@ -36,8 +36,8 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
         text: { primary: '#1A237E', secondary: '#5C6BC0' },
       },
       dark: {
-        primary: { main: '#9FA8DA', light: '#C5CAE9', dark: '#7986CB', contrastText: '#000000' },
-        secondary: { main: '#AAB6FE', light: '#C5CAE9', dark: '#9FA8DA', contrastText: '#000000' },
+        primary: { main: '#9FA8DA', light: '#C5CAE9', dark: '#7986CB', contrastText: '#0D1117' },
+        secondary: { main: '#AAB6FE', light: '#C5CAE9', dark: '#9FA8DA', contrastText: '#0D1117' },
         background: { default: '#0D1117', paper: '#161B22' },
         text: { primary: '#E6EDF3', secondary: '#AAB6FE' },
       },
@@ -53,8 +53,8 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
         text: { primary: '#4A2C3D', secondary: '#7A5F71' },
       },
       dark: {
-        primary: { main: '#C4A7B7', light: '#D9C4CF', dark: '#997A8D', contrastText: '#000000' },
-        secondary: { main: '#D9C4CF', light: '#EDDFE6', dark: '#B89CAC', contrastText: '#000000' },
+        primary: { main: '#C4A7B7', light: '#D9C4CF', dark: '#997A8D', contrastText: '#1A0E15' },
+        secondary: { main: '#D9C4CF', light: '#EDDFE6', dark: '#B89CAC', contrastText: '#1A0E15' },
         background: { default: '#1A0E15', paper: '#2E1A28' },
         text: { primary: '#F8E8F1', secondary: '#D9C4CF' },
       },
@@ -64,14 +64,14 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
     name: 'Sage Green',
     palette: {
       light: {
-        primary: { main: '#9CAF88', light: '#C5D5B5', dark: '#7A8F6F', contrastText: '#2D3A2E' },
-        secondary: { main: '#B8C9A8', light: '#D4E3C8', dark: '#9AB187', contrastText: '#2D3A2E' },
+        primary: { main: '#9CAF88', light: '#C5D5B5', dark: '#7A8F6F', contrastText: '#FFFFFF' },
+        secondary: { main: '#B8C9A8', light: '#D4E3C8', dark: '#9AB187', contrastText: '#FFFFFF' },
         background: { default: '#F8FAF6', paper: '#FFFFFF' },
         text: { primary: '#2D3A2E', secondary: '#5A6C5B' },
       },
       dark: {
-        primary: { main: '#B8C9A8', light: '#D4E3C8', dark: '#9CAF88', contrastText: '#000000' },
-        secondary: { main: '#C5D5B5', light: '#E0EAD5', dark: '#B8C9A8', contrastText: '#000000' },
+        primary: { main: '#B8C9A8', light: '#D4E3C8', dark: '#9CAF88', contrastText: '#1A261A' },
+        secondary: { main: '#C5D5B5', light: '#E0EAD5', dark: '#B8C9A8', contrastText: '#1A261A' },
         background: { default: '#141A14', paper: '#1E261E' },
         text: { primary: '#E8F0E8', secondary: '#C5D5B5' },
       },
@@ -108,7 +108,7 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: isDark ? '#0A0E14' : '#FAFBFC',
+            backgroundColor: paletteConfig.background.default,
           },
         },
       },
