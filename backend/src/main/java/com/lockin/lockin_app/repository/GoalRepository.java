@@ -20,5 +20,7 @@ public interface GoalRepository extends JpaRepository<Goal, Long> {
     List<Goal> findByUserIdAndCompletedOrderByCreatedAtDesc(Long userId, Boolean completed);
 
     List<Goal> findByUserIdAndTypeOrderByCreatedAtDesc(Long userId, GoalType type);
-    
+
+    long countByUserIdAndCompleted(Long userId, Boolean completed);
+
 }

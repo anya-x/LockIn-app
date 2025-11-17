@@ -30,6 +30,8 @@ public class BadgeService {
     private final UserRepository userRepository;
     private final FocusSessionRepository focusSessionRepository;
     private final AnalyticsCalculationService analyticsService;
+    private final com.lockin.lockin_app.repository.TaskRepository taskRepository;
+    private final com.lockin.lockin_app.repository.GoalRepository goalRepository;
 
     @Transactional(readOnly = true)
     public List<BadgeDTO> getUserBadges(Long userId) {
@@ -45,28 +47,39 @@ public class BadgeService {
 
         List<BadgeDTO> newBadges = new ArrayList<>();
 
-        // Check each badge type
-        if (checkPomodoro100(userId)) {
-            BadgeDTO badge = awardBadge(userId, BadgeType.POMODORO_100);
-            if (badge != null) newBadges.add(badge);
-        }
+        // Easy badges (check these first for quick wins)
+        checkAndAward(userId, BadgeType.FIRST_STEPS, this::checkFirstSteps, newBadges);
+        checkAndAward(userId, BadgeType.TASK_TERMINATOR, this::checkTaskTerminator, newBadges);
+        checkAndAward(userId, BadgeType.POMODORO_100, this::checkPomodoro100, newBadges);
 
-        if (checkWeekWarrior(userId)) {
-            BadgeDTO badge = awardBadge(userId, BadgeType.WEEK_WARRIOR);
-            if (badge != null) newBadges.add(badge);
-        }
+        // Medium badges
+        checkAndAward(userId, BadgeType.WEEK_WARRIOR, this::checkWeekWarrior, newBadges);
+        checkAndAward(userId, BadgeType.DEEP_WORK_MASTER, this::checkDeepWorkMaster, newBadges);
+        checkAndAward(userId, BadgeType.FLOW_STATE, this::checkFlowState, newBadges);
+        checkAndAward(userId, BadgeType.GOAL_CRUSHER, this::checkGoalCrusher, newBadges);
+        checkAndAward(userId, BadgeType.EARLY_BIRD, this::checkEarlyBird, newBadges);
 
-        if (checkDeepWorkMaster(userId)) {
-            BadgeDTO badge = awardBadge(userId, BadgeType.DEEP_WORK_MASTER);
-            if (badge != null) newBadges.add(badge);
-        }
-
-        if (checkZenMode(userId)) {
-            BadgeDTO badge = awardBadge(userId, BadgeType.ZEN_MODE);
-            if (badge != null) newBadges.add(badge);
-        }
+        // Hard badges (expensive checks - only if not already earned)
+        checkAndAward(userId, BadgeType.ZEN_MODE, this::checkZenMode, newBadges);
+        checkAndAward(userId, BadgeType.MONTH_MARATHONER, this::checkMonthMarathoner, newBadges);
+        checkAndAward(userId, BadgeType.POMODORO_500, this::checkPomodoro500, newBadges);
+        checkAndAward(userId, BadgeType.SUSTAINABLE_PACE, this::checkSustainablePace, newBadges);
 
         return newBadges;
+    }
+
+    private void checkAndAward(Long userId, BadgeType badgeType,
+                                java.util.function.Function<Long, Boolean> checker,
+                                List<BadgeDTO> newBadges) {
+        // Skip if already earned
+        if (badgeRepository.existsByUserIdAndBadgeType(userId, badgeType)) {
+            return;
+        }
+
+        if (checker.apply(userId)) {
+            BadgeDTO badge = awardBadge(userId, badgeType);
+            if (badge != null) newBadges.add(badge);
+        }
     }
 
     private boolean checkPomodoro100(Long userId) {
@@ -116,6 +129,87 @@ public class BadgeService {
 
             // Burnout score should be low (< 40 out of 100)
             if (analytics.getBurnoutRiskScore() >= 40) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Easy badge checks
+    private boolean checkFirstSteps(Long userId) {
+        long completedTasks = taskRepository.countByUserIdAndStatus(
+                userId, com.lockin.lockin_app.entity.TaskStatus.DONE);
+        return completedTasks >= 1;
+    }
+
+    private boolean checkTaskTerminator(Long userId) {
+        long completedTasks = taskRepository.countByUserIdAndStatus(
+                userId, com.lockin.lockin_app.entity.TaskStatus.DONE);
+        return completedTasks >= 100;
+    }
+
+    private boolean checkPomodoro500(Long userId) {
+        long totalSessions = focusSessionRepository.countByUserIdAndCompleted(userId, true);
+        return totalSessions >= 500;
+    }
+
+    // Medium badge checks
+    private boolean checkFlowState(Long userId) {
+        LocalDate today = LocalDate.now();
+        DailyAnalyticsDTO analytics = analyticsService.calculateDailyAnalytics(userId, today);
+        // 5+ hours = 300+ minutes
+        return analytics.getFocusMinutes() >= 300;
+    }
+
+    private boolean checkGoalCrusher(Long userId) {
+        long completedGoals = goalRepository.countByUserIdAndCompleted(userId, true);
+        return completedGoals >= 10;
+    }
+
+    private boolean checkEarlyBird(Long userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate weekAgo = today.minusDays(6);
+
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = weekAgo.plusDays(i);
+            DailyAnalyticsDTO analytics = analyticsService.calculateDailyAnalytics(userId, date);
+
+            // Check if morning focus (before 8 AM) was significant
+            // Morning is 00:00 - 11:59, so we check if morning had activity
+            if (analytics.getMorningFocusMinutes() < 30) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Hard badge checks
+    private boolean checkMonthMarathoner(Long userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate monthAgo = today.minusDays(29);
+
+        for (int i = 0; i < 30; i++) {
+            LocalDate date = monthAgo.plusDays(i);
+            DailyAnalyticsDTO analytics = analyticsService.calculateDailyAnalytics(userId, date);
+
+            // Not productive if less than 30 min focus OR less than 1 task completed
+            if (analytics.getFocusMinutes() < 30 && analytics.getTasksCompleted() < 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean checkSustainablePace(Long userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate twoWeeksAgo = today.minusDays(13);
+
+        for (int i = 0; i < 14; i++) {
+            LocalDate date = twoWeeksAgo.plusDays(i);
+            DailyAnalyticsDTO analytics = analyticsService.calculateDailyAnalytics(userId, date);
+
+            // 5-6 hours = 300-360 minutes
+            if (analytics.getFocusMinutes() < 240 || analytics.getFocusMinutes() > 360) {
                 return false;
             }
         }
