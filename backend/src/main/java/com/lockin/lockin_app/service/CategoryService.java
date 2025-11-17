@@ -166,6 +166,30 @@ public class CategoryService {
         return CategoryResponseDTO.fromEntity(category, taskCount);
     }
 
+    /**
+     * Gets category entity for user (used internally by other services)
+     *
+     * @param categoryId category id
+     * @param userId user id for ownership validation
+     * @return Category entity
+     * @throws ResourceNotFoundException if category not found
+     * @throws UnauthorizedException if user doesn't own the category
+     */
+    @Transactional(readOnly = true)
+    public Category getCategoryEntityForUser(Long categoryId, Long userId) {
+        log.debug("Getting category entity: {} for user: {}", categoryId, userId);
+
+        Category category =
+                categoryRepository
+                        .findById(categoryId)
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Category", "id", categoryId));
+
+        validateCategoryOwnership(category, userId);
+
+        return category;
+    }
+
     /** validates category ownership */
     private void validateCategoryOwnership(Category category, Long userId) {
         if (!category.getUser().getId().equals(userId)) {
