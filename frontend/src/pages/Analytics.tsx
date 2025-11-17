@@ -41,6 +41,7 @@ import {
 } from "recharts";
 import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
+import ProductivityInsights from "../components/analytics/ProductivityInsights";
 import CustomTooltip from "../components/analytics/CustomTooltip";
 import { exportToCSV } from "../utils/exportToCSV";
 import { useTimer } from "../context/TimerContext";
@@ -637,6 +638,9 @@ const AnalyticsPage: React.FC = () => {
           </Paper>
         </>
       )}
+
+      {/* Productivity Insights */}
+      <ProductivityInsights />
 
       {/* Weekly Report */}
       <WeeklyReport />

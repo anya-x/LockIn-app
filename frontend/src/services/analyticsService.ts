@@ -45,6 +45,15 @@ export interface ComparisonData {
   burnoutTrend: "up" | "down" | "stable";
 }
 
+export interface ProductivityInsights {
+  mostProductiveDay: string;
+  bestTimeOfDay: string;
+  averageSessionLength: number;
+  completionRateTrend: number;
+  averageProductivityScore: number;
+  totalDaysAnalyzed: number;
+}
+
 export const analyticsService = {
   getTodayAnalytics: async (): Promise<Analytics> => {
     const response = await api.get<Analytics>("/analytics/today");
@@ -75,5 +84,10 @@ export const analyticsService = {
 
   refreshCache: async (): Promise<void> => {
     await api.post("/analytics/refresh");
+  },
+
+  getProductivityInsights: async (): Promise<ProductivityInsights> => {
+    const response = await api.get<ProductivityInsights>("/analytics/insights");
+    return response.data;
   },
 };
