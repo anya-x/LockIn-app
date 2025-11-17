@@ -352,13 +352,13 @@ public class AnalyticsCalculationService {
     }
 
     /**
-     * Gets aggregated analytics for a date range.
-     * Returns TOTALS for counts (tasks, pomodoros, minutes) and AVERAGES for scores (productivity, burnout).
+     * Calculates daily averages for a date range.
+     * Returns the average values per day across all metrics.
      *
      * @param userId user to calculate analytics for
      * @param startDate start of period
      * @param endDate end of period
-     * @return aggregated analytics for the period
+     * @return daily average analytics for the period
      */
     @Cacheable(value = "periodAnalytics", key = "#userId + '_' + #startDate + '_' + #endDate")
     public DailyAnalyticsDTO getAverageForPeriod(
@@ -396,14 +396,13 @@ public class AnalyticsCalculationService {
         }
 
         if (dayCount > 0) {
-            // Use totals for counts (tasks, pomodoros, minutes)
-            average.setTasksCreated(totalTasksCreated);
-            average.setTasksCompleted(totalTasksCompleted);
-            average.setTasksCompletedFromToday(totalTasksCompletedFromToday);
-            average.setPomodorosCompleted(totalPomodoros);
-            average.setFocusMinutes(totalFocusMinutes);
-            average.setBreakMinutes(totalBreakMinutes);
-            // Use averages for scores
+            // Return daily averages for all metrics
+            average.setTasksCreated(totalTasksCreated / dayCount);
+            average.setTasksCompleted(totalTasksCompleted / dayCount);
+            average.setTasksCompletedFromToday(totalTasksCompletedFromToday / dayCount);
+            average.setPomodorosCompleted(totalPomodoros / dayCount);
+            average.setFocusMinutes(totalFocusMinutes / dayCount);
+            average.setBreakMinutes(totalBreakMinutes / dayCount);
             average.setProductivityScore(totalProductivity / dayCount);
             average.setBurnoutRiskScore(totalBurnout / dayCount);
             average.setCompletionRate(

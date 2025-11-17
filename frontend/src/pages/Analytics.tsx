@@ -303,11 +303,11 @@ const AnalyticsPage: React.FC = () => {
               <Box display="flex" alignItems="center" gap={1} mb={1}>
                 <CheckCircle color="success" fontSize="small" />
                 <Typography variant="subtitle2" color="text.secondary">
-                  Tasks Completed
+                  Daily Avg Tasks
                 </Typography>
               </Box>
               <Typography variant="h3">
-                {comparisonData?.current.tasksCompleted || 0}
+                {comparisonData?.current.tasksCompleted.toFixed(1) || 0}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {todayAnalytics.tasksCompletedFromToday}/
@@ -338,7 +338,7 @@ const AnalyticsPage: React.FC = () => {
               <Box display="flex" alignItems="center" gap={1} mb={1}>
                 <Timer color="primary" fontSize="small" />
                 <Typography variant="subtitle2" color="text.secondary">
-                  Focus Time
+                  Daily Avg Focus
                 </Typography>
               </Box>
               <Typography variant="h3">
@@ -375,14 +375,14 @@ const AnalyticsPage: React.FC = () => {
               <Box display="flex" alignItems="center" gap={1} mb={1}>
                 <Speed color="info" fontSize="small" />
                 <Typography variant="subtitle2" color="text.secondary">
-                  Productivity Score
+                  Avg Productivity
                 </Typography>
               </Box>
               <Typography variant="h3">
                 {comparisonData?.current.productivityScore.toFixed(0) || 0}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Focus: {todayAnalytics.focusScore.toFixed(0)}/100
+                Focus: {todayAnalytics.focusScore.toFixed(0)}/100 today
               </Typography>
               {comparisonData && (
                 <Box display="flex" alignItems="center" gap={1}>
@@ -408,7 +408,7 @@ const AnalyticsPage: React.FC = () => {
               <Box display="flex" alignItems="center" gap={1} mb={1}>
                 <WarningAmber color="warning" fontSize="small" />
                 <Typography variant="subtitle2" color="text.secondary">
-                  Burnout Risk
+                  Avg Burnout Risk
                 </Typography>
               </Box>
               <Typography variant="h3">
