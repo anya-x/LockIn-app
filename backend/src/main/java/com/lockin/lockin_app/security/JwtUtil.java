@@ -1,9 +1,13 @@
 package com.lockin.lockin_app.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,8 +62,20 @@ public class JwtUtil {
             String email = extractClaim(token, Claims::getSubject);
             log.debug("Extracted email from token");
             return email;
-        } catch (Exception e) {
-            log.error("Failed to extract email from token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token is expired: {}", e.getMessage());
+            throw e;
+        } catch (MalformedJwtException e) {
+            log.warn("JWT token is malformed: {}", e.getMessage());
+            throw e;
+        } catch (SignatureException e) {
+            log.warn("JWT signature validation failed: {}", e.getMessage());
+            throw e;
+        } catch (UnsupportedJwtException e) {
+            log.warn("JWT token is unsupported: {}", e.getMessage());
+            throw e;
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT claims string is empty: {}", e.getMessage());
             throw e;
         }
     }
@@ -94,8 +110,20 @@ public class JwtUtil {
             boolean isValid = tokenEmail.equals(email) && !isTokenExpired(token);
             log.debug("Token validation for {}: {}", email, isValid ? "SUCCESS" : "FAILED");
             return isValid;
-        } catch (Exception e) {
-            log.error("Token validation error for {}: {}", email, e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.warn("Token validation failed for {}: Token expired", email);
+            return false;
+        } catch (MalformedJwtException e) {
+            log.warn("Token validation failed for {}: Malformed token", email);
+            return false;
+        } catch (SignatureException e) {
+            log.warn("Token validation failed for {}: Invalid signature", email);
+            return false;
+        } catch (UnsupportedJwtException e) {
+            log.warn("Token validation failed for {}: Unsupported token", email);
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.warn("Token validation failed for {}: Empty claims", email);
             return false;
         }
     }

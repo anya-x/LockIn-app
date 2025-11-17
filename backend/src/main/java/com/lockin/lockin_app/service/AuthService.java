@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.AuthResponseDTO;
 import com.lockin.lockin_app.dto.LoginRequestDTO;
 import com.lockin.lockin_app.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ConflictException;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.UserRepository;
 import com.lockin.lockin_app.security.JwtUtil;
@@ -34,12 +35,12 @@ public class AuthService {
      *
      * @param request user registration details
      * @return authentication response with token and user infos
-     * @throws ResourceNotFoundException if email already exists
+     * @throws ConflictException if email already exists
      */
     @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
         if (userService.existsByEmail(request.getEmail())) {
-            throw new ResourceNotFoundException("Email already registered: " + request.getEmail());
+            throw new ConflictException("Email already registered: " + request.getEmail());
         }
 
         User user = new User();

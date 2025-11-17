@@ -2,6 +2,7 @@ package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.entity.*;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
@@ -51,7 +52,7 @@ public class AnalyticsCalculationService {
         User user =
                 userRepository
                         .findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         log.info(
                 "Calculating analytics for {} {} on {}",
@@ -367,7 +368,7 @@ public class AnalyticsCalculationService {
         User user =
                 userRepository
                         .findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         DailyAnalytics average = new DailyAnalytics();
         average.setUser(user);

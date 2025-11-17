@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class StreakService {
     @Transactional
     public void updateStreak(Long userId) {
         User user = userRepository.findById(userId)
-                                  .orElseThrow(() -> new RuntimeException("User not found"));
+                                  .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         LocalDate today = LocalDate.now();
         LocalDate lastActivity = user.getLastActivityDate();
@@ -77,7 +78,7 @@ public class StreakService {
 
     public StreakStats getStreakStats(Long userId) {
         User user = userRepository.findById(userId)
-                                  .orElseThrow(() -> new RuntimeException("User not found"));
+                                  .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         LocalDate today = LocalDate.now();
         LocalDate lastActivity = user.getLastActivityDate();

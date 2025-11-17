@@ -141,6 +141,42 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBadRequest(
+            BadRequestException ex, WebRequest request) {
+
+        log.warn("Bad request: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponseDTO> handleConflict(
+            ConflictException ex, WebRequest request) {
+
+        log.warn("Resource conflict: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.CONFLICT.value())
+                        .error(HttpStatus.CONFLICT.getReasonPhrase())
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }

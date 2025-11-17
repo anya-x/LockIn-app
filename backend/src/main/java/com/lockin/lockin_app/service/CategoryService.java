@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.CategoryRequestDTO;
 import com.lockin.lockin_app.dto.CategoryResponseDTO;
 import com.lockin.lockin_app.entity.Category;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.exception.ConflictException;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.repository.CategoryRepository;
@@ -66,7 +67,7 @@ public class CategoryService {
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (categoryRepository.existsByUserIdAndName(userId, request.getName())) {
-            throw new ResourceNotFoundException(
+            throw new ConflictException(
                     "Category with name '" + request.getName() + "' already exists");
         }
 
@@ -110,7 +111,7 @@ public class CategoryService {
 
         if (!category.getName().equals(request.getName())
                 && categoryRepository.existsByUserIdAndName(userId, request.getName())) {
-            throw new ResourceNotFoundException(
+            throw new ConflictException(
                     "Category with name '" + request.getName() + "' already exists");
         }
 

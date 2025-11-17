@@ -2,6 +2,11 @@ package com.lockin.lockin_app.security;
 
 import com.lockin.lockin_app.service.CustomUserDetailsService;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -71,8 +76,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.debug("user already authentificated");
                 }
             }
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token expired: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            log.warn("Malformed JWT token: {}", e.getMessage());
+        } catch (SignatureException e) {
+            log.warn("Invalid JWT signature: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            log.warn("Unsupported JWT token: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT claims string is empty: {}", e.getMessage());
         } catch (Exception e) {
-            log.error("JWT authentification error:", e);
+            log.error("Unexpected JWT authentication error:", e);
         }
 
         filterChain.doFilter(request, response);
