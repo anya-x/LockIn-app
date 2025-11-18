@@ -31,6 +31,15 @@ export interface TaskBreakdownRequest {
 }
 
 /**
+ * Result of AI description enhancement.
+ */
+export interface EnhancementResult {
+  enhancedDescription: string;
+  tokensUsed: number;
+  costUSD: number;
+}
+
+/**
  * AI service for task breakdown and other AI features.
  *
  * CURRENT LIMITATIONS:
@@ -70,6 +79,30 @@ export const aiService = {
       {
         title,
         description: description || "",
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Enhance a task description using AI.
+   *
+   * Takes a vague or minimal description and expands it into
+   * a clear, actionable description.
+   *
+   * @param title Task title for context
+   * @param description Current description to enhance
+   * @returns Enhanced description with usage stats
+   */
+  enhanceDescription: async (
+    title: string,
+    description: string
+  ): Promise<EnhancementResult> => {
+    const response = await api.post<EnhancementResult>(
+      "/ai/enhance-description",
+      {
+        title,
+        description,
       }
     );
     return response.data;
