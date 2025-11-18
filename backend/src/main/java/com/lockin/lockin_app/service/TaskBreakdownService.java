@@ -161,7 +161,7 @@ public class TaskBreakdownService {
                 """,
                 title,
                 description != null && !description.trim().isEmpty()
-                        ? description
+                        ? description.trim()
                         : "No additional details provided"
         );
 

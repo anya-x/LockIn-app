@@ -212,25 +212,25 @@ public class DailyBriefingService {
 
         if (!q1.isEmpty()) {
             summary.append("URGENT & IMPORTANT (Do First):\n");
-            q1.forEach(t -> summary.append("- ").append(t.getTitle()).append("\n"));
+            q1.forEach(t -> summary.append("- ").append(t.getTitle() != null ? t.getTitle() : "Untitled").append("\n"));
             summary.append("\n");
         }
 
         if (!q2.isEmpty()) {
             summary.append("IMPORTANT (Schedule):\n");
-            q2.forEach(t -> summary.append("- ").append(t.getTitle()).append("\n"));
+            q2.forEach(t -> summary.append("- ").append(t.getTitle() != null ? t.getTitle() : "Untitled").append("\n"));
             summary.append("\n");
         }
 
         if (!q3.isEmpty()) {
             summary.append("URGENT (Delegate if possible):\n");
-            q3.forEach(t -> summary.append("- ").append(t.getTitle()).append("\n"));
+            q3.forEach(t -> summary.append("- ").append(t.getTitle() != null ? t.getTitle() : "Untitled").append("\n"));
             summary.append("\n");
         }
 
         if (!q4.isEmpty()) {
             summary.append("OTHER:\n");
-            q4.forEach(t -> summary.append("- ").append(t.getTitle()).append("\n"));
+            q4.forEach(t -> summary.append("- ").append(t.getTitle() != null ? t.getTitle() : "Untitled").append("\n"));
         }
 
         return summary.toString();
