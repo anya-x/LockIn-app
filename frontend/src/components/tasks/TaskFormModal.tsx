@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import type { Task } from "../../types/task";
 import CategorySelector from "../categories/CategorySelector";
+import DescriptionEnhancer from "./DescriptionEnhancer";
 
 interface TaskFormModalProps {
   open: boolean;
@@ -122,6 +123,17 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               rows={3}
               fullWidth
             />
+
+            {/* AI Description Enhancement */}
+            {formData.title && (
+              <DescriptionEnhancer
+                title={formData.title}
+                description={formData.description || ""}
+                onDescriptionChange={(enhanced) =>
+                  setFormData({ ...formData, description: enhanced })
+                }
+              />
+            )}
 
             <CategorySelector
               value={formData.categoryId || null}
