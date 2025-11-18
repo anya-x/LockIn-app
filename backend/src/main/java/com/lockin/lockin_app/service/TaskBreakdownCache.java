@@ -27,20 +27,19 @@ public class TaskBreakdownCache {
     /**
      * Get cached breakdown result.
      *
-     * BUG: Cache key is just title+description without userId!
-     *
+     * @param userId User ID
      * @param title Task title
      * @param description Task description
      * @return Cached result or null if not found
      */
-    public TaskBreakdownResultDTO get(String title, String description) {
-        String key = generateCacheKey(title, description);
+    public TaskBreakdownResultDTO get(Long userId, String title, String description) {
+        String key = generateCacheKey(userId, title, description);
         TaskBreakdownResultDTO result = cache.get(key);
 
         if (result != null) {
-            log.info("Cache HIT for task: {}", title);
+            log.info("Cache HIT for user {} task: {}", userId, title);
         } else {
-            log.debug("Cache MISS for task: {}", title);
+            log.debug("Cache MISS for user {} task: {}", userId, title);
         }
 
         return result;
@@ -49,14 +48,15 @@ public class TaskBreakdownCache {
     /**
      * Store breakdown result in cache.
      *
+     * @param userId User ID
      * @param title Task title
      * @param description Task description
      * @param result Breakdown result
      */
-    public void put(String title, String description, TaskBreakdownResultDTO result) {
-        String key = generateCacheKey(title, description);
+    public void put(Long userId, String title, String description, TaskBreakdownResultDTO result) {
+        String key = generateCacheKey(userId, title, description);
         cache.put(key, result);
-        log.info("Cached breakdown for task: {} (cache size: {})", title, cache.size());
+        log.info("Cached breakdown for user {} task: {} (cache size: {})", userId, title, cache.size());
     }
 
     /**
@@ -75,14 +75,11 @@ public class TaskBreakdownCache {
     }
 
     /**
-     * Generate cache key from task title and description.
+     * Generate cache key from userId, task title and description.
      *
-     * BUG: Doesn't include userId! All users share same cache.
-     * If two users have tasks with same title/description,
-     * they'll get each other's cached results.
+     * FIXED: Now includes userId to prevent cache leakage between users.
      */
-    private String generateCacheKey(String title, String description) {
-        // BUG: Should be: userId + ":" + title + ":" + description
-        return title + ":" + (description != null ? description : "");
+    private String generateCacheKey(Long userId, String title, String description) {
+        return userId + ":" + title + ":" + (description != null ? description : "");
     }
 }

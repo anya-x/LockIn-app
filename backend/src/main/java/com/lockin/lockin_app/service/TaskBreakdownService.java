@@ -77,6 +77,13 @@ public class TaskBreakdownService {
             throw new IllegalArgumentException("Task title cannot be empty");
         }
 
+        // Check cache first
+        TaskBreakdownResultDTO cached = cache.get(userId, title, description);
+        if (cached != null) {
+            log.info("Returning cached result for user {} task: {}", userId, title);
+            return cached;
+        }
+
         // Call Claude API
         TaskBreakdownResultDTO result = breakdownTask(title, description);
 
@@ -95,6 +102,9 @@ public class TaskBreakdownService {
         aiUsageRepository.save(usage);
 
         log.info("Saved AI usage: {} tokens, ${}", usage.getTokensUsed(), usage.getCostUSD());
+
+        // Cache the result
+        cache.put(userId, title, description, result);
 
         return result;
     }
@@ -118,13 +128,6 @@ public class TaskBreakdownService {
         // Validation
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Task title cannot be empty");
-        }
-
-        // Check cache first
-        TaskBreakdownResultDTO cached = cache.get(title, description);
-        if (cached != null) {
-            log.info("Returning cached result for task: {}", title);
-            return cached;
         }
 
         // IMPROVED PROMPT v3 - Explicitly request JSON with reasoning
@@ -195,18 +198,13 @@ public class TaskBreakdownService {
 
             log.info("Successfully broke down task into {} subtasks", subtasks.size());
 
-            TaskBreakdownResultDTO result = new TaskBreakdownResultDTO(
+            return new TaskBreakdownResultDTO(
                     null, // originalTask - will be set by caller if needed
                     subtasks,
                     response.getTotalTokens(),
                     response.getEstimatedCost(),
                     reasoning
             );
-
-            // Store in cache for future requests
-            cache.put(title, description, result);
-
-            return result;
 
         } catch (Exception e) {
             log.error("Failed to break down task: {}", e.getMessage());
