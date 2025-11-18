@@ -6,7 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.dto.SubtaskSuggestionDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
+import com.lockin.lockin_app.entity.AIUsage;
 import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.repository.AIUsageRepository;
+import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +31,8 @@ import java.util.List;
 public class TaskBreakdownService {
 
     private final ClaudeAPIClientService claudeAPIClientService;
+    private final AIUsageRepository aiUsageRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -50,6 +56,44 @@ public class TaskBreakdownService {
 
         // Set the original task reference
         result.setOriginalTask(task);
+
+        return result;
+    }
+
+    /**
+     * Break down a task by title and description into subtasks using AI WITH usage tracking.
+     *
+     * @param title Task title
+     * @param description Task description (can be null/empty)
+     * @param userId User ID for usage tracking
+     * @return Breakdown result with suggested subtasks
+     */
+    public TaskBreakdownResultDTO breakdownTask(String title, String description, Long userId) {
+        log.info("Breaking down task: {} for user: {}", title, userId);
+
+        // Validation
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Task title cannot be empty");
+        }
+
+        // Call Claude API
+        TaskBreakdownResultDTO result = breakdownTask(title, description);
+
+        // Save usage record
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        AIUsage usage = new AIUsage();
+        usage.setUser(user);
+        usage.setFeatureType("BREAKDOWN");
+        usage.setTokensUsed(result.getTokensUsed());
+        usage.setCostUSD(result.getCostUSD());
+        usage.setRequestDetails(String.format("{\"title\":\"%s\"}", title.replace("\"", "\\\"")));
+        // TODO: Save response details
+
+        aiUsageRepository.save(usage);
+
+        log.info("Saved AI usage: {} tokens, ${}", usage.getTokensUsed(), usage.getCostUSD());
 
         return result;
     }

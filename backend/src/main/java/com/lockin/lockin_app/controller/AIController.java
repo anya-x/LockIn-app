@@ -69,7 +69,12 @@ public class AIController {
         // TODO: Add rate limiting (10 requests per day per user)
 
         try {
-            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(task);
+            // Use the new overload that tracks usage
+            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(
+                    task.getTitle(),
+                    task.getDescription(),
+                    userId
+            );
 
             log.info("AI breakdown successful: {} subtasks, ${} cost",
                     result.getSubtasks().size(),
@@ -129,7 +134,12 @@ public class AIController {
         // TODO: Share rate limit counter with breakdown endpoint
 
         try {
-            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(tempTask);
+            // Use the new overload that tracks usage
+            TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(
+                    request.getTitle(),
+                    request.getDescription(),
+                    userId
+            );
 
             log.info("AI breakdown preview successful: {} subtasks, ${} cost",
                     result.getSubtasks().size(),
