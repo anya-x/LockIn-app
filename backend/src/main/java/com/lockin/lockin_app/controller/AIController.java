@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
 import com.lockin.lockin_app.service.TaskService;
 import com.lockin.lockin_app.service.UserService;
@@ -36,6 +37,7 @@ public class AIController {
     private final TaskBreakdownService taskBreakdownService;
     private final TaskService taskService;
     private final UserService userService;
+    private final RateLimitService rateLimitService;
 
     /**
      * Break down an existing task into subtasks using AI.
@@ -62,11 +64,11 @@ public class AIController {
         // Get userId from authenticated user
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
 
+        // Check rate limit before processing
+        rateLimitService.checkRateLimit(userId);
+
         // Get task and verify ownership (throws exception if not found or not owned)
         Task task = taskService.getTaskEntity(taskId, userId);
-
-        // BUG: No rate limiting yet! User could spam this endpoint
-        // TODO: Add rate limiting (10 requests per day per user)
 
         try {
             // Use the new overload that tracks usage
@@ -120,6 +122,9 @@ public class AIController {
         // Get userId from authenticated user
         Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
 
+        // Check rate limit before processing
+        rateLimitService.checkRateLimit(userId);
+
         // Create temporary task object (not saved to DB)
         // This is just for AI processing, won't be persisted
         Task tempTask = new Task();
@@ -129,9 +134,6 @@ public class AIController {
         // Set user reference (needed for potential future features)
         User user = userService.getUserById(userId);
         tempTask.setUser(user);
-
-        // BUG: No rate limiting here either!
-        // TODO: Share rate limit counter with breakdown endpoint
 
         try {
             // Use the new overload that tracks usage
