@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.service.DailyBriefingService;
 import com.lockin.lockin_app.service.DescriptionEnhancementService;
 import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
@@ -40,6 +41,7 @@ public class AIController {
     private final UserService userService;
     private final RateLimitService rateLimitService;
     private final DescriptionEnhancementService descriptionEnhancementService;
+    private final DailyBriefingService dailyBriefingService;
 
     /**
      * Break down an existing task into subtasks using AI.
@@ -207,6 +209,54 @@ public class AIController {
         } catch (Exception e) {
             log.error("AI description enhancement failed: {}", e.getMessage());
             throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get daily briefing for user's tasks.
+     *
+     * GET /api/ai/daily-briefing
+     *
+     * Generates an AI-powered summary of the day's tasks:
+     * - Motivational summary
+     * - Task counts by Eisenhower Matrix quadrants
+     * - Top 3 priority recommendations
+     * - Time management insights
+     *
+     * BUG: Generates on every request! Will waste API credits.
+     * Need to cache briefing per day.
+     *
+     * @param userDetails Authenticated user
+     * @return Daily briefing with task summary and priorities
+     */
+    @GetMapping("/daily-briefing")
+    public ResponseEntity<DailyBriefingService.BriefingResult> getDailyBriefing(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("Daily briefing requested by user: {}", userDetails.getUsername());
+
+        // Get userId from authenticated user
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // Check rate limit
+        rateLimitService.checkRateLimit(userId);
+
+        // BUG: Generates new briefing on every page load!
+        // Should cache per day to avoid wasting API credits
+
+        try {
+            DailyBriefingService.BriefingResult result =
+                    dailyBriefingService.generateDailyBriefing(userId);
+
+            log.info("Daily briefing generated: {} tokens, ${} cost",
+                    result.tokensUsed(),
+                    String.format("%.4f", result.costUSD()));
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("Daily briefing generation failed: {}", e.getMessage());
+            throw new RuntimeException("Daily briefing generation failed: " + e.getMessage(), e);
         }
     }
 }
