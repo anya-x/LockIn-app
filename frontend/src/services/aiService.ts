@@ -9,6 +9,13 @@ export interface SubtaskSuggestion {
   description: string;
   estimatedMinutes: number;
   priority: "HIGH" | "MEDIUM" | "LOW";
+  // Derived from priority for display:
+  // HIGH = urgent + important
+  // MEDIUM = important only
+  // LOW = urgent only
+  // (neither = no priority set)
+  isUrgent?: boolean;
+  isImportant?: boolean;
 }
 
 /**

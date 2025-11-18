@@ -22,6 +22,8 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AddTaskIcon from "@mui/icons-material/AddTask";
@@ -48,9 +50,15 @@ interface AITaskBreakdownProps {
  * Features:
  * ✅ Edit task titles and descriptions
  * ✅ Adjust estimated minutes
- * ✅ Change priority levels
+ * ✅ Set Eisenhower Matrix flags (Urgent/Important checkboxes)
  * ✅ Remove unwanted subtasks
  * ✅ Real-time total time calculation
+ *
+ * Eisenhower Matrix mapping:
+ * - Urgent + Important = Do First (High Priority)
+ * - Important only = Schedule (Medium Priority)
+ * - Urgent only = Delegate (Low Priority)
+ * - Neither = Eliminate/Later (No Priority)
  *
  * CURRENT LIMITATIONS:
  * - No error retry mechanism
@@ -78,9 +86,15 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   const [editableSubtasks, setEditableSubtasks] = useState<SubtaskSuggestion[]>([]);
 
   // Sync editable subtasks when result changes
+  // Convert priority to isUrgent/isImportant flags
   useEffect(() => {
     if (result?.subtasks) {
-      setEditableSubtasks([...result.subtasks]);
+      const subtasksWithFlags = result.subtasks.map((subtask) => ({
+        ...subtask,
+        isUrgent: subtask.priority === "HIGH" || subtask.priority === "LOW",
+        isImportant: subtask.priority === "HIGH" || subtask.priority === "MEDIUM",
+      }));
+      setEditableSubtasks(subtasksWithFlags);
     }
   }, [result]);
 
@@ -129,6 +143,7 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
    * Create subtasks from edited suggestions.
    *
    * Converts edited subtasks to TaskRequest format and passes to parent.
+   * Uses Eisenhower Matrix flags (isUrgent/isImportant) directly.
    */
   const handleCreateSubtasks = async () => {
     if (editableSubtasks.length === 0) return;
@@ -141,9 +156,8 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
           title: subtask.title,
           description: subtask.description,
           status: "TODO" as const,
-          isUrgent: subtask.priority === "HIGH",
-          isImportant:
-            subtask.priority === "HIGH" || subtask.priority === "MEDIUM",
+          isUrgent: subtask.isUrgent || false,
+          isImportant: subtask.isImportant || false,
           categoryId: task.categoryId,
         })
       );
@@ -327,7 +341,7 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
                     sx={{ mb: 2 }}
                   />
 
-                  <Box display="flex" gap={2}>
+                  <Box display="flex" gap={2} alignItems="center">
                     <TextField
                       type="number"
                       label="Estimated Minutes"
@@ -340,18 +354,32 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
                       InputProps={{ inputProps: { min: 5, max: 480 } }}
                     />
 
-                    <FormControl size="small" sx={{ width: 150 }}>
-                      <InputLabel>Priority</InputLabel>
-                      <Select
-                        value={subtask.priority}
-                        label="Priority"
-                        onChange={(e) => handleUpdateSubtask(index, "priority", e.target.value)}
-                      >
-                        <MenuItem value="HIGH">🔴 High</MenuItem>
-                        <MenuItem value="MEDIUM">🟡 Medium</MenuItem>
-                        <MenuItem value="LOW">🟢 Low</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <Box display="flex" gap={1}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={subtask.isUrgent || false}
+                            onChange={(e) =>
+                              handleUpdateSubtask(index, "isUrgent", e.target.checked)
+                            }
+                            color="error"
+                          />
+                        }
+                        label="Urgent"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={subtask.isImportant || false}
+                            onChange={(e) =>
+                              handleUpdateSubtask(index, "isImportant", e.target.checked)
+                            }
+                            color="warning"
+                          />
+                        }
+                        label="Important"
+                      />
+                    </Box>
                   </Box>
                 </ListItem>
               ))}
