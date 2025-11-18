@@ -40,6 +40,20 @@ export interface EnhancementResult {
 }
 
 /**
+ * Result of daily briefing generation.
+ */
+export interface BriefingResult {
+  summary: string;
+  urgentImportantCount: number;
+  importantCount: number;
+  urgentCount: number;
+  otherCount: number;
+  topPriorities: string[];
+  tokensUsed: number;
+  costUSD: number;
+}
+
+/**
  * AI service for task breakdown and other AI features.
  *
  * CURRENT LIMITATIONS:
@@ -105,6 +119,19 @@ export const aiService = {
         description,
       }
     );
+    return response.data;
+  },
+
+  /**
+   * Get daily briefing for user's tasks.
+   *
+   * Generates an AI-powered summary of the day's tasks with
+   * priority recommendations and time management insights.
+   *
+   * @returns Daily briefing with task summary
+   */
+  getDailyBriefing: async (): Promise<BriefingResult> => {
+    const response = await api.get<BriefingResult>("/ai/daily-briefing");
     return response.data;
   },
 };
