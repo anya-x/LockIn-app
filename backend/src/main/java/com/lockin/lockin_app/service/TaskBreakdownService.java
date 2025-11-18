@@ -33,6 +33,7 @@ public class TaskBreakdownService {
     private final ClaudeAPIClientService claudeAPIClientService;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
+    private final TaskBreakdownCache cache;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -119,6 +120,13 @@ public class TaskBreakdownService {
             throw new IllegalArgumentException("Task title cannot be empty");
         }
 
+        // Check cache first
+        TaskBreakdownResultDTO cached = cache.get(title, description);
+        if (cached != null) {
+            log.info("Returning cached result for task: {}", title);
+            return cached;
+        }
+
         // IMPROVED PROMPT v3 - Explicitly request JSON with reasoning
         String systemPrompt = """
             You are a productivity assistant that breaks down tasks into actionable subtasks.
@@ -187,13 +195,18 @@ public class TaskBreakdownService {
 
             log.info("Successfully broke down task into {} subtasks", subtasks.size());
 
-            return new TaskBreakdownResultDTO(
+            TaskBreakdownResultDTO result = new TaskBreakdownResultDTO(
                     null, // originalTask - will be set by caller if needed
                     subtasks,
                     response.getTotalTokens(),
                     response.getEstimatedCost(),
                     reasoning
             );
+
+            // Store in cache for future requests
+            cache.put(title, description, result);
+
+            return result;
 
         } catch (Exception e) {
             log.error("Failed to break down task: {}", e.getMessage());
