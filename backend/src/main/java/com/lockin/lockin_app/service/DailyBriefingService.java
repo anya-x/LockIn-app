@@ -1,5 +1,6 @@
 package com.lockin.lockin_app.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.entity.AIUsage;
 import com.lockin.lockin_app.entity.Task;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,7 @@ public class DailyBriefingService {
     private final TaskRepository taskRepository;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Generate a daily briefing for the user's tasks.
@@ -38,6 +42,35 @@ public class DailyBriefingService {
      */
     public BriefingResult generateDailyBriefing(Long userId) {
         log.info("Generating daily briefing for user: {}", userId);
+
+        // FIXED: Check cache first - only generate once per day
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+
+        // Find today's briefing in AIUsage
+        List<AIUsage> todayBriefings = aiUsageRepository.findAll().stream()
+                .filter(u -> u.getUser().getId().equals(userId))
+                .filter(u -> "BRIEFING".equals(u.getFeatureType()))
+                .filter(u -> u.getCreatedAt().isAfter(todayStart))
+                .toList();
+
+        if (!todayBriefings.isEmpty()) {
+            AIUsage cachedUsage = todayBriefings.get(0);
+            try {
+                // Parse cached result from responseDetails
+                BriefingResult cached = objectMapper.readValue(
+                        cachedUsage.getResponseDetails(),
+                        BriefingResult.class
+                );
+                log.info("Returning cached briefing from {}", cachedUsage.getCreatedAt());
+                return cached;
+            } catch (Exception e) {
+                log.warn("Failed to parse cached briefing, regenerating: {}", e.getMessage());
+                // Fall through to generate new one
+            }
+        }
 
         // Get all active tasks for the user
         List<Task> tasks = taskRepository.findByUserId(userId);
@@ -127,25 +160,8 @@ public class DailyBriefingService {
                 topPriorities.addAll(additional);
             }
 
-            // Track usage
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            AIUsage usage = new AIUsage();
-            usage.setUser(user);
-            usage.setFeatureType("BRIEFING");
-            usage.setTokensUsed(response.getTotalTokens());
-            usage.setCostUSD(response.getEstimatedCost());
-            usage.setRequestDetails(String.format("{\"taskCount\":%d}", activeTasks.size()));
-
-            aiUsageRepository.save(usage);
-
-            log.info("Daily briefing generated: {} tasks, {} tokens, ${} cost",
-                    activeTasks.size(),
-                    response.getTotalTokens(),
-                    String.format("%.4f", response.getEstimatedCost()));
-
-            return new BriefingResult(
+            // Create result
+            BriefingResult result = new BriefingResult(
                     briefing,
                     q1UrgentImportant.size(),
                     q2ImportantNotUrgent.size(),
@@ -155,6 +171,30 @@ public class DailyBriefingService {
                     response.getTotalTokens(),
                     response.getEstimatedCost()
             );
+
+            // Track usage and cache result
+            AIUsage usage = new AIUsage();
+            usage.setUser(user);
+            usage.setFeatureType("BRIEFING");
+            usage.setTokensUsed(response.getTotalTokens());
+            usage.setCostUSD(response.getEstimatedCost());
+            usage.setRequestDetails(String.format("{\"taskCount\":%d}", activeTasks.size()));
+
+            // FIXED: Cache the result in responseDetails for next request
+            try {
+                usage.setResponseDetails(objectMapper.writeValueAsString(result));
+            } catch (Exception e) {
+                log.warn("Failed to cache briefing result: {}", e.getMessage());
+            }
+
+            aiUsageRepository.save(usage);
+
+            log.info("Daily briefing generated and cached: {} tasks, {} tokens, ${} cost",
+                    activeTasks.size(),
+                    response.getTotalTokens(),
+                    String.format("%.4f", response.getEstimatedCost()));
+
+            return result;
 
         } catch (Exception e) {
             log.error("Daily briefing generation failed: {}", e.getMessage());
