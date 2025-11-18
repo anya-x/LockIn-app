@@ -33,7 +33,6 @@ public class TaskBreakdownService {
     private final ClaudeAPIClientService claudeAPIClientService;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
-    private final TaskBreakdownCache cache;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -77,13 +76,6 @@ public class TaskBreakdownService {
             throw new IllegalArgumentException("Task title cannot be empty");
         }
 
-        // Check cache first
-        TaskBreakdownResultDTO cached = cache.get(userId, title, description);
-        if (cached != null) {
-            log.info("Returning cached result for user {} task: {}", userId, title);
-            return cached;
-        }
-
         // Call Claude API
         TaskBreakdownResultDTO result = breakdownTask(title, description);
 
@@ -102,9 +94,6 @@ public class TaskBreakdownService {
         aiUsageRepository.save(usage);
 
         log.info("Saved AI usage: {} tokens, ${}", usage.getTokensUsed(), usage.getCostUSD());
-
-        // Cache the result
-        cache.put(userId, title, description, result);
 
         return result;
     }
