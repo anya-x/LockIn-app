@@ -104,6 +104,16 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
 
+        <!-- Caffeine Cache - High performance caching library -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

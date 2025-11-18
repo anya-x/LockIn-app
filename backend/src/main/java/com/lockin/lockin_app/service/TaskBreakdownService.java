@@ -13,6 +13,7 @@ import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -107,10 +108,14 @@ public class TaskBreakdownService {
      * - Always returns valid JSON ✓
      * - Includes reasoning for transparency ✓
      *
+     * CACHEABLE: Results cached for 1 hour to reduce API costs.
+     * Cache key: title + description
+     *
      * @param title Task title
      * @param description Task description (can be null/empty)
      * @return Breakdown result with suggested subtasks
      */
+    @Cacheable(value = "taskBreakdowns", key = "#title + ':' + (#description != null ? #description : '')")
     public TaskBreakdownResultDTO breakdownTask(String title, String description) {
         log.info("Breaking down task: {}", title);
 

@@ -10,12 +10,12 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service for generating daily task briefings using AI.
@@ -37,40 +37,19 @@ public class DailyBriefingService {
     /**
      * Generate a daily briefing for the user's tasks.
      *
+     * CACHEABLE: Results cached for 24 hours (expires daily at midnight).
+     * Cache key: userId + current date (ensures one briefing per day per user)
+     *
      * @param userId User ID
      * @return Briefing result with summary and priorities
      */
+    @Cacheable(value = "dailyBriefings", key = "#userId + ':' + T(java.time.LocalDate).now().toString()")
     public BriefingResult generateDailyBriefing(Long userId) {
         log.info("Generating daily briefing for user: {}", userId);
 
-        // FIXED: Check cache first - only generate once per day
+        // Get user for tracking
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-
-        // Find today's briefing in AIUsage
-        List<AIUsage> todayBriefings = aiUsageRepository.findAll().stream()
-                .filter(u -> u.getUser().getId().equals(userId))
-                .filter(u -> "BRIEFING".equals(u.getFeatureType()))
-                .filter(u -> u.getCreatedAt().isAfter(todayStart))
-                .toList();
-
-        if (!todayBriefings.isEmpty()) {
-            AIUsage cachedUsage = todayBriefings.get(0);
-            try {
-                // Parse cached result from responseDetails
-                BriefingResult cached = objectMapper.readValue(
-                        cachedUsage.getResponseDetails(),
-                        BriefingResult.class
-                );
-                log.info("Returning cached briefing from {}", cachedUsage.getCreatedAt());
-                return cached;
-            } catch (Exception e) {
-                log.warn("Failed to parse cached briefing, regenerating: {}", e.getMessage());
-                // Fall through to generate new one
-            }
-        }
 
         // Get all active tasks for the user
         List<Task> tasks = taskRepository.findByUserId(userId);
@@ -172,7 +151,7 @@ public class DailyBriefingService {
                     response.getEstimatedCost()
             );
 
-            // Track usage and cache result
+            // Track usage (caching handled by @Cacheable annotation)
             AIUsage usage = new AIUsage();
             usage.setUser(user);
             usage.setFeatureType("BRIEFING");
@@ -180,16 +159,9 @@ public class DailyBriefingService {
             usage.setCostUSD(response.getEstimatedCost());
             usage.setRequestDetails(String.format("{\"taskCount\":%d}", activeTasks.size()));
 
-            // FIXED: Cache the result in responseDetails for next request
-            try {
-                usage.setResponseDetails(objectMapper.writeValueAsString(result));
-            } catch (Exception e) {
-                log.warn("Failed to cache briefing result: {}", e.getMessage());
-            }
-
             aiUsageRepository.save(usage);
 
-            log.info("Daily briefing generated and cached: {} tasks, {} tokens, ${} cost",
+            log.info("Daily briefing generated: {} tasks, {} tokens, ${} cost",
                     activeTasks.size(),
                     response.getTotalTokens(),
                     String.format("%.4f", response.getEstimatedCost()));

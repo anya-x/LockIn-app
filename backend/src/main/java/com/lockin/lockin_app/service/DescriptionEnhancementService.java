@@ -7,6 +7,7 @@ import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -29,11 +30,15 @@ public class DescriptionEnhancementService {
     /**
      * Enhance a task description using AI.
      *
+     * CACHEABLE: Results cached for 1 hour to reduce API costs.
+     * Cache key: title + description (same input = cached result)
+     *
      * @param title Task title for context
      * @param description Original description (can be vague or empty)
      * @param userId User ID for usage tracking
      * @return Enhanced description
      */
+    @Cacheable(value = "enhancedDescriptions", key = "#title + ':' + #description")
     public EnhancementResult enhanceDescription(String title, String description, Long userId) {
         log.info("Enhancing description for task: {} (user: {})", title, userId);
 
