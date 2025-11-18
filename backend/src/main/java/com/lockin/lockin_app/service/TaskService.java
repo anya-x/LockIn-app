@@ -358,6 +358,28 @@ public class TaskService {
     }
 
     /**
+     * Gets a task entity by ID and validates ownership.
+     * Used for internal operations that need the Task entity (not DTO).
+     *
+     * @param taskId ID of the task
+     * @param userId ID of the user
+     * @return Task entity
+     * @throws ResourceNotFoundException if task doesn't exist
+     * @throws UnauthorizedException if user doesn't own the task
+     */
+    public Task getTaskEntity(Long taskId, Long userId) {
+        log.debug("Fetching task entity: {} for user: {}", taskId, userId);
+
+        Task task = taskRepository
+                .findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+
+        validateTaskOwnership(task, userId);
+
+        return task;
+    }
+
+    /**
      * Validates task ownership and throws exception if user doesn't own it
      *
      * @throws UnauthorizedException if task doesn't belong to user
