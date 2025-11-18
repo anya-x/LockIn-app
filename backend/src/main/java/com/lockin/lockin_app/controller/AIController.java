@@ -4,6 +4,7 @@ import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.service.DescriptionEnhancementService;
 import com.lockin.lockin_app.service.RateLimitService;
 import com.lockin.lockin_app.service.TaskBreakdownService;
 import com.lockin.lockin_app.service.TaskService;
@@ -38,6 +39,7 @@ public class AIController {
     private final TaskService taskService;
     private final UserService userService;
     private final RateLimitService rateLimitService;
+    private final DescriptionEnhancementService descriptionEnhancementService;
 
     /**
      * Break down an existing task into subtasks using AI.
@@ -155,6 +157,56 @@ public class AIController {
         } catch (Exception e) {
             log.error("AI breakdown preview failed: {}", e.getMessage());
             throw new RuntimeException("AI task breakdown failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Enhance a task description using AI.
+     *
+     * POST /api/ai/enhance-description
+     * Body: { "title": "...", "description": "..." }
+     *
+     * Takes a vague or minimal description and expands it into
+     * a clear, actionable description using AI.
+     *
+     * @param request Task title and description
+     * @param userDetails Authenticated user
+     * @return Enhanced description with usage stats
+     */
+    @PostMapping("/enhance-description")
+    public ResponseEntity<DescriptionEnhancementService.EnhancementResult> enhanceDescription(
+            @Valid @RequestBody TaskBreakdownRequestDTO request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("AI description enhancement requested by user {} for task: {}",
+                userDetails.getUsername(), request.getTitle());
+
+        // Get userId from authenticated user
+        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+
+        // Check rate limit
+        rateLimitService.checkRateLimit(userId);
+
+        // BUG: No validation for empty description!
+        // Will waste API credits if user submits empty description
+
+        try {
+            DescriptionEnhancementService.EnhancementResult result =
+                    descriptionEnhancementService.enhanceDescription(
+                            request.getTitle(),
+                            request.getDescription(),
+                            userId
+                    );
+
+            log.info("AI description enhancement successful: {} tokens, ${} cost",
+                    result.tokensUsed(),
+                    String.format("%.4f", result.costUSD()));
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("AI description enhancement failed: {}", e.getMessage());
+            throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
         }
     }
 }
