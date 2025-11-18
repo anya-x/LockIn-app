@@ -38,8 +38,8 @@ public class RateLimitService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // BUG: Should be minusDays(1) not minusHours(1)!
-        LocalDateTime since = LocalDateTime.now().minusHours(1);
+        // Check requests in last 24 hours
+        LocalDateTime since = LocalDateTime.now().minusDays(1);
         long requestCount = aiUsageRepository.countRecentRequests(user, since);
 
         log.debug("User {} has made {} AI requests recently", userId, requestCount);
@@ -63,7 +63,7 @@ public class RateLimitService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        LocalDateTime since = LocalDateTime.now().minusHours(1); // BUG: Same bug here
+        LocalDateTime since = LocalDateTime.now().minusDays(1);
         long requestCount = aiUsageRepository.countRecentRequests(user, since);
 
         return Math.max(0, MAX_REQUESTS_PER_DAY - (int) requestCount);
