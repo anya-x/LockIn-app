@@ -37,8 +37,18 @@ public class DescriptionEnhancementService {
     public EnhancementResult enhanceDescription(String title, String description, Long userId) {
         log.info("Enhancing description for task: {} (user: {})", title, userId);
 
-        // BUG: No validation! Should check if description is empty/null
-        // This will waste API credits on meaningless requests
+        // Validation
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Task title cannot be empty");
+        }
+
+        if (description == null || description.trim().isEmpty()) {
+            throw new IllegalArgumentException("Description cannot be empty. Please provide at least a brief description to enhance.");
+        }
+
+        if (description.trim().length() < 3) {
+            throw new IllegalArgumentException("Description is too short. Please provide at least 3 characters.");
+        }
 
         String systemPrompt = """
             You are a productivity assistant that improves task descriptions.

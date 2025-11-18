@@ -187,9 +187,6 @@ public class AIController {
         // Check rate limit
         rateLimitService.checkRateLimit(userId);
 
-        // BUG: No validation for empty description!
-        // Will waste API credits if user submits empty description
-
         try {
             DescriptionEnhancementService.EnhancementResult result =
                     descriptionEnhancementService.enhanceDescription(
@@ -204,6 +201,9 @@ public class AIController {
 
             return ResponseEntity.ok(result);
 
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid request: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("AI description enhancement failed: {}", e.getMessage());
             throw new RuntimeException("AI description enhancement failed: " + e.getMessage(), e);
