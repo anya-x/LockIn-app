@@ -1,5 +1,7 @@
 package com.lockin.lockin_app.entity;
 
+import com.lockin.lockin_app.features.categories.entity.Category;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

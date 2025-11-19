@@ -1,12 +1,12 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.categories.service;
 
-import com.lockin.lockin_app.dto.CategoryRequestDTO;
-import com.lockin.lockin_app.dto.CategoryResponseDTO;
-import com.lockin.lockin_app.entity.Category;
+import com.lockin.lockin_app.features.categories.dto.CategoryRequestDTO;
+import com.lockin.lockin_app.features.categories.dto.CategoryResponseDTO;
+import com.lockin.lockin_app.features.categories.entity.Category;
 import com.lockin.lockin_app.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
-import com.lockin.lockin_app.repository.CategoryRepository;
+import com.lockin.lockin_app.features.categories.repository.CategoryRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 

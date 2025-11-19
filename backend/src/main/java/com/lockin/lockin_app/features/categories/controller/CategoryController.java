@@ -1,8 +1,8 @@
-package com.lockin.lockin_app.controller;
+package com.lockin.lockin_app.features.categories.controller;
 
-import com.lockin.lockin_app.dto.CategoryRequestDTO;
-import com.lockin.lockin_app.dto.CategoryResponseDTO;
-import com.lockin.lockin_app.service.CategoryService;
+import com.lockin.lockin_app.features.categories.dto.CategoryRequestDTO;
+import com.lockin.lockin_app.features.categories.dto.CategoryResponseDTO;
+import com.lockin.lockin_app.features.categories.service.CategoryService;
 import com.lockin.lockin_app.service.UserService;
 
 import jakarta.validation.Valid;

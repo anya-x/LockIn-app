@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.repository;
+package com.lockin.lockin_app.features.categories.repository;
 
-import com.lockin.lockin_app.entity.Category;
+import com.lockin.lockin_app.features.categories.entity.Category;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -4,7 +4,7 @@ import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.dto.TaskRequestDTO;
 import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.dto.TaskStatisticsDTO;
-import com.lockin.lockin_app.entity.Category;
+import com.lockin.lockin_app.features.categories.entity.Category;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.entity.User;
@@ -35,7 +35,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserService userService;
-    private final CategoryService categoryService;
+    private final com.lockin.lockin_app.features.categories.service.CategoryService categoryService;
     private final GoalService goalService;
     private final ApplicationEventPublisher eventPublisher;
 

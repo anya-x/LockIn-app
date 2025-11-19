@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.categories.dto;
 
-import com.lockin.lockin_app.entity.Category;
+import com.lockin.lockin_app.features.categories.entity.Category;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
