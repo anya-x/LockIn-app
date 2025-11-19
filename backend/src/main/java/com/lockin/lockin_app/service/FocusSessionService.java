@@ -16,10 +16,12 @@ import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,6 +52,8 @@ public class FocusSessionService {
     /**
      * Starts a new focus session
      *
+     * <p>Invalidates today's analytics cache since session count changed.
+     *
      * @param userId user starting the session
      * @param request session configuration (duration, profile, optional task link)
      * @return created session with start timestamp
@@ -57,6 +61,7 @@ public class FocusSessionService {
      * @throws UnauthorizedException if task belongs to another user
      */
     @Transactional
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public FocusSessionResponseDTO startSession(Long userId, FocusSessionRequestDTO request) {
         log.info("Starting session for user: {}", userId);
 
@@ -105,11 +110,13 @@ public class FocusSessionService {
      *
      * <p>Records actual minutes worked and completion timestamp, prevents completing an
      * already-completed session.
+     * <p>Invalidates today's analytics cache since focus minutes changed.
      *
      * @param actualMinutes actual time worked
      * @throws ResourceNotFoundException if session already completed or minutes negative
      */
     @Transactional
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public FocusSessionResponseDTO completeSession(
             Long sessionId, Long userId, Integer actualMinutes) {
         log.info("Completing session: {} for user: {}", sessionId, userId);
@@ -148,6 +155,7 @@ public class FocusSessionService {
     }
 
     @Transactional
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public FocusSessionResponseDTO updateSession(
             Long sessionId, Long userId, Integer actualMinutes) {
         log.info("Updating session: {} for user: {}", sessionId, userId);

@@ -417,18 +417,21 @@ public class AnalyticsCalculationService {
     }
 
     /**
-     * Invalidates analytics cache for a specific date
+     * Invalidates analytics cache for a specific user and date
      *
-     * <p>called when new tasks or focus sessions are added
+     * <p>Called when tasks or focus sessions are created/updated/deleted.
+     * Only invalidates the specific user's cache, not all users.
      *
-     * @param userId user
-     * @param date date
+     * @param userId user whose cache to invalidate
+     * @param date date to invalidate (usually today)
      */
     @CacheEvict(
-            value = {"dailyAnalytics", "periodAnalytics"},
-            allEntries = true)
+            value = "dailyAnalytics",
+            key = "#userId + '_' + #date")
     public void invalidateCache(Long userId, LocalDate date) {
         log.debug("Invalidating analytics cache for user {} on {}", userId, date);
+        // Note: periodAnalytics cache will expire naturally after 1 hour
+        // or can be manually refreshed via the refresh endpoint
     }
 
     /**

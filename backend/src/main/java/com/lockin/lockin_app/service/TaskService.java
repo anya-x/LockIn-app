@@ -16,12 +16,14 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +45,7 @@ public class TaskService {
      * Creates a new task for the user
      *
      * <p>validates it belongs to the user
+     * <p>Invalidates today's analytics cache since task count changed
      *
      * @param userId owner of the task
      * @param request task details (title, description, category, priority)
@@ -50,6 +53,7 @@ public class TaskService {
      * @throws ResourceNotFoundException if user or category doesn't exist
      */
     @Transactional
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public TaskResponseDTO createTask(Long userId, TaskRequestDTO request) {
         log.info("Creating task for user: {}", userId);
 
@@ -129,11 +133,13 @@ public class TaskService {
      *
      * <p>Automatically sets completedAt timestamp when status changes to COMPLETED. Clears
      * completedAt if status changes away from COMPLETED.
+     * <p>Invalidates today's analytics cache since task status/completion may have changed.
      *
      * @throws ResourceNotFoundException if task doesn't exist
      * @throws UnauthorizedException if user doesn't own task
      */
     @Transactional
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public TaskResponseDTO updateTask(Long taskId, Long userId, TaskRequestDTO request) {
         log.info("Updating task: {} for user: {}", taskId, userId);
 
@@ -166,6 +172,7 @@ public class TaskService {
     }
 
     @Transactional
+    @CacheEvict(value = "dailyAnalytics", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public void deleteTask(Long taskId, Long userId) {
         log.info("Deleting task: {} for user: {}", taskId, userId);
 
