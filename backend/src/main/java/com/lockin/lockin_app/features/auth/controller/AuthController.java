@@ -1,10 +1,10 @@
-package com.lockin.lockin_app.controller;
+package com.lockin.lockin_app.features.auth.controller;
 
-import com.lockin.lockin_app.dto.AuthResponseDTO;
-import com.lockin.lockin_app.dto.LoginRequestDTO;
-import com.lockin.lockin_app.dto.RegisterRequestDTO;
+import com.lockin.lockin_app.features.auth.dto.AuthResponseDTO;
+import com.lockin.lockin_app.features.auth.dto.LoginRequestDTO;
+import com.lockin.lockin_app.features.auth.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
-import com.lockin.lockin_app.service.AuthService;
+import com.lockin.lockin_app.features.auth.service.AuthService;
 
 import jakarta.validation.Valid;
 

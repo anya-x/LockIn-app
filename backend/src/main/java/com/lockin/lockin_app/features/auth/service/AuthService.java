@@ -1,8 +1,8 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.auth.service;
 
-import com.lockin.lockin_app.dto.AuthResponseDTO;
-import com.lockin.lockin_app.dto.LoginRequestDTO;
-import com.lockin.lockin_app.dto.RegisterRequestDTO;
+import com.lockin.lockin_app.features.auth.dto.AuthResponseDTO;
+import com.lockin.lockin_app.features.auth.dto.LoginRequestDTO;
+import com.lockin.lockin_app.features.auth.dto.RegisterRequestDTO;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.features.users.repository.UserRepository;

@@ -1,7 +1,7 @@
 package com.lockin.lockin_app.config;
 
 import com.lockin.lockin_app.security.JwtAuthenticationFilter;
-import com.lockin.lockin_app.service.CustomUserDetailsService;
+import com.lockin.lockin_app.features.auth.service.CustomUserDetailsService;
 
 import lombok.extern.slf4j.Slf4j;
 

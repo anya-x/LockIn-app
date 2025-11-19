@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.auth.service;
 
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
