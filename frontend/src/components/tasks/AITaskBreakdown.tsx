@@ -39,17 +39,6 @@ interface AITaskBreakdownProps {
   onCreateSubtasks: (subtasks: TaskRequest[]) => Promise<void>;
 }
 
-/**
- *
- * TODO:
- * - add retry button on error
- * - show progress when creating multiple subtasks
- * - allow editing AI suggestions
- * - add checkboxes to select which subtasks to create
- * - hide cost to user
- * - add loading animation or skeleton
- * - speed up task breakdown
- */
 const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   task,
   open,

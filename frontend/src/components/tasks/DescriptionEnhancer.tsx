@@ -39,12 +39,6 @@ export const DescriptionEnhancer: React.FC<DescriptionEnhancerProps> = ({
       const result = await aiService.enhanceDescription(title, description);
 
       setEnhancedPreview(result.enhancedDescription);
-
-      console.log(
-        `Enhanced description (${
-          result.tokensUsed
-        } tokens, $${result.costUSD.toFixed(4)})`
-      );
     } catch (err: any) {
       console.error("Enhancement failed:", err);
       setError(err.response?.data?.message || "Failed to enhance description");

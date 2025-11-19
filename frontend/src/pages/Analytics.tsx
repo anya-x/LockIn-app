@@ -49,7 +49,6 @@ import BurnoutAlert from "../components/analytics/BurnOutAlert";
 import WeeklyReport from "../components/analytics/WeeklyReport";
 import ProductivityInsights from "../components/analytics/ProductivityInsights";
 import ProductivityHeatmap from "../components/analytics/ProductivityHeatmap";
-// import CustomTooltip from "../components/analytics/CustomTooltip";
 import { exportToCSV } from "../utils/exportToCSV";
 import { useTimer } from "../context/TimerContext";
 import {
