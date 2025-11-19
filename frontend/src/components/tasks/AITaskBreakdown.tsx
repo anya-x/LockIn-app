@@ -8,8 +8,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
-  Chip,
   CircularProgress,
   Alert,
   Box,

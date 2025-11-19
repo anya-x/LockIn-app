@@ -99,7 +99,7 @@ export const TimerProvider: React.FC<{
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationShownRef = useRef(false);
-  const titleUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const titleUpdateIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     audioRef.current = new Audio("/notification.wav");
@@ -207,7 +207,7 @@ export const TimerProvider: React.FC<{
   useEffect(() => {
     if (timer.sessionStartedAt) {
       const updateTitleAndCheckCompletion = () => {
-        const currentElapsedMs = timer.isRunning
+        const currentElapsedMs = timer.isRunning && timer.sessionStartedAt
           ? Date.now() - timer.sessionStartedAt
           : 0;
         const totalElapsedMs = (timer.pausedElapsedMs || 0) + currentElapsedMs;
@@ -330,7 +330,7 @@ export const TimerProvider: React.FC<{
     });
   };
 
-  const stopTimer = async (notes?: string) => {
+  const stopTimer = async (_notes?: string) => {
     if (timer.sessionId) {
       const elapsedMs = Date.now() - (timer.sessionStartedAt || Date.now());
       const actualMinutes = Math.floor(elapsedMs / 60000);

@@ -45,14 +45,6 @@ import DailyBriefing from "../components/dashboard/DailyBriefing";
 import EmptyState from "../components/shared/EmptyState";
 import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
 
-interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
-
 const Tasks: React.FC = () => {
   const theme = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -248,7 +240,7 @@ const Tasks: React.FC = () => {
   };
 
   const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
+    _event: React.ChangeEvent<unknown>,
     page: number
   ) => {
     setCurrentPage(page - 1);
@@ -265,13 +257,23 @@ const Tasks: React.FC = () => {
     setEditingTask(undefined);
   };
 
-  const handleSaveTask = async (taskData: TaskRequest) => {
+  const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
+      const request: TaskRequest = {
+        title: taskData.title!,
+        description: taskData.description,
+        isUrgent: taskData.isUrgent,
+        isImportant: taskData.isImportant,
+        status: taskData.status,
+        dueDate: taskData.dueDate,
+        categoryId: taskData.categoryId,
+      };
+
       if (editingTask) {
-        const updated = await taskService.updateTask(editingTask.id, taskData);
+        const updated = await taskService.updateTask(editingTask.id, request);
         setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
       } else {
-        await taskService.createTask(taskData);
+        await taskService.createTask(request);
         if (hasActiveFilters()) {
           fetchFilteredTasks(currentPage);
         } else {

@@ -332,7 +332,7 @@ const Statistics: React.FC = () => {
         <ToggleButtonGroup
           value={dateRange}
           exclusive
-          onChange={(e, newValue) => {
+          onChange={(_e, newValue) => {
             if (newValue !== null) {
               setDateRange(newValue);
             }

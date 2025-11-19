@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -6,7 +6,6 @@ import {
   CardContent,
   Typography,
   IconButton,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,7 +19,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { categoryService, type Category } from "../services/categoryService";
+import { type Category } from "../services/categoryService";
 import {
   useCategories,
   useCreateCategory,

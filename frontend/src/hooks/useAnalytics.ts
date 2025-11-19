@@ -1,8 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   analyticsService,
-  type Analytics,
-  type StreakStats,
 } from "../services/analyticsService";
 
 export function useTodayAnalytics() {
