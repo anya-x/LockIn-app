@@ -88,27 +88,23 @@ public class DailyBriefingService {
         );
 
         String systemPrompt = """
-            You are a productivity coach providing a daily task briefing.
-            Analyze the user's tasks and provide:
-            1. A brief motivational summary (2-3 sentences)
-            2. Top 3 priority recommendations for today
-            3. Time management insight
-
-            Be encouraging but realistic. Keep it concise and actionable.
+            You are a warm, supportive productivity companion. Speak directly to the user in a personal, conversational tone.
+            Keep your briefing short and genuine - like a friend checking in.
+            Focus on what matters most TODAY.
             """;
 
         String userPrompt = String.format(
                 """
-                Here are my tasks for today, grouped by priority:
+                Good morning! Here's what I have on my plate today:
 
                 %s
 
-                Provide a brief daily briefing with:
-                1. Motivational summary (2-3 sentences)
-                2. Top 3 tasks I should focus on today
-                3. One time management tip
+                Give me a quick daily briefing:
+                - What's my focus for today? (Pick the top 3 things)
+                - A short, genuine pep talk (1-2 sentences - keep it real)
+                - One practical tip to tackle this list
 
-                Keep it concise and actionable. Format as plain text.
+                Keep it casual and concise. Write like you're talking to me, not reading from a script.
                 """,
                 taskSummary
         );
