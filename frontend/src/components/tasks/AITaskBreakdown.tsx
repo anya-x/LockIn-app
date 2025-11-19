@@ -23,6 +23,7 @@ import {
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AddTaskIcon from "@mui/icons-material/AddTask";
 import DeleteIcon from "@mui/icons-material/Delete";
+import SettingsIcon from "@mui/icons-material/Settings";
 import type { Task, TaskRequest } from "../../types/task";
 import {
   aiService,
@@ -30,7 +31,9 @@ import {
   type SubtaskSuggestion,
 } from "../../services/aiService";
 import { useRateLimit } from "../../hooks/useRateLimit";
+import { useAIPreferences } from "../../context/AIPreferencesContext";
 import RateLimitIndicator from "../ai/RateLimitIndicator";
+import { useNavigate } from "react-router-dom";
 
 interface AITaskBreakdownProps {
   task: Task;
@@ -57,6 +60,7 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
   onCreateSubtasks,
 }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TaskBreakdownResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +69,7 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
     []
   );
   const rateLimit = useRateLimit();
+  const { aiEnabled } = useAIPreferences();
 
   useEffect(() => {
     if (result?.subtasks) {
@@ -399,22 +404,43 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
 
         {!result && !loading && !error && (
           <Box textAlign="center" py={4}>
-            <AutoAwesomeIcon
-              sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
-            />
-            <Typography variant="body1" color="text.secondary" gutterBottom>
-              Click below to let AI break down this task into actionable
-              subtasks.
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AutoAwesomeIcon />}
-              onClick={handleBreakdown}
-              disabled={rateLimit.isAtLimit}
-              sx={{ mt: 2 }}
-            >
-              Generate Breakdown
-            </Button>
+            {!aiEnabled ? (
+              <>
+                <SettingsIcon
+                  sx={{ fontSize: 48, color: "text.disabled", mb: 2 }}
+                />
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  AI features are currently disabled
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<SettingsIcon />}
+                  onClick={() => navigate("/settings")}
+                  sx={{ mt: 2, textTransform: "none" }}
+                >
+                  Enable in Settings
+                </Button>
+              </>
+            ) : (
+              <>
+                <AutoAwesomeIcon
+                  sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+                />
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  Click below to let AI break down this task into actionable
+                  subtasks.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AutoAwesomeIcon />}
+                  onClick={handleBreakdown}
+                  disabled={rateLimit.isAtLimit}
+                  sx={{ mt: 2 }}
+                >
+                  Generate Breakdown
+                </Button>
+              </>
+            )}
           </Box>
         )}
       </DialogContent>

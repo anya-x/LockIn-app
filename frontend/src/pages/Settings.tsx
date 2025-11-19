@@ -17,8 +17,10 @@ import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   Check as CheckIcon,
+  AutoAwesome as AIIcon,
 } from "@mui/icons-material";
 import { useAppTheme } from "../context/ThemeContext";
+import { useAIPreferences } from "../context/AIPreferencesContext";
 import type { ThemeColor } from "../themes/themeConfig";
 import PageHeader from "../components/shared/PageHeader";
 
@@ -26,6 +28,7 @@ const Settings: React.FC = () => {
   const theme = useTheme();
   const { themeColor, themeMode, setThemeColor, toggleThemeMode, themeName } =
     useAppTheme();
+  const { aiEnabled, toggleAI } = useAIPreferences();
 
   const themeOptions: Array<{
     id: ThemeColor;
@@ -176,7 +179,7 @@ const Settings: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box
             sx={{
@@ -209,6 +212,41 @@ const Settings: React.FC = () => {
                 <Switch
                   checked={themeMode === "dark"}
                   onChange={toggleThemeMode}
+                />
+              }
+              label=""
+            />
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <AIIcon
+                sx={{ color: theme.palette.primary.main, fontSize: 28 }}
+              />
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  AI Features
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Enable AI-powered task breakdown, description enhancement, and daily briefing
+                </Typography>
+              </Box>
+            </Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={aiEnabled}
+                  onChange={toggleAI}
                 />
               }
               label=""
