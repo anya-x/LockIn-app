@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.analytics.dto;
 
 
 import lombok.AllArgsConstructor;

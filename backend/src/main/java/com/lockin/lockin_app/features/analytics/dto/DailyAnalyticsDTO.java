@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.analytics.dto;
 
-import com.lockin.lockin_app.entity.DailyAnalytics;
+import com.lockin.lockin_app.features.analytics.entity.DailyAnalytics;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

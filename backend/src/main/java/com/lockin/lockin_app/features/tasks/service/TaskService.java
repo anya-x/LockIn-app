@@ -1,6 +1,6 @@
 package com.lockin.lockin_app.features.tasks.service;
 
-import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
+import com.lockin.lockin_app.features.analytics.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.features.tasks.dto.TaskRequestDTO;
 import com.lockin.lockin_app.features.tasks.dto.TaskResponseDTO;
 import com.lockin.lockin_app.features.tasks.dto.TaskStatisticsDTO;

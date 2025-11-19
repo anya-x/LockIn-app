@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.analytics.service;
 
-import com.lockin.lockin_app.dto.ComparisonDTO;
-import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
+import com.lockin.lockin_app.features.analytics.dto.ComparisonDTO;
+import com.lockin.lockin_app.features.analytics.dto.DailyAnalyticsDTO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

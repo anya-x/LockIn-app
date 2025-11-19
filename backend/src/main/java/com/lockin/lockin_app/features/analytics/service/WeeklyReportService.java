@@ -1,9 +1,9 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.analytics.service;
 
-import com.lockin.lockin_app.dto.WeeklyReportDTO;
-import com.lockin.lockin_app.entity.DailyAnalytics;
+import com.lockin.lockin_app.features.analytics.dto.WeeklyReportDTO;
+import com.lockin.lockin_app.features.analytics.entity.DailyAnalytics;
 import com.lockin.lockin_app.features.users.entity.User;
-import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
+import com.lockin.lockin_app.features.analytics.repository.DailyAnalyticsRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
