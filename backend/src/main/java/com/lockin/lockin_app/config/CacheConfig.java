@@ -20,6 +20,7 @@ public class CacheConfig {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
 
         cacheManager.setCaches(Arrays.asList(
+                // AI Service Caches
                 // Task breakdowns: 1 hour TTL, 500 entries
                 new CaffeineCache("taskBreakdowns",
                         Caffeine.newBuilder()
@@ -38,6 +39,25 @@ public class CacheConfig {
 
                 // Enhanced descriptions: 1 hour TTL, 500 entries
                 new CaffeineCache("enhancedDescriptions",
+                        Caffeine.newBuilder()
+                                .maximumSize(500)
+                                .expireAfterWrite(1, TimeUnit.HOURS)
+                                .recordStats()
+                                .build()),
+
+                // Analytics Caches
+                // Daily analytics: 6 hour TTL, 1000 entries (userId_date key)
+                // Analytics don't change frequently, can cache longer
+                new CaffeineCache("dailyAnalytics",
+                        Caffeine.newBuilder()
+                                .maximumSize(1000)
+                                .expireAfterWrite(6, TimeUnit.HOURS)
+                                .recordStats()
+                                .build()),
+
+                // Period analytics: 1 hour TTL, 500 entries (userId_startDate_endDate key)
+                // Aggregated stats, refresh more frequently
+                new CaffeineCache("periodAnalytics",
                         Caffeine.newBuilder()
                                 .maximumSize(500)
                                 .expireAfterWrite(1, TimeUnit.HOURS)
