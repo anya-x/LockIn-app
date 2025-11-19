@@ -1,6 +1,6 @@
 package com.lockin.lockin_app.exception;
 
-import com.lockin.lockin_app.dto.ErrorResponseDTO;
+import com.lockin.lockin_app.shared.dto.ErrorResponseDTO;
 
 import lombok.extern.slf4j.Slf4j;
 

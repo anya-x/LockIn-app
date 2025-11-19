@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.shared.dto;
 
 import lombok.Data;
 

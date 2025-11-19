@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.shared.service;
 
 import lombok.extern.slf4j.Slf4j;
 

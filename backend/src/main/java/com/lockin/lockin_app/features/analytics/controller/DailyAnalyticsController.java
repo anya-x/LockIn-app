@@ -2,7 +2,7 @@ package com.lockin.lockin_app.features.analytics.controller;
 
 import com.lockin.lockin_app.features.analytics.dto.ComparisonDTO;
 import com.lockin.lockin_app.features.analytics.dto.DailyAnalyticsDTO;
-import com.lockin.lockin_app.dto.DateRangeDTO;
+import com.lockin.lockin_app.shared.dto.DateRangeDTO;
 import com.lockin.lockin_app.features.analytics.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.analytics.service.AnalyticsCalculationService;
