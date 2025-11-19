@@ -6,9 +6,11 @@ import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -19,7 +21,13 @@ public class RateLimitService {
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
 
-    private static final int MAX_REQUESTS_PER_DAY = 10;
+    @Value("${ai.requests.per-user-per-day}")
+    private int maxRequestsPerDay;
+
+    @PostConstruct
+    public void init() {
+        log.info("Rate limit service initialized: maxRequestsPerDay={}", maxRequestsPerDay);
+    }
 
     /**
      * Check if user has exceeded daily rate limit.
@@ -35,13 +43,15 @@ public class RateLimitService {
         LocalDateTime since = LocalDateTime.now().minusHours(24);
         long requestCount = aiUsageRepository.countRecentRequests(user, since);
 
-        log.debug("User {} has made {} AI requests in the last 24 hours", userId, requestCount);
+        log.debug("User {} has made {} of {} allowed AI requests in the last 24 hours",
+                userId, requestCount, maxRequestsPerDay);
 
-        if (requestCount >= MAX_REQUESTS_PER_DAY) {
-            log.warn("Rate limit exceeded for user {}: {} requests in 24 hours", userId, requestCount);
+        if (requestCount >= maxRequestsPerDay) {
+            log.warn("Rate limit exceeded for user {}: {}/{} requests in 24 hours",
+                    userId, requestCount, maxRequestsPerDay);
             throw new RateLimitExceededException(
                     String.format("Rate limit exceeded. You can make %d AI requests per day. Please try again tomorrow.",
-                                  MAX_REQUESTS_PER_DAY)
+                                  maxRequestsPerDay)
             );
         }
     }
@@ -58,7 +68,11 @@ public class RateLimitService {
         LocalDateTime since = LocalDateTime.now().minusHours(24);
         long requestCount = aiUsageRepository.countRecentRequests(user, since);
 
-        return Math.max(0, MAX_REQUESTS_PER_DAY - (int) requestCount);
+        int remaining = Math.max(0, maxRequestsPerDay - (int) requestCount);
+
+        log.debug("User {} has {} of {} requests remaining", userId, remaining, maxRequestsPerDay);
+
+        return remaining;
     }
 
 }
