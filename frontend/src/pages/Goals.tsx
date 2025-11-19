@@ -28,6 +28,7 @@ import { useGoals, useCreateGoal, useDeleteGoal } from "../hooks/useGoals";
 import { useTimer } from "../context/TimerContext";
 import { useQueryClient } from "@tanstack/react-query";
 import PageHeader from "../components/shared/PageHeader";
+import EmptyState from "../components/shared/EmptyState";
 
 const Goals: React.FC = () => {
   const theme = useTheme();
@@ -174,22 +175,15 @@ const Goals: React.FC = () => {
       )}
 
       {!loading && displayedGoals.length === 0 && (
-        <Box sx={{ textAlign: "center", py: 8 }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No {tabValue === "all" ? "" : tabValue} goals yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Create your first goal to start tracking your progress!
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-            sx={{ mt: 3 }}
-          >
-            Create Your First Goal
-          </Button>
-        </Box>
+        <EmptyState
+          title={`No ${tabValue === "all" ? "" : tabValue} goals yet`}
+          description="Create your first goal to start tracking your progress!"
+          action={{
+            label: "Create Your First Goal",
+            onClick: () => setCreateDialogOpen(true),
+            icon: <AddIcon />,
+          }}
+        />
       )}
 
       {!loading && displayedGoals.length > 0 && (

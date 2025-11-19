@@ -42,6 +42,8 @@ import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/tasks/AITaskBreakdown";
 import DailyBriefing from "../components/dashboard/DailyBriefing";
+import EmptyState from "../components/shared/EmptyState";
+import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
 
 interface PaginatedResponse<T> {
   content: T[];
@@ -349,19 +351,6 @@ const Tasks: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "TODO":
-        return "default";
-      case "IN_PROGRESS":
-        return "primary";
-      case "COMPLETED":
-        return "success";
-      default:
-        return "default";
-    }
-  };
-
   const getPageRange = () => {
     const start = currentPage * pageSize + 1;
     const end = Math.min((currentPage + 1) * pageSize, totalElements);
@@ -378,13 +367,10 @@ const Tasks: React.FC = () => {
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
 
       case "priority":
-        const getPriority = (task: Task) => {
-          if (task.isUrgent && task.isImportant) return 4;
-          if (task.isUrgent) return 3;
-          if (task.isImportant) return 2;
-          return 1;
-        };
-        return getPriority(b) - getPriority(a);
+        return (
+          getPriorityLevel(b.isUrgent, b.isImportant) -
+          getPriorityLevel(a.isUrgent, a.isImportant)
+        );
 
       case "status":
         const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
@@ -546,18 +532,18 @@ const Tasks: React.FC = () => {
       )}
 
       {sortedTasks.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 8 }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            {searchTerm || hasActiveFilters()
+        <EmptyState
+          title={
+            searchTerm || hasActiveFilters()
               ? "No tasks match your search or filters"
-              : "No tasks yet"}
-          </Typography>
-          {!searchTerm && !hasActiveFilters() && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Create your first task to get started!
-            </Typography>
-          )}
-        </Box>
+              : "No tasks yet"
+          }
+          description={
+            !searchTerm && !hasActiveFilters()
+              ? "Create your first task to get started!"
+              : undefined
+          }
+        />
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {sortedTasks.map((task) => (

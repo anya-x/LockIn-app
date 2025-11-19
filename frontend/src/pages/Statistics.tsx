@@ -30,6 +30,7 @@ import { FOCUS_PROFILES, type FocusProfile } from "../config/focusProfiles";
 import { useTimer } from "../context/TimerContext";
 import { useStatisticsData } from "../hooks/useStatistics";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatTime } from "../utils/timeFormatting";
 
 interface ProfileStats {
   profile: FocusProfile;
@@ -241,15 +242,6 @@ const Statistics: React.FC = () => {
 
     return calculateStatistics(recentSessions, taskStats, tasks);
   }, [data, dateRange]);
-
-  const formatTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
 
   const StatCardSkeleton = () => (
     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
