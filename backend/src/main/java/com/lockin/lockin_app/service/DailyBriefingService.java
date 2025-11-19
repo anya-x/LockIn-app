@@ -26,10 +26,15 @@ public class DailyBriefingService {
     private final TaskRepository taskRepository;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
+    private final RateLimitService rateLimitService;
 
     @Cacheable(value = "dailyBriefings", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public BriefingResultDTO generateDailyBriefing(Long userId) {
         log.info("Generating daily briefing for user: {} (cache miss)", userId);
+
+        // Check rate limit INSIDE @Cacheable method
+        // This way, cache hits don't count against the limit
+        rateLimitService.checkRateLimit(userId);
 
         List<Task> q1UrgentImportant = taskRepository.findByQuadrantExcludingStatus(
                 userId, true, true, TaskStatus.COMPLETED);

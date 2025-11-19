@@ -62,6 +62,15 @@ public class CacheConfig {
                                 .maximumSize(500)
                                 .expireAfterWrite(1, TimeUnit.HOURS)
                                 .recordStats()
+                                .build()),
+
+                // Rate Limit Counters: 5 min TTL, 1000 entries (userId key)
+                // Caches the request count to reduce database queries
+                new CaffeineCache("rateLimitCounters",
+                        Caffeine.newBuilder()
+                                .maximumSize(1000)
+                                .expireAfterWrite(5, TimeUnit.MINUTES)
+                                .recordStats()
                                 .build())
         ));
 

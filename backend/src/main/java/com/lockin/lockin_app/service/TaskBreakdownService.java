@@ -26,6 +26,7 @@ public class TaskBreakdownService {
     private final ClaudeAPIClientService claudeAPIClientService;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
+    private final RateLimitService rateLimitService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TaskBreakdownResultDTO breakdownTask(Task task) {
@@ -44,35 +45,13 @@ public class TaskBreakdownService {
         return result;
     }
     
-    public TaskBreakdownResultDTO breakdownTask(String title, String description, Long userId) {
-        log.info("Breaking down task: {} for user: {}", title, userId);
-
-        if (title == null || title.trim().isEmpty()) {
-            throw new IllegalArgumentException("Task title cannot be empty");
-        }
-
-        TaskBreakdownResultDTO result = breakdownTask(title, description);
-
-        User user = userRepository.findById(userId)
-                                  .orElseThrow(() -> new RuntimeException("User not found"));
-
-        AIUsage usage = new AIUsage();
-        usage.setUser(user);
-        usage.setFeatureType("BREAKDOWN");
-        usage.setTokensUsed(result.getTokensUsed());
-        usage.setCostUSD(result.getCostUSD());
-        usage.setRequestDetails(String.format("{\"title\":\"%s\"}", title.replace("\"", "\\\"")));
-
-        aiUsageRepository.save(usage);
-
-        log.info("Saved AI usage: {} tokens, ${}", usage.getTokensUsed(), usage.getCostUSD());
-
-        return result;
-    }
-
     @Cacheable(value = "taskBreakdowns", key = "#title + '_' + (#description != null ? #description : '')")
-    public TaskBreakdownResultDTO breakdownTask(String title, String description) {
-        log.info("Breaking down task: {} (cache miss)", title);
+    public TaskBreakdownResultDTO breakdownTask(String title, String description, Long userId) {
+        log.info("Breaking down task: {} for user: {} (cache miss)", title, userId);
+
+        // Check rate limit INSIDE @Cacheable method
+        // This way, cache hits don't count against the limit
+        rateLimitService.checkRateLimit(userId);
 
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Task title cannot be empty");
@@ -140,13 +119,30 @@ public class TaskBreakdownService {
 
             log.info("Successfully broke down task into {} subtasks", subtasks.size());
 
-            return new TaskBreakdownResultDTO(
+            TaskBreakdownResultDTO result = new TaskBreakdownResultDTO(
                     null,
                     subtasks,
                     response.getTotalTokens(),
                     response.getEstimatedCost(),
                     reasoning
             );
+
+            // Save AIUsage for tracking (only on cache miss)
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            AIUsage usage = new AIUsage();
+            usage.setUser(user);
+            usage.setFeatureType("BREAKDOWN");
+            usage.setTokensUsed(response.getTotalTokens());
+            usage.setCostUSD(response.getEstimatedCost());
+            usage.setRequestDetails(String.format("{\"title\":\"%s\"}", title.replace("\"", "\\\"")));
+
+            aiUsageRepository.save(usage);
+
+            log.info("Saved AI usage: {} tokens, ${}", usage.getTokensUsed(), usage.getCostUSD());
+
+            return result;
 
         } catch (Exception e) {
             log.error("Failed to break down task: {}", e.getMessage());
