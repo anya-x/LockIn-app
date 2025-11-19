@@ -38,7 +38,8 @@ public class TaskBreakdownService {
 
         TaskBreakdownResultDTO result = breakdownTask(
                 task.getTitle(),
-                task.getDescription()
+                task.getDescription(),
+                task.getUser().getId()
         );
         result.setOriginalTask(task);
 
