@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.entity;
+package com.lockin.lockin_app.features.focus_sessions.entity;
 
 public enum SessionType {
     WORK,

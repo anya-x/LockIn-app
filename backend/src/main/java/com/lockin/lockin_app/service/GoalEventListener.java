@@ -3,7 +3,7 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.event.PomodoroCompletedEvent;
 import com.lockin.lockin_app.event.TaskCompletedEvent;
-import com.lockin.lockin_app.repository.FocusSessionRepository;
+import com.lockin.lockin_app.features.focus_sessions.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;

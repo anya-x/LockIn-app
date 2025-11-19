@@ -1,6 +1,6 @@
 package com.lockin.lockin_app.service;
 
-import com.lockin.lockin_app.dto.FocusSessionResponseDTO;
+import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
 import com.lockin.lockin_app.entity.Goal;

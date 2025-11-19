@@ -7,7 +7,7 @@ import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.event.PomodoroCompletedEvent;
 import com.lockin.lockin_app.event.TaskCompletedEvent;
 import com.lockin.lockin_app.features.badges.repository.BadgeRepository;
-import com.lockin.lockin_app.repository.FocusSessionRepository;
+import com.lockin.lockin_app.features.focus_sessions.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.GoalRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
 

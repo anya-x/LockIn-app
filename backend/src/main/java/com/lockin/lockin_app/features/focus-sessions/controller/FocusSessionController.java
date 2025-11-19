@@ -1,8 +1,8 @@
-package com.lockin.lockin_app.controller;
+package com.lockin.lockin_app.features.focus_sessions.controller;
 
-import com.lockin.lockin_app.dto.FocusSessionRequestDTO;
-import com.lockin.lockin_app.dto.FocusSessionResponseDTO;
-import com.lockin.lockin_app.service.FocusSessionService;
+import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionRequestDTO;
+import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionResponseDTO;
+import com.lockin.lockin_app.features.focus_sessions.service.FocusSessionService;
 import com.lockin.lockin_app.features.users.service.UserService;
 
 import jakarta.validation.Valid;

@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.focus_sessions.dto;
 
-import com.lockin.lockin_app.entity.SessionType;
+import com.lockin.lockin_app.features.focus_sessions.entity.SessionType;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

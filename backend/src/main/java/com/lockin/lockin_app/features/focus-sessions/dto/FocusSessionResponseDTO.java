@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.focus_sessions.dto;
 
-import com.lockin.lockin_app.entity.FocusSession;
-import com.lockin.lockin_app.entity.SessionType;
+import com.lockin.lockin_app.features.focus_sessions.entity.FocusSession;
+import com.lockin.lockin_app.features.focus_sessions.entity.SessionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -4,7 +4,7 @@ import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.entity.*;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
-import com.lockin.lockin_app.repository.FocusSessionRepository;
+import com.lockin.lockin_app.features.focus_sessions.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 

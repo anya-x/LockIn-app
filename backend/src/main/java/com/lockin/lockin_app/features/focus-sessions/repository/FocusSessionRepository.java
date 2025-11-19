@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.repository;
+package com.lockin.lockin_app.features.focus_sessions.repository;
 
-import com.lockin.lockin_app.entity.FocusSession;
-import com.lockin.lockin_app.entity.SessionType;
+import com.lockin.lockin_app.features.focus_sessions.entity.FocusSession;
+import com.lockin.lockin_app.features.focus_sessions.entity.SessionType;
 import com.lockin.lockin_app.features.users.entity.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
