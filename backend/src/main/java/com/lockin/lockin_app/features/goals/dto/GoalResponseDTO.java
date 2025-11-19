@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.goals.dto;
 
-import com.lockin.lockin_app.entity.Goal;
+import com.lockin.lockin_app.features.goals.entity.Goal;
 import com.lockin.lockin_app.entity.Goal.GoalType;
 
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.goals.dto;
 
 import com.lockin.lockin_app.entity.Goal.GoalType;
 

@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.goals.service;
 
 import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.event.PomodoroCompletedEvent;

@@ -1,14 +1,14 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.goals.service;
 
 import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionResponseDTO;
-import com.lockin.lockin_app.dto.GoalRequestDTO;
-import com.lockin.lockin_app.dto.GoalResponseDTO;
-import com.lockin.lockin_app.entity.Goal;
+import com.lockin.lockin_app.features.goals.dto.GoalRequestDTO;
+import com.lockin.lockin_app.features.goals.dto.GoalResponseDTO;
+import com.lockin.lockin_app.features.goals.entity.Goal;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
-import com.lockin.lockin_app.repository.GoalRepository;
+import com.lockin.lockin_app.features.goals.repository.GoalRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

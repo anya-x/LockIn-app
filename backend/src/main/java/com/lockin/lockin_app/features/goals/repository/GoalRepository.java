@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.repository;
+package com.lockin.lockin_app.features.goals.repository;
 
-import com.lockin.lockin_app.entity.Goal;
+import com.lockin.lockin_app.features.goals.entity.Goal;
 import com.lockin.lockin_app.entity.Goal.GoalType;
 
 import org.springframework.data.domain.Page;
