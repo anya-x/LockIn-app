@@ -1,20 +1,22 @@
 import type { Analytics } from "../services/analyticsService";
 
+/**
+ * Calculate aggregate statistics from analytics data.
+ *
+ * @param analytics Array of daily analytics
+ * @returns Aggregate stats (sessions, productivity, tasks, focus time)
+ */
 export const calculateStats = (analytics: Analytics[]) => {
-  console.log("calculating stats for analytics:", analytics);
-
   const totalSessions = analytics.reduce(
     (sum, day) => sum + day.pomodorosCompleted,
     0
   );
-  console.log("total sessions:", totalSessions);
 
   const avgProductivity =
     analytics.reduce((sum, day) => sum + day.productivityScore, 0) /
     analytics.length;
-  console.log("average productivity:", avgProductivity);
 
-  const stats = {
+  return {
     totalSessions,
     avgProductivity,
     totalTasks: analytics.reduce((sum, day) => sum + day.tasksCompleted, 0),
@@ -23,16 +25,19 @@ export const calculateStats = (analytics: Analytics[]) => {
       0
     ),
   };
-
-  console.log("final stats:", stats);
-  return stats;
 };
 
+/**
+ * Determine trend direction based on current vs previous values.
+ *
+ * @param current Current period value
+ * @param previous Previous period value
+ * @returns "up", "down", or "stable" (±5% threshold)
+ */
 export const getTrendDirection = (
   current: number,
   previous: number
 ): string => {
-  console.log(`comparing ${current} to ${previous}`);
   if (current > previous * 1.05) return "up";
   if (current < previous * 0.95) return "down";
   return "stable";
