@@ -234,6 +234,8 @@ public class TaskController extends BaseController {
     public ResponseEntity<TaskStatisticsDTO> getStatistics(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("GET /api/tasks/statistics : User: {}", userDetails.getUsername());
+
         Long userId = getCurrentUserId(userDetails);
         TaskStatisticsDTO stats = taskService.getStatistics(userId);
         return ResponseEntity.ok(stats);
