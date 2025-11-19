@@ -19,4 +19,7 @@ public interface AIUsageRepository extends JpaRepository<AIUsage, Long> {
             "AND u.createdAt >= :since")
     long countRecentRequests(@Param("user") User user,
                              @Param("since") LocalDateTime since);
+
+    @Query("DELETE FROM AIUsage u WHERE u.createdAt < :cutoffDate")
+    int deleteByCreatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

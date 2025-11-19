@@ -25,4 +25,7 @@ public interface DailyAnalyticsRepository extends JpaRepository<DailyAnalytics, 
                     + "AND d.date >= :startDate ORDER BY d.date ASC")
     List<DailyAnalytics> findLastNDays(
             @Param("user") User user, @Param("startDate") LocalDate startDate);
+
+    @Query("DELETE FROM DailyAnalytics d WHERE d.date < :cutoffDate")
+    int deleteByDateBefore(@Param("cutoffDate") LocalDate cutoffDate);
 }
