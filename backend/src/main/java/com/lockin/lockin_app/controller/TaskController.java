@@ -28,11 +28,14 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/tasks")
-@RequiredArgsConstructor
-public class TaskController {
+public class TaskController extends BaseController {
 
     private final TaskService taskService;
-    private final UserService userService;
+
+    public TaskController(UserService userService, TaskService taskService) {
+        super(userService);
+        this.taskService = taskService;
+    }
 
     /**
      * Gets paginated list of user's tasks
@@ -49,7 +52,7 @@ public class TaskController {
 
         log.debug("GET /api/tasks: User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<TaskResponseDTO> tasks = taskService.getTasksPaginated(userId, pageable);
@@ -63,7 +66,7 @@ public class TaskController {
 
         log.debug("GET /api/tasks/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         TaskResponseDTO task = taskService.getTask(id, userId);
 
         return ResponseEntity.ok(task);
@@ -82,7 +85,7 @@ public class TaskController {
 
         log.debug("POST /api/tasks : User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         TaskResponseDTO created = taskService.createTask(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -96,7 +99,7 @@ public class TaskController {
 
         log.debug("PUT /api/tasks/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         TaskResponseDTO updated = taskService.updateTask(id, userId, request);
 
         return ResponseEntity.ok(updated);
@@ -108,7 +111,7 @@ public class TaskController {
 
         log.debug("DELETE /api/tasks/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         taskService.deleteTask(id, userId);
 
         return ResponseEntity.noContent().build();
@@ -132,7 +135,7 @@ public class TaskController {
 
         log.debug("GET /api/tasks/quadrant : User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         List<TaskResponseDTO> tasks = taskService.getTasksByQuadrant(userId, isUrgent, isImportant);
         return ResponseEntity.ok(tasks);
     }
@@ -148,7 +151,7 @@ public class TaskController {
 
         log.debug("GET /api/tasks/matrix : User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         EisenhowerMatrixDTO matrix = taskService.getEisenhowerMatrix(userId);
         return ResponseEntity.ok(matrix);
     }
@@ -162,7 +165,7 @@ public class TaskController {
 
         log.debug("PATCH /api/tasks/{}/quadrant : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         TaskResponseDTO task = taskService.updateTaskQuadrant(id, userId, isUrgent, isImportant);
         return ResponseEntity.ok(task);
     }
@@ -181,7 +184,7 @@ public class TaskController {
                 userDetails.getUsername(),
                 query);
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         List<TaskResponseDTO> tasks = taskService.searchTasks(userId, query);
         return ResponseEntity.ok(tasks);
     }
@@ -211,7 +214,7 @@ public class TaskController {
 
         log.debug("GET /api/tasks/filter : User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         TaskStatus taskStatus = null;
         if (status != null && !status.equals("all")) {
@@ -231,7 +234,7 @@ public class TaskController {
     public ResponseEntity<TaskStatisticsDTO> getStatistics(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         TaskStatisticsDTO stats = taskService.getStatistics(userId);
         return ResponseEntity.ok(stats);
     }
@@ -242,7 +245,7 @@ public class TaskController {
 
         log.debug("GET /api/tasks/incomplete : User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         List<TaskResponseDTO> tasks = taskService.getIncompleteTasks(userId);
 
         return ResponseEntity.ok(tasks);

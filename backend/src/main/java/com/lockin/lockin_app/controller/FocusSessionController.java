@@ -22,11 +22,14 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/sessions")
-@RequiredArgsConstructor
-public class FocusSessionController {
+public class FocusSessionController extends BaseController {
 
     private final FocusSessionService sessionService;
-    private final UserService userService;
+    public FocusSessionController(UserService userService,
+            FocusSessionService focusSessionService) {
+        super(userService);
+        this.focusSessionService = focusSessionService;
+    }
 
     @GetMapping
     public ResponseEntity<List<FocusSessionResponseDTO>> getUserSessions(
@@ -34,7 +37,7 @@ public class FocusSessionController {
 
         log.debug("GET /api/sessions: User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         List<FocusSessionResponseDTO> sessions = sessionService.getUserSessions(userId);
 
         return ResponseEntity.ok(sessions);
@@ -47,7 +50,7 @@ public class FocusSessionController {
 
         log.debug("POST /api/sessions/start: User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         FocusSessionResponseDTO session = sessionService.startSession(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
@@ -61,7 +64,7 @@ public class FocusSessionController {
 
         log.debug("POST /api/sessions/{}/complete: User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Integer actualMinutes = request.get("actualMinutes");
 
         FocusSessionResponseDTO session = sessionService.completeSession(id, userId, actualMinutes);
@@ -77,7 +80,7 @@ public class FocusSessionController {
 
         log.debug("PUT /api/sessions/{}: User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Integer actualMinutes = request.get("actualMinutes");
 
         FocusSessionResponseDTO session = sessionService.updateSession(id, userId, actualMinutes);
@@ -91,7 +94,7 @@ public class FocusSessionController {
 
         log.debug("GET /api/sessions/today: User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Integer totalMinutes = sessionService.getTotalFocusMinutesToday(userId);
         List<FocusSessionResponseDTO> sessions = sessionService.getTodaysSessions(userId);
 
@@ -107,7 +110,7 @@ public class FocusSessionController {
 
         log.debug("PUT /api/sessions/{}/notes: User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         String notes = request.get("notes");
 
         FocusSessionResponseDTO session = sessionService.updateSessionNotes(id, userId, notes);

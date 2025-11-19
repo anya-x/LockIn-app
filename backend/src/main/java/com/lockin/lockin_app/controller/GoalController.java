@@ -21,11 +21,14 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/goals")
-@RequiredArgsConstructor
-public class GoalController {
+public class GoalController extends BaseController {
 
     private final GoalService goalService;
-    private final UserService userService;
+
+    public GoalController(UserService userService, GoalService goalService) {
+        super(userService);
+        this.goalService = goalService;
+    }
 
     /**
      * Gets all goals of a user
@@ -38,7 +41,7 @@ public class GoalController {
 
         log.debug("GET /api/goals: User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         List<GoalResponseDTO> goals = goalService.getUserGoals(userId);
 
@@ -51,7 +54,7 @@ public class GoalController {
 
         log.debug("GET /api/goals/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         GoalResponseDTO goal = goalService.getGoal(id, userId);
 
         return ResponseEntity.ok(goal);
@@ -70,7 +73,7 @@ public class GoalController {
 
         log.debug("POST /api/goals : User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         GoalResponseDTO created = goalService.createGoal(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -84,7 +87,7 @@ public class GoalController {
 
         log.debug("PUT /api/goals/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         GoalResponseDTO updated = goalService.updateGoal(id, userId, request);
 
         return ResponseEntity.ok(updated);
@@ -96,7 +99,7 @@ public class GoalController {
 
         log.debug("DELETE /api/goals/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         goalService.deleteGoal(id, userId);
 
         return ResponseEntity.noContent().build();

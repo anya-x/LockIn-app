@@ -19,14 +19,25 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/ai")
-@RequiredArgsConstructor
-public class AIController {
+public class AIController extends BaseController {
 
     private final TaskBreakdownService taskBreakdownService;
-    private final TaskService taskService;
-    private final UserService userService;
-    private final DescriptionEnhancementService descriptionEnhancementService;
+    private final TaskService taskService;    private final DescriptionEnhancementService descriptionEnhancementService;
     private final DailyBriefingService dailyBriefingService;
+    public AIController(UserService userService,
+            ClaudeAPIClientService claudeAPIClientService,
+            TaskBreakdownService taskBreakdownService,
+            DescriptionEnhancementService descriptionEnhancementService,
+            DailyBriefingService dailyBriefingService,
+            TaskService taskService) {
+        super(userService);
+        this.claudeAPIClientService = claudeAPIClientService;
+        this.taskBreakdownService = taskBreakdownService;
+        this.descriptionEnhancementService = descriptionEnhancementService;
+        this.dailyBriefingService = dailyBriefingService;
+        this.taskService = taskService;
+    }
+
 
 
     @PostMapping("/breakdown/{taskId}")
@@ -36,7 +47,7 @@ public class AIController {
 
         log.info("AI breakdown requested for task {} by user {}", taskId, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Task task = taskService.getTaskEntity(taskId, userId);
 
         try {
@@ -70,7 +81,7 @@ public class AIController {
         log.info("AI breakdown preview requested by user {} for task: {}",
                  userDetails.getUsername(), request.getTitle());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Task tempTask = new Task();
         tempTask.setTitle(request.getTitle());
         tempTask.setDescription(request.getDescription());
@@ -110,7 +121,7 @@ public class AIController {
         log.info("AI description enhancement requested by user {} for task: {}",
                  userDetails.getUsername(), request.getTitle());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         try {
             EnhancementResultDTO result =
@@ -140,7 +151,7 @@ public class AIController {
             @AuthenticationPrincipal UserDetails userDetails) {
         log.info("Daily briefing requested by user: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         try {
             BriefingResultDTO result =

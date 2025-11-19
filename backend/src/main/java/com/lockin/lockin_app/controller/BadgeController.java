@@ -20,23 +20,26 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/badges")
-@RequiredArgsConstructor
-public class BadgeController {
+public class BadgeController extends BaseController {
 
     private final BadgeService badgeService;
-    private final UserService userService;
-
     /**
      * Get all badges for the authenticated user
      *
      * @param earnedOnly if true, only return earned badges; if false, return all badges
      */
+    public BadgeController(UserService userService,
+            BadgeService badgeService) {
+        super(userService);
+        this.badgeService = badgeService;
+    }
+
     @GetMapping
     public ResponseEntity<List<BadgeDTO>> getUserBadges(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "false") boolean earnedOnly) {
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         log.debug("Fetching badges for user {}, earnedOnly={}", userId, earnedOnly);
 
         List<BadgeDTO> badges;

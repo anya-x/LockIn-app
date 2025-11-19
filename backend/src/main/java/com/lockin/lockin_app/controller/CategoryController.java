@@ -21,19 +21,22 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/categories")
-@RequiredArgsConstructor
-public class CategoryController {
+public class CategoryController extends BaseController {
 
     private final CategoryService categoryService;
-    private final UserService userService;
+
+    public CategoryController(UserService userService, CategoryService categoryService) {
+        super(userService);
+        this.categoryService = categoryService;
+    }
 
     @GetMapping
     public ResponseEntity<List<CategoryResponseDTO>> getAllCategories(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/categries: User: {}", userDetails.getUsername());
+        log.debug("GET /api/categories: User: {}", userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         List<CategoryResponseDTO> categories = categoryService.getUserCategories(userId);
 
         return ResponseEntity.ok(categories);
@@ -45,7 +48,7 @@ public class CategoryController {
 
         log.debug("GET /api/categories/{} : User: {}", id, userDetails.getUsername());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         CategoryResponseDTO category = categoryService.getCategoryForUser(id, userId);
 
         return ResponseEntity.ok(category);
@@ -57,11 +60,11 @@ public class CategoryController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug(
-                "POST /api/categries: User: {} Category: {}",
+                "POST /api/categories: User: {} Category: {}",
                 userDetails.getUsername(),
                 request.getName());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         CategoryResponseDTO created = categoryService.createCategory(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -74,12 +77,12 @@ public class CategoryController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.debug(
-                "PUT /api/categries/{}: User: {} Category: {}",
+                "PUT /api/categories/{}: User: {} Category: {}",
                 id,
                 userDetails.getUsername(),
                 request.getName());
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         CategoryResponseDTO updated = categoryService.updateCategory(id, userId, request);
 
         return ResponseEntity.ok(updated);
@@ -89,9 +92,9 @@ public class CategoryController {
     public ResponseEntity<Void> deleteCategory(
             @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("DELETE /api/categries/ Category: {}", id);
+        log.debug("DELETE /api/categories/ Category: {}", id);
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         categoryService.deleteCategory(id, userId);
 
         return ResponseEntity.noContent().build();
