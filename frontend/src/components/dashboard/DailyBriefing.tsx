@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -55,10 +55,6 @@ export const DailyBriefing: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadBriefing();
-  }, []);
-
   const handleRefresh = () => {
     loadBriefing();
   };
@@ -107,6 +103,18 @@ export const DailyBriefing: React.FC = () => {
           <Typography color="error" variant="body2">
             {error}
           </Typography>
+        )}
+
+        {!briefing && !isLoading && !error && (
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <TodayIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Click "Refresh" to generate your AI-powered daily briefing
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Get a summary of your tasks and priorities for today
+            </Typography>
+          </Box>
         )}
 
         {briefing && (
