@@ -19,4 +19,12 @@ public interface AIUsageRepository extends JpaRepository<AIUsage, Long> {
             "AND u.createdAt >= :since")
     long countRecentRequests(@Param("user") User user,
                              @Param("since") LocalDateTime since);
+
+    @Query("SELECT u FROM AIUsage u WHERE u.user = :user " +
+            "AND u.featureType = :featureType " +
+            "AND u.createdAt >= :startOfDay " +
+            "ORDER BY u.createdAt DESC LIMIT 1")
+    AIUsage findTodaysBriefing(@Param("user") User user,
+                               @Param("featureType") String featureType,
+                               @Param("startOfDay") LocalDateTime startOfDay);
 }
