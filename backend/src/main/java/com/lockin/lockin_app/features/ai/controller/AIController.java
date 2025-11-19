@@ -192,4 +192,19 @@ public class AIController extends BaseController {
 
         return ResponseEntity.ok(status);
     }
+
+    @DeleteMapping("/rate-limit/reset")
+    public ResponseEntity<RateLimitStatusDTO> resetRateLimit(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getCurrentUserId(userDetails);
+
+        log.warn("Rate limit reset requested by user: {}", getCurrentUserEmail(userDetails));
+        rateLimitService.resetRateLimit(userId);
+
+        int limit = rateLimitService.getMaxRequests();
+
+        RateLimitStatusDTO status = new RateLimitStatusDTO(limit, limit, 0);
+
+        return ResponseEntity.ok(status);
+    }
 }

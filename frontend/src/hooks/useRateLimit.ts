@@ -5,6 +5,7 @@ interface UseRateLimitResult extends RateLimitStatus {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  reset: () => Promise<void>;
   isNearLimit: boolean;
   isAtLimit: boolean;
   percentage: number;
@@ -36,6 +37,24 @@ export const useRateLimit = (): UseRateLimitResult => {
     }
   }, []);
 
+  const resetRateLimit = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await aiService.resetRateLimit();
+      setStatus(data);
+    } catch (err: any) {
+      console.error("Failed to reset rate limit:", err);
+      setError(
+        err.response?.data?.message || "Failed to reset rate limit"
+      );
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchRateLimit();
   }, [fetchRateLimit]);
@@ -49,6 +68,7 @@ export const useRateLimit = (): UseRateLimitResult => {
     loading,
     error,
     refetch: fetchRateLimit,
+    reset: resetRateLimit,
     isNearLimit,
     isAtLimit,
     percentage,

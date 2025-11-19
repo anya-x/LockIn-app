@@ -91,6 +91,11 @@ export const aiService = {
     const response = await api.get<RateLimitStatus>("/ai/rate-limit");
     return response.data;
   },
+
+  resetRateLimit: async (): Promise<RateLimitStatus> => {
+    const response = await api.delete<RateLimitStatus>("/ai/rate-limit/reset");
+    return response.data;
+  },
 };
 
 export default aiService;

@@ -4,8 +4,10 @@ import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.exception.RateLimitExceededException;
 import com.lockin.lockin_app.features.ai.repository.AIUsageRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -60,6 +62,16 @@ public class RateLimitService {
 
     public int getMaxRequests() {
         return MAX_REQUESTS_PER_DAY;
+    }
+
+    @Transactional
+    @CacheEvict(value = "rateLimitCounters", key = "#userId")
+    public void resetRateLimit(Long userId) {
+        User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new RuntimeException("User not found"));
+
+        aiUsageRepository.deleteByUser(user);
+        log.info("Reset rate limit for user {} - all AI usage records deleted", userId);
     }
 
 }

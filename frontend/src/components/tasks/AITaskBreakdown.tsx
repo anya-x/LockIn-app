@@ -176,7 +176,12 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
         </Box>
 
         <Box mb={3}>
-          <RateLimitIndicator status={rateLimit} variant="detailed" />
+          <RateLimitIndicator
+            status={rateLimit}
+            variant="detailed"
+            onReset={rateLimit.reset}
+            showResetButton={import.meta.env.DEV}
+          />
         </Box>
 
         <Divider sx={{ my: 2 }} />

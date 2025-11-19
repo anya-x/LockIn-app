@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   LinearProgress,
@@ -6,20 +6,41 @@ import {
   Tooltip,
   alpha,
   useTheme,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import type { RateLimitStatus } from "../../services/aiService";
 
 interface RateLimitIndicatorProps {
   status: RateLimitStatus;
   variant?: "compact" | "detailed";
+  onReset?: () => Promise<void>;
+  showResetButton?: boolean;
 }
 
 const RateLimitIndicator: React.FC<RateLimitIndicatorProps> = ({
   status,
   variant = "compact",
+  onReset,
+  showResetButton = false,
 }) => {
   const theme = useTheme();
+  const [resetting, setResetting] = useState(false);
+
+  const handleReset = async () => {
+    if (!onReset) return;
+
+    setResetting(true);
+    try {
+      await onReset();
+    } catch (error) {
+      console.error("Failed to reset rate limit:", error);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const percentage = Math.round((status.used / status.limit) * 100);
   const isNearLimit = status.remaining <= 3 && status.remaining > 0;
@@ -145,6 +166,23 @@ const RateLimitIndicator: React.FC<RateLimitIndicatorProps> = ({
         >
           Use your remaining requests wisely!
         </Typography>
+      )}
+
+      {showResetButton && onReset && (
+        <Box mt={2}>
+          <Button
+            variant="outlined"
+            size="small"
+            color="warning"
+            fullWidth
+            startIcon={resetting ? <CircularProgress size={16} /> : <RefreshIcon />}
+            onClick={handleReset}
+            disabled={resetting}
+            sx={{ textTransform: "none" }}
+          >
+            {resetting ? "Resetting..." : "Reset Rate Limit (Dev Only)"}
+          </Button>
+        </Box>
       )}
     </Box>
   );

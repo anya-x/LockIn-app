@@ -19,4 +19,6 @@ public interface AIUsageRepository extends JpaRepository<AIUsage, Long> {
             "AND u.createdAt >= :since")
     long countRecentRequests(@Param("user") User user,
                              @Param("since") LocalDateTime since);
+
+    void deleteByUser(User user);
 }
