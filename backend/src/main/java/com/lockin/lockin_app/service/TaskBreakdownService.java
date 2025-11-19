@@ -87,21 +87,39 @@ public class TaskBreakdownService {
                 2. If task is vague, make reasonable assumptions
                 3. Each subtask must start with action verb
                 4. Estimate realistic time (15-90 minutes per subtask)
-                5. Classify using Eisenhower Matrix:
-                   - isUrgent: true if time-sensitive (deadline-driven, blocking other work)
-                   - isImportant: true if contributes to goals/objectives (strategic, high-value)
+                5. Classify using Eisenhower Matrix - consider BOTH deadline AND task nature:
 
-                6. DEADLINE GUIDANCE for urgency classification:
-                   - Due within 24-48 hours → Most/all subtasks should be URGENT
-                   - Due within 1 week → First few subtasks likely URGENT
-                   - Due within 2+ weeks → Only blocking subtasks URGENT
-                   - No deadline → Base urgency on task nature (blocking work, time-sensitive)
+                   isUrgent: true if ANY of these apply:
+                   • Time-sensitive by nature (bug fixes, critical issues, blocking others)
+                   • Deadline approaching (due within 1-2 days)
+                   • Has consequences if delayed (production issues, dependencies)
 
-                   Examples:
-                   • Urgent + Important (Do First): Critical deadlines, crises
-                   • Important only (Schedule): Planning, learning, relationship-building
-                   • Urgent only (Delegate): Interruptions, some emails/calls
-                   • Neither (Eliminate): Busy work, time-wasters
+                   isImportant: true if ANY of these apply:
+                   • Contributes to goals/objectives (strategic, high-value)
+                   • Core work vs busywork (meaningful impact)
+                   • Aligns with project priorities
+
+                6. URGENCY EXAMPLES by task type (deadline is just ONE factor):
+
+                   CONTENT-DRIVEN urgency (urgent regardless of deadline):
+                   • "Fix production bug" → URGENT (blocks users)
+                   • "Review PR blocking deployment" → URGENT (blocks others)
+                   • "Respond to client emergency" → URGENT (external dependency)
+
+                   DEADLINE-DRIVEN urgency (depends on timeline):
+                   • "Organize photos" due tomorrow → NOT urgent (can reschedule)
+                   • "Submit tax return" due tomorrow → URGENT (penalty if late)
+                   • "Prepare presentation" due in 2 hours → URGENT (imminent)
+
+                   NEITHER urgent (even with deadline):
+                   • "Clean downloads folder" → Never urgent
+                   • "Read optional article" → Never urgent
+
+                   Eisenhower Quadrants:
+                   • Urgent + Important (Do First): Critical deadlines, crises, blocking work
+                   • Important only (Schedule): Planning, learning, strategic work
+                   • Urgent only (Delegate): Interruptions, some emails
+                   • Neither (Eliminate): Busywork, time-wasters
 
                 JSON Format (respond with ONLY this, no other text):
                 {
@@ -191,6 +209,8 @@ public class TaskBreakdownService {
 
     /**
      * Formats deadline information into human-readable context for AI urgency classification.
+     * Provides factual deadline information without prescribing urgency - the AI should
+     * consider both deadline AND task nature when determining urgency.
      *
      * @param dueDate The task's due date, or null if no deadline
      * @return Human-readable deadline context for AI prompt
@@ -205,17 +225,19 @@ public class TaskBreakdownService {
         long daysUntilDue = ChronoUnit.DAYS.between(now, dueDate);
 
         if (hoursUntilDue < 0) {
-            return "OVERDUE (was due " + Math.abs(daysUntilDue) + " days ago)";
+            return "OVERDUE by " + Math.abs(daysUntilDue) + " days";
+        } else if (hoursUntilDue < 6) {
+            return "Due in " + hoursUntilDue + " hours (imminent)";
         } else if (hoursUntilDue < 24) {
-            return "Due in " + hoursUntilDue + " hours (VERY URGENT)";
+            return "Due in " + hoursUntilDue + " hours (today)";
         } else if (daysUntilDue == 1) {
-            return "Due tomorrow (" + hoursUntilDue + " hours - URGENT)";
+            return "Due tomorrow (" + hoursUntilDue + " hours)";
         } else if (daysUntilDue < 7) {
             return "Due in " + daysUntilDue + " days (this week)";
         } else if (daysUntilDue < 14) {
             return "Due in " + daysUntilDue + " days (next week)";
         } else {
-            return "Due in " + daysUntilDue + " days (" + (daysUntilDue / 7) + " weeks)";
+            return "Due in " + daysUntilDue + " days (" + (daysUntilDue / 7) + " weeks out)";
         }
     }
 }
