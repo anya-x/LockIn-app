@@ -11,6 +11,7 @@ export function useGoals() {
       const response = await goalService.getAllGoals();
       return response.data;
     },
+    staleTime: 30 * 60 * 1000, // 30 minutes - goals change infrequently
   });
 }
 

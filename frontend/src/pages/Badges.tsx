@@ -35,6 +35,7 @@ const Badges: React.FC = () => {
       const response = await badgeService.getUserBadges(false);
       return response.data;
     },
+    staleTime: 60 * 60 * 1000, // 1 hour - badges unlock rarely
   });
 
   const displayedBadges = useMemo(() => {
