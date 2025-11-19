@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.features.badges.service;
+package com.lockin.lockin_app.features.badges.listener;
 
 import com.lockin.lockin_app.features.badges.entity.BadgeType;
 import com.lockin.lockin_app.entity.BadgeType.BadgeCategory;
