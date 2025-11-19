@@ -13,6 +13,7 @@ import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -69,8 +70,9 @@ public class TaskBreakdownService {
         return result;
     }
 
+    @Cacheable(value = "taskBreakdowns", key = "#title + '_' + (#description != null ? #description : '')")
     public TaskBreakdownResultDTO breakdownTask(String title, String description) {
-        log.info("Breaking down task: {}", title);
+        log.info("Breaking down task: {} (cache miss)", title);
 
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Task title cannot be empty");

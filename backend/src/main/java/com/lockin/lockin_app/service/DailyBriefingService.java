@@ -1,7 +1,5 @@
 package com.lockin.lockin_app.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lockin.lockin_app.dto.BriefingResultDTO;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.entity.AIUsage;
@@ -13,13 +11,11 @@ import com.lockin.lockin_app.repository.TaskRepository;
 import com.lockin.lockin_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,34 +26,10 @@ public class DailyBriefingService {
     private final TaskRepository taskRepository;
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
 
-
+    @Cacheable(value = "dailyBriefings", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public BriefingResultDTO generateDailyBriefing(Long userId) {
-        log.info("Generating daily briefing for user: {}", userId);
-
-        User user = userRepository.findById(userId)
-                                  .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Check for cached briefing from today
-        LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        AIUsage cachedBriefing = aiUsageRepository.findTodaysBriefing(user, "BRIEFING", startOfDay);
-
-        if (cachedBriefing != null && cachedBriefing.getResponseDetails() != null) {
-            log.info("Returning cached briefing for user: {}", userId);
-            try {
-                BriefingResultDTO cached = objectMapper.readValue(
-                        cachedBriefing.getResponseDetails(),
-                        BriefingResultDTO.class
-                );
-                log.info("Cache hit! Saved API call for daily briefing");
-                return cached;
-            } catch (JsonProcessingException e) {
-                log.warn("Failed to parse cached briefing, regenerating: {}", e.getMessage());
-            }
-        }
-
-        log.info("No cached briefing found, generating new one for user: {}", userId);
+        log.info("Generating daily briefing for user: {} (cache miss)", userId);
 
         List<Task> q1UrgentImportant = taskRepository.findByQuadrantExcludingStatus(
                 userId, true, true, TaskStatus.COMPLETED);
@@ -139,7 +111,10 @@ public class DailyBriefingService {
                     response.getEstimatedCost()
             );
 
-            // Cache the result
+            // Track usage for analytics and cost monitoring
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
             AIUsage usage = new AIUsage();
             usage.setUser(user);
             usage.setFeatureType("BRIEFING");
@@ -147,16 +122,9 @@ public class DailyBriefingService {
             usage.setCostUSD(response.getEstimatedCost());
             usage.setRequestDetails(String.format("{\"taskCount\":%d}", totalActiveTasks));
 
-            try {
-                String cachedResponse = objectMapper.writeValueAsString(result);
-                usage.setResponseDetails(cachedResponse);
-            } catch (JsonProcessingException e) {
-                log.warn("Failed to cache briefing result: {}", e.getMessage());
-            }
-
             aiUsageRepository.save(usage);
 
-            log.info("Daily briefing generated and cached: {} tasks, {} tokens, ${} cost",
+            log.info("Daily briefing generated: {} tasks, {} tokens, ${} cost (cached by Caffeine)",
                      totalActiveTasks,
                      response.getTotalTokens(),
                      String.format("%.4f", response.getEstimatedCost()));
