@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.repository;
+package com.lockin.lockin_app.features.ai.repository;
 
-import com.lockin.lockin_app.entity.AIUsage;
+import com.lockin.lockin_app.features.ai.entity.AIUsage;
 import com.lockin.lockin_app.features.users.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

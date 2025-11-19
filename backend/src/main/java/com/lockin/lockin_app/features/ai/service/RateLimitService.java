@@ -1,8 +1,8 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.ai.service;
 
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.exception.RateLimitExceededException;
-import com.lockin.lockin_app.repository.AIUsageRepository;
+import com.lockin.lockin_app.features.ai.repository.AIUsageRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

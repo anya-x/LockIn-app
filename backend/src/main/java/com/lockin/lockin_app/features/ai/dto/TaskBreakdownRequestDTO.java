@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.ai.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -1,12 +1,12 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.ai.service;
 
-import com.lockin.lockin_app.dto.BriefingResultDTO;
-import com.lockin.lockin_app.dto.ClaudeResponseDTO;
-import com.lockin.lockin_app.entity.AIUsage;
+import com.lockin.lockin_app.features.ai.dto.BriefingResultDTO;
+import com.lockin.lockin_app.features.ai.dto.ClaudeResponseDTO;
+import com.lockin.lockin_app.features.ai.entity.AIUsage;
 import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
 import com.lockin.lockin_app.features.users.entity.User;
-import com.lockin.lockin_app.repository.AIUsageRepository;
+import com.lockin.lockin_app.features.ai.repository.AIUsageRepository;
 import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

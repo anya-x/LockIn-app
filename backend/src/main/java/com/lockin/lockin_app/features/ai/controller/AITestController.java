@@ -1,9 +1,9 @@
-package com.lockin.lockin_app.controller;
+package com.lockin.lockin_app.features.ai.controller;
 
-import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
-import com.lockin.lockin_app.service.ClaudeAPIClientService;
-import com.lockin.lockin_app.dto.ClaudeResponseDTO;
-import com.lockin.lockin_app.service.TaskBreakdownService;
+import com.lockin.lockin_app.features.ai.dto.TaskBreakdownResultDTO;
+import com.lockin.lockin_app.features.ai.service.ClaudeAPIClientService;
+import com.lockin.lockin_app.features.ai.dto.ClaudeResponseDTO;
+import com.lockin.lockin_app.features.ai.service.TaskBreakdownService;
 import com.lockin.lockin_app.features.tasks.entity.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

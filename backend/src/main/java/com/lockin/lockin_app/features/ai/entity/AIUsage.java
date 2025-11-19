@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.entity;
+package com.lockin.lockin_app.features.ai.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

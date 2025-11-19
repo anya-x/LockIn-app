@@ -1,15 +1,15 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.ai.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lockin.lockin_app.dto.ClaudeResponseDTO;
-import com.lockin.lockin_app.dto.SubtaskSuggestionDTO;
-import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
-import com.lockin.lockin_app.entity.AIUsage;
+import com.lockin.lockin_app.features.ai.dto.ClaudeResponseDTO;
+import com.lockin.lockin_app.features.ai.dto.SubtaskSuggestionDTO;
+import com.lockin.lockin_app.features.ai.dto.TaskBreakdownResultDTO;
+import com.lockin.lockin_app.features.ai.entity.AIUsage;
 import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.users.entity.User;
-import com.lockin.lockin_app.repository.AIUsageRepository;
+import com.lockin.lockin_app.features.ai.repository.AIUsageRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

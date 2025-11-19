@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.lockin.lockin_app.features.tasks.entity.Task;

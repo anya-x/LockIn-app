@@ -1,8 +1,8 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lockin.lockin_app.dto.ClaudeResponseDTO;
+import com.lockin.lockin_app.features.ai.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.config.AnthropicConfig;
 import com.lockin.lockin_app.exception.ClaudeAPIException;
 
