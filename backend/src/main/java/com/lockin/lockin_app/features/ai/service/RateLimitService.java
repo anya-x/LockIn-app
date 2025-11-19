@@ -50,4 +50,16 @@ public class RateLimitService {
         return Math.max(0, MAX_REQUESTS_PER_DAY - (int) requestCount);
     }
 
+    public int getUsedRequests(Long userId) {
+        User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new RuntimeException("User not found"));
+
+        LocalDateTime since = LocalDateTime.now().minusHours(24);
+        return (int) aiUsageRepository.countRecentRequests(user, since);
+    }
+
+    public int getMaxRequests() {
+        return MAX_REQUESTS_PER_DAY;
+    }
+
 }

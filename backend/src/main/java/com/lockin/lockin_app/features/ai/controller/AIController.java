@@ -2,10 +2,12 @@ package com.lockin.lockin_app.features.ai.controller;
 
 import com.lockin.lockin_app.features.ai.dto.BriefingResultDTO;
 import com.lockin.lockin_app.features.ai.dto.EnhancementResultDTO;
+import com.lockin.lockin_app.features.ai.dto.RateLimitStatusDTO;
 import com.lockin.lockin_app.features.ai.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.features.ai.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.features.ai.service.DailyBriefingService;
 import com.lockin.lockin_app.features.ai.service.DescriptionEnhancementService;
+import com.lockin.lockin_app.features.ai.service.RateLimitService;
 import com.lockin.lockin_app.features.ai.service.TaskBreakdownService;
 import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.tasks.service.TaskService;
@@ -30,18 +32,21 @@ public class AIController extends BaseController {
     private final TaskService taskService;
     private final DescriptionEnhancementService descriptionEnhancementService;
     private final DailyBriefingService dailyBriefingService;
+    private final RateLimitService rateLimitService;
 
     public AIController(
             UserService userService,
             TaskBreakdownService taskBreakdownService,
             TaskService taskService,
             DescriptionEnhancementService descriptionEnhancementService,
-            DailyBriefingService dailyBriefingService) {
+            DailyBriefingService dailyBriefingService,
+            RateLimitService rateLimitService) {
         super(userService);
         this.taskBreakdownService = taskBreakdownService;
         this.taskService = taskService;
         this.descriptionEnhancementService = descriptionEnhancementService;
         this.dailyBriefingService = dailyBriefingService;
+        this.rateLimitService = rateLimitService;
     }
 
     @PostMapping("/breakdown/{taskId}")
@@ -170,5 +175,21 @@ public class AIController extends BaseController {
             log.error("Daily briefing generation failed: {}", e.getMessage());
             throw new RuntimeException("Daily briefing generation failed: " + e.getMessage(), e);
         }
+    }
+
+    @GetMapping("/rate-limit")
+    public ResponseEntity<RateLimitStatusDTO> getRateLimitStatus(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.debug("Rate limit status requested by user: {}", getCurrentUserEmail(userDetails));
+
+        Long userId = getCurrentUserId(userDetails);
+
+        int limit = rateLimitService.getMaxRequests();
+        int used = rateLimitService.getUsedRequests(userId);
+        int remaining = rateLimitService.getRemainingRequests(userId);
+
+        RateLimitStatusDTO status = new RateLimitStatusDTO(limit, remaining, used);
+
+        return ResponseEntity.ok(status);
     }
 }

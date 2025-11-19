@@ -141,6 +141,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponseDTO> handleRateLimitExceeded(
+            RateLimitExceededException ex, WebRequest request) {
+
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+
+        ErrorResponseDTO errorResponse =
+                ErrorResponseDTO.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                        .error("Too Many Requests")
+                        .message(ex.getMessage())
+                        .path(extractPath(request))
+                        .build();
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
+    }
+
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }

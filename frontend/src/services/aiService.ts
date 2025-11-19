@@ -40,6 +40,12 @@ export interface BriefingResult {
   costUSD: number;
 }
 
+export interface RateLimitStatus {
+  limit: number;
+  remaining: number;
+  used: number;
+}
+
 export const aiService = {
   breakdownTask: async (taskId: number): Promise<TaskBreakdownResult> => {
     const response = await api.post<TaskBreakdownResult>(
@@ -78,6 +84,11 @@ export const aiService = {
 
   getDailyBriefing: async (): Promise<BriefingResult> => {
     const response = await api.get<BriefingResult>("/ai/daily-briefing");
+    return response.data;
+  },
+
+  getRateLimitStatus: async (): Promise<RateLimitStatus> => {
+    const response = await api.get<RateLimitStatus>("/ai/rate-limit");
     return response.data;
   },
 };

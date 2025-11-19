@@ -30,6 +30,7 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
+    // Rate limit errors are handled by components
     return Promise.reject(error);
   }
 );
