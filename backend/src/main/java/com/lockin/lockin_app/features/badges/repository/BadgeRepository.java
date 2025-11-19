@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.repository;
+package com.lockin.lockin_app.features.badges.repository;
 
-import com.lockin.lockin_app.entity.Badge;
-import com.lockin.lockin_app.entity.BadgeType;
+import com.lockin.lockin_app.features.badges.entity.Badge;
+import com.lockin.lockin_app.features.badges.entity.BadgeType;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

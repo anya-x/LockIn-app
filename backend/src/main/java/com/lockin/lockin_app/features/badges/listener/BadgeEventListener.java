@@ -1,12 +1,12 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.badges.service;
 
-import com.lockin.lockin_app.entity.BadgeType;
+import com.lockin.lockin_app.features.badges.entity.BadgeType;
 import com.lockin.lockin_app.entity.BadgeType.BadgeCategory;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.event.PomodoroCompletedEvent;
 import com.lockin.lockin_app.event.TaskCompletedEvent;
-import com.lockin.lockin_app.repository.BadgeRepository;
+import com.lockin.lockin_app.features.badges.repository.BadgeRepository;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.GoalRepository;
 import com.lockin.lockin_app.repository.TaskRepository;

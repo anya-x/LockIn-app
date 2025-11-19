@@ -1,10 +1,10 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.badges.service;
 
-import com.lockin.lockin_app.dto.BadgeDTO;
-import com.lockin.lockin_app.entity.Badge;
-import com.lockin.lockin_app.entity.BadgeType;
+import com.lockin.lockin_app.features.badges.dto.BadgeDTO;
+import com.lockin.lockin_app.features.badges.entity.Badge;
+import com.lockin.lockin_app.features.badges.entity.BadgeType;
 import com.lockin.lockin_app.features.users.entity.User;
-import com.lockin.lockin_app.repository.BadgeRepository;
+import com.lockin.lockin_app.features.badges.repository.BadgeRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

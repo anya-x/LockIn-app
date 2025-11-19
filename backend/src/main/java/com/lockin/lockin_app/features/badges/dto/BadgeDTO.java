@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.badges.dto;
 
-import com.lockin.lockin_app.entity.Badge;
-import com.lockin.lockin_app.entity.BadgeType;
+import com.lockin.lockin_app.features.badges.entity.Badge;
+import com.lockin.lockin_app.features.badges.entity.BadgeType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.controller;
+package com.lockin.lockin_app.features.badges.controller;
 
-import com.lockin.lockin_app.dto.BadgeDTO;
-import com.lockin.lockin_app.service.BadgeService;
+import com.lockin.lockin_app.features.badges.dto.BadgeDTO;
+import com.lockin.lockin_app.features.badges.service.BadgeService;
 import com.lockin.lockin_app.features.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
