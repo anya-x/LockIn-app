@@ -10,8 +10,8 @@ import com.lockin.lockin_app.features.analytics.service.ComparisonService;
 import com.lockin.lockin_app.features.analytics.service.StreakService;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.features.analytics.service.WeeklyReportService;
+import com.lockin.lockin_app.shared.controller.BaseController;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
@@ -25,22 +25,32 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/analytics")
-@RequiredArgsConstructor
-public class DailyAnalyticsController {
+public class DailyAnalyticsController extends BaseController {
 
     private final AnalyticsCalculationService calculationService;
-    private final UserService userService;
     private final WeeklyReportService weeklyReportService;
     private final StreakService streakService;
     private final ComparisonService comparisonService;
+
+    public DailyAnalyticsController(UserService userService,
+                                    AnalyticsCalculationService calculationService,
+                                    WeeklyReportService weeklyReportService,
+                                    StreakService streakService,
+                                    ComparisonService comparisonService) {
+        super(userService);
+        this.calculationService = calculationService;
+        this.weeklyReportService = weeklyReportService;
+        this.streakService = streakService;
+        this.comparisonService = comparisonService;
+    }
 
     @GetMapping("/today")
     public ResponseEntity<DailyAnalyticsDTO> getTodayAnalytics(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/analytics/today: User: {}", userDetails.getUsername());
+        log.debug("GET /api/analytics/today: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         LocalDate today = LocalDate.now();
 
         DailyAnalyticsDTO analytics = calculationService.calculateDailyAnalytics(userId, today);
@@ -52,9 +62,9 @@ public class DailyAnalyticsController {
     public ResponseEntity<List<DailyAnalyticsDTO>> getAnalyticsRange(
             @RequestParam int days, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/analytics/range?days={}: User: {}", days, userDetails.getUsername());
+        log.debug("GET /api/analytics/range?days={}: User: {}", days, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
@@ -73,9 +83,9 @@ public class DailyAnalyticsController {
     public ResponseEntity<DailyAnalyticsDTO> calculateForDate(
             @PathVariable String date, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/analytics/calculate/{}: User: {}", date, userDetails.getUsername());
+        log.debug("POST /api/analytics/calculate/{}: User: {}", date, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         LocalDate targetDate = LocalDate.parse(date);
 
         DailyAnalyticsDTO analytics =
@@ -88,9 +98,9 @@ public class DailyAnalyticsController {
     public ResponseEntity<WeeklyReportDTO> getWeeklyReport(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/analytics/weekly-report: User: {}", userDetails.getUsername());
+        log.debug("GET /api/analytics/weekly-report: User: {}", getCurrentUserEmail(userDetails));
 
-        User user = userService.getUserByEmail(userDetails.getUsername());
+        User user = userService.getUserByEmail(getCurrentUserEmail(userDetails));
 
         WeeklyReportDTO report = weeklyReportService.generateWeeklyReport(user);
 
@@ -106,9 +116,9 @@ public class DailyAnalyticsController {
     public ResponseEntity<ComparisonDTO> comparePeriods(
             @RequestBody DateRangeDTO request, @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/analytics/compare: User: {}", userDetails.getUsername());
+        log.debug("POST /api/analytics/compare: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         DailyAnalyticsDTO current =
                 calculationService.getAverageForPeriod(
@@ -126,9 +136,9 @@ public class DailyAnalyticsController {
     @PostMapping("/refresh")
     public ResponseEntity<Void> refreshAnalytics(@AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/analytics/refresh: User: {}", userDetails.getUsername());
+        log.debug("POST /api/analytics/refresh: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         calculationService.invalidateCache(userId, LocalDate.now());
 
@@ -141,9 +151,9 @@ public class DailyAnalyticsController {
     public ResponseEntity<StreakService.StreakStats> getStreak(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/analytics/streak: User: {}", userDetails.getUsername());
+        log.debug("GET /api/analytics/streak: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
 
         // Update streak based on today's activity
         streakService.updateStreak(userId);

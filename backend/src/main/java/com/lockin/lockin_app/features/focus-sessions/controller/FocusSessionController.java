@@ -4,10 +4,10 @@ import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionRequestDTO;
 import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.features.focus_sessions.service.FocusSessionService;
 import com.lockin.lockin_app.features.users.service.UserService;
+import com.lockin.lockin_app.shared.controller.BaseController;
 
 import jakarta.validation.Valid;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
@@ -22,19 +22,22 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/sessions")
-@RequiredArgsConstructor
-public class FocusSessionController {
+public class FocusSessionController extends BaseController {
 
     private final FocusSessionService sessionService;
-    private final UserService userService;
+
+    public FocusSessionController(UserService userService, FocusSessionService sessionService) {
+        super(userService);
+        this.sessionService = sessionService;
+    }
 
     @GetMapping
     public ResponseEntity<List<FocusSessionResponseDTO>> getUserSessions(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/sessions: User: {}", userDetails.getUsername());
+        log.debug("GET /api/sessions: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         List<FocusSessionResponseDTO> sessions = sessionService.getUserSessions(userId);
 
         return ResponseEntity.ok(sessions);
@@ -45,9 +48,9 @@ public class FocusSessionController {
             @Valid @RequestBody FocusSessionRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/sessions/start: User: {}", userDetails.getUsername());
+        log.debug("POST /api/sessions/start: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         FocusSessionResponseDTO session = sessionService.startSession(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
@@ -59,9 +62,9 @@ public class FocusSessionController {
             @RequestBody Map<String, Integer> request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("POST /api/sessions/{}/complete: User: {}", id, userDetails.getUsername());
+        log.debug("POST /api/sessions/{}/complete: User: {}", id, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Integer actualMinutes = request.get("actualMinutes");
 
         FocusSessionResponseDTO session = sessionService.completeSession(id, userId, actualMinutes);
@@ -75,9 +78,9 @@ public class FocusSessionController {
             @RequestBody Map<String, Integer> request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("PUT /api/sessions/{}: User: {}", id, userDetails.getUsername());
+        log.debug("PUT /api/sessions/{}: User: {}", id, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Integer actualMinutes = request.get("actualMinutes");
 
         FocusSessionResponseDTO session = sessionService.updateSession(id, userId, actualMinutes);
@@ -89,9 +92,9 @@ public class FocusSessionController {
     public ResponseEntity<Map<String, Object>> getTodayStats(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("GET /api/sessions/today: User: {}", userDetails.getUsername());
+        log.debug("GET /api/sessions/today: User: {}", getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         Integer totalMinutes = sessionService.getTotalFocusMinutesToday(userId);
         List<FocusSessionResponseDTO> sessions = sessionService.getTodaysSessions(userId);
 
@@ -105,9 +108,9 @@ public class FocusSessionController {
             @RequestBody Map<String, String> request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.debug("PUT /api/sessions/{}/notes: User: {}", id, userDetails.getUsername());
+        log.debug("PUT /api/sessions/{}/notes: User: {}", id, getCurrentUserEmail(userDetails));
 
-        Long userId = userService.getUserIdFromEmail(userDetails.getUsername());
+        Long userId = getCurrentUserId(userDetails);
         String notes = request.get("notes");
 
         FocusSessionResponseDTO session = sessionService.updateSessionNotes(id, userId, notes);
