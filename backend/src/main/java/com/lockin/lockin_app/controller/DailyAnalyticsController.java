@@ -4,11 +4,11 @@ import com.lockin.lockin_app.dto.ComparisonDTO;
 import com.lockin.lockin_app.dto.DailyAnalyticsDTO;
 import com.lockin.lockin_app.dto.DateRangeDTO;
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.service.AnalyticsCalculationService;
 import com.lockin.lockin_app.service.ComparisonService;
 import com.lockin.lockin_app.service.StreakService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.service.WeeklyReportService;
 
 import lombok.RequiredArgsConstructor;

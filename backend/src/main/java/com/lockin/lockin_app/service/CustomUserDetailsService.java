@@ -1,7 +1,7 @@
 package com.lockin.lockin_app.service;
 
-import com.lockin.lockin_app.entity.User;
-import com.lockin.lockin_app.repository.UserRepository;
+import com.lockin.lockin_app.features.users.entity.User;
+import com.lockin.lockin_app.features.users.repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 

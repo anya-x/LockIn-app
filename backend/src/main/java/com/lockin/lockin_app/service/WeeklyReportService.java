@@ -2,7 +2,7 @@ package com.lockin.lockin_app.service;
 
 import com.lockin.lockin_app.dto.WeeklyReportDTO;
 import com.lockin.lockin_app.entity.DailyAnalytics;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
 
 import lombok.RequiredArgsConstructor;

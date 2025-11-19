@@ -3,7 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
 import com.lockin.lockin_app.service.GoalService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.features.users.service.UserService;
 
 import jakarta.validation.Valid;
 

@@ -3,12 +3,12 @@ package com.lockin.lockin_app.features.categories.service;
 import com.lockin.lockin_app.features.categories.dto.CategoryRequestDTO;
 import com.lockin.lockin_app.features.categories.dto.CategoryResponseDTO;
 import com.lockin.lockin_app.features.categories.entity.Category;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.features.categories.repository.CategoryRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
-import com.lockin.lockin_app.repository.UserRepository;
+import com.lockin.lockin_app.features.users.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -6,7 +6,7 @@ import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.repository.DailyAnalyticsRepository;
 import com.lockin.lockin_app.repository.FocusSessionRepository;
 import com.lockin.lockin_app.repository.TaskRepository;
-import com.lockin.lockin_app.repository.UserRepository;
+import com.lockin.lockin_app.features.users.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

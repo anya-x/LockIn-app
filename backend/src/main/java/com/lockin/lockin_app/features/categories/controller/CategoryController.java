@@ -3,7 +3,7 @@ package com.lockin.lockin_app.features.categories.controller;
 import com.lockin.lockin_app.features.categories.dto.CategoryRequestDTO;
 import com.lockin.lockin_app.features.categories.dto.CategoryResponseDTO;
 import com.lockin.lockin_app.features.categories.service.CategoryService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.features.users.service.UserService;
 
 import jakarta.validation.Valid;
 

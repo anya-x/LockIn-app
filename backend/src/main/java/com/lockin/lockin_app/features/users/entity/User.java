@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.entity;
+package com.lockin.lockin_app.features.users.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

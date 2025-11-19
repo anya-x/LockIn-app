@@ -4,7 +4,7 @@ import com.lockin.lockin_app.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.dto.GoalRequestDTO;
 import com.lockin.lockin_app.dto.GoalResponseDTO;
 import com.lockin.lockin_app.entity.Goal;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.event.GoalCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;

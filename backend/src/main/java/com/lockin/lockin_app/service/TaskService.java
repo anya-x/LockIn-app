@@ -7,7 +7,7 @@ import com.lockin.lockin_app.dto.TaskStatisticsDTO;
 import com.lockin.lockin_app.features.categories.entity.Category;
 import com.lockin.lockin_app.entity.Task;
 import com.lockin.lockin_app.entity.TaskStatus;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.event.TaskCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;

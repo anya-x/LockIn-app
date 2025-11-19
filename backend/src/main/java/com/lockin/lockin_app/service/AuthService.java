@@ -3,9 +3,9 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.dto.AuthResponseDTO;
 import com.lockin.lockin_app.dto.LoginRequestDTO;
 import com.lockin.lockin_app.dto.RegisterRequestDTO;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
-import com.lockin.lockin_app.repository.UserRepository;
+import com.lockin.lockin_app.features.users.repository.UserRepository;
 import com.lockin.lockin_app.security.JwtUtil;
 
 import lombok.RequiredArgsConstructor;

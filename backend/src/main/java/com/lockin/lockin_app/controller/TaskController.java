@@ -6,7 +6,7 @@ import com.lockin.lockin_app.dto.TaskResponseDTO;
 import com.lockin.lockin_app.dto.TaskStatisticsDTO;
 import com.lockin.lockin_app.entity.TaskStatus;
 import com.lockin.lockin_app.service.TaskService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.features.users.service.UserService;
 
 import jakarta.validation.Valid;
 

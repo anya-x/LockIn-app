@@ -2,7 +2,7 @@ package com.lockin.lockin_app.controller;
 
 import com.lockin.lockin_app.dto.BadgeDTO;
 import com.lockin.lockin_app.service.BadgeService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.features.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

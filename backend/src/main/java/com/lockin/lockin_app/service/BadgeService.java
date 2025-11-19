@@ -3,7 +3,7 @@ package com.lockin.lockin_app.service;
 import com.lockin.lockin_app.dto.BadgeDTO;
 import com.lockin.lockin_app.entity.Badge;
 import com.lockin.lockin_app.entity.BadgeType;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.repository.BadgeRepository;
 
 import lombok.RequiredArgsConstructor;

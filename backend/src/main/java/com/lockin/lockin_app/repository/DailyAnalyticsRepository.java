@@ -1,7 +1,7 @@
 package com.lockin.lockin_app.repository;
 
 import com.lockin.lockin_app.entity.DailyAnalytics;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

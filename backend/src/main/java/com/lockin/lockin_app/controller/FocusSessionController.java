@@ -3,7 +3,7 @@ package com.lockin.lockin_app.controller;
 import com.lockin.lockin_app.dto.FocusSessionRequestDTO;
 import com.lockin.lockin_app.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.service.FocusSessionService;
-import com.lockin.lockin_app.service.UserService;
+import com.lockin.lockin_app.features.users.service.UserService;
 
 import jakarta.validation.Valid;
 

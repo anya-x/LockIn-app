@@ -5,7 +5,7 @@ import com.lockin.lockin_app.dto.EnhancementResultDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownRequestDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.Task;
-import com.lockin.lockin_app.entity.User;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
