@@ -1,6 +1,4 @@
-package com.lockin.lockin_app.features.analytics.dto;
-
-import com.lockin.lockin_app.features.tasks.dto.TaskResponseDTO;
+package com.lockin.lockin_app.features.tasks.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
