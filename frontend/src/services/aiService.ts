@@ -1,11 +1,17 @@
 import api from "./api";
 import type { Task } from "../types/task";
 
+/**
+ * AI-generated subtask suggestion with Eisenhower Matrix classification.
+ */
 export interface SubtaskSuggestion {
   title: string;
   description: string;
   estimatedMinutes: number;
-  priority: "HIGH" | "MEDIUM" | "LOW";
+  /** Eisenhower Matrix: Is this task time-sensitive? */
+  isUrgent: boolean;
+  /** Eisenhower Matrix: Does this task contribute to goals? */
+  isImportant: boolean;
 }
 
 export interface TaskBreakdownResult {

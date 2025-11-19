@@ -17,11 +17,10 @@ import {
   alpha,
   useTheme,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   IconButton,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
 } from "@mui/material";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AddTaskIcon from "@mui/icons-material/AddTask";
@@ -115,9 +114,8 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
           title: subtask.title,
           description: subtask.description,
           status: "TODO" as const,
-          isUrgent: subtask.priority === "HIGH",
-          isImportant:
-            subtask.priority === "HIGH" || subtask.priority === "MEDIUM",
+          isUrgent: subtask.isUrgent,
+          isImportant: subtask.isImportant,
           categoryId: task.categoryId,
         })
       );
@@ -129,17 +127,6 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
       setError("Failed to create subtasks. Please try again.");
     } finally {
       setCreating(false);
-    }
-  };
-
-  const getPriorityColor = (priority: string): "error" | "warning" | "info" => {
-    switch (priority) {
-      case "HIGH":
-        return "error";
-      case "MEDIUM":
-        return "warning";
-      default:
-        return "info";
     }
   };
 
@@ -315,20 +302,58 @@ const AITaskBreakdown: React.FC<AITaskBreakdownProps> = ({
                       InputProps={{ inputProps: { min: 5, max: 480 } }}
                     />
 
-                    <FormControl size="small" sx={{ width: 150 }}>
-                      <InputLabel>Priority</InputLabel>
-                      <Select
-                        value={subtask.priority}
-                        label="Priority"
-                        onChange={(e) =>
-                          handleUpdateSubtask(index, "priority", e.target.value)
+                    <FormGroup sx={{ flexDirection: "row", gap: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={subtask.isUrgent}
+                            onChange={(e) =>
+                              handleUpdateSubtask(
+                                index,
+                                "isUrgent",
+                                e.target.checked
+                              )
+                            }
+                            sx={{
+                              color: "error.main",
+                              "&.Mui-checked": {
+                                color: "error.main",
+                              },
+                            }}
+                          />
                         }
-                      >
-                        <MenuItem value="HIGH">🔴 High</MenuItem>
-                        <MenuItem value="MEDIUM">🟡 Medium</MenuItem>
-                        <MenuItem value="LOW">🟢 Low</MenuItem>
-                      </Select>
-                    </FormControl>
+                        label={
+                          <Typography variant="body2" color="error">
+                            🔴 Urgent
+                          </Typography>
+                        }
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={subtask.isImportant}
+                            onChange={(e) =>
+                              handleUpdateSubtask(
+                                index,
+                                "isImportant",
+                                e.target.checked
+                              )
+                            }
+                            sx={{
+                              color: "warning.main",
+                              "&.Mui-checked": {
+                                color: "warning.main",
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" color="warning.main">
+                            🟡 Important
+                          </Typography>
+                        }
+                      />
+                    </FormGroup>
                   </Box>
                 </ListItem>
               ))}

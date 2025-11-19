@@ -65,12 +65,12 @@ public class TaskBreakdownService {
 
             Your response must include:
             1. A brief reasoning explaining your breakdown approach
-            2. An array of 3-7 actionable subtasks
+            2. An array of 3-7 actionable subtasks classified using the Eisenhower Matrix
             """;
 
         String userPrompt = String.format(
                 """
-                Break down this task into 3-7 actionable subtasks.
+                Break down this task into 3-7 actionable subtasks using the Eisenhower Matrix.
 
                 Task Title: "%s"
                 Description: "%s"
@@ -80,7 +80,15 @@ public class TaskBreakdownService {
                 2. If task is vague, make reasonable assumptions
                 3. Each subtask must start with action verb
                 4. Estimate realistic time (15-90 minutes per subtask)
-                5. Assign priority: HIGH (urgent), MEDIUM (important), or LOW (optional)
+                5. Classify using Eisenhower Matrix:
+                   - isUrgent: true if time-sensitive (deadline-driven, blocking other work)
+                   - isImportant: true if contributes to goals/objectives (strategic, high-value)
+
+                   Examples:
+                   • Urgent + Important (Do First): Critical deadlines, crises
+                   • Important only (Schedule): Planning, learning, relationship-building
+                   • Urgent only (Delegate): Interruptions, some emails/calls
+                   • Neither (Eliminate): Busy work, time-wasters
 
                 JSON Format (respond with ONLY this, no other text):
                 {
@@ -90,7 +98,8 @@ public class TaskBreakdownService {
                       "title": "Action verb + specific task",
                       "description": "What and how to do it",
                       "estimatedMinutes": 30,
-                      "priority": "MEDIUM"
+                      "isUrgent": false,
+                      "isImportant": true
                     }
                   ]
                 }
