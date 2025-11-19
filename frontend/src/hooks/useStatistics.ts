@@ -24,6 +24,6 @@ export function useStatisticsData() {
         tasks: Array.isArray(tasks) ? tasks : [],
       };
     },
-    staleTime: 60 * 60 * 1000, // 1 hour - statistics change with each completed task/session
+    staleTime: Infinity, // Never auto-refresh - updates via manual invalidation on timer.completionCounter
   });
 }
