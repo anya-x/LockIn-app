@@ -74,4 +74,29 @@ public class RateLimitService {
         log.info("Reset rate limit for user {} - all AI usage records deleted", userId);
     }
 
+
+    @Transactional
+    @CacheEvict(value = "rateLimitCounters", key = "#userId")
+    public void simulateUsage(Long userId, int count) {
+        User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // First reset to have a clean slate
+        aiUsageRepository.deleteByUser(user);
+
+        // Create dummy usage records
+        for (int i = 0; i < count; i++) {
+            com.lockin.lockin_app.features.ai.entity.AIUsage usage = new com.lockin.lockin_app.features.ai.entity.AIUsage();
+            usage.setUser(user);
+            usage.setFeatureType("TEST_SIMULATION");
+            usage.setTokensUsed(100);
+            usage.setCostUSD(0.001);
+            usage.setRequestDetails("{\"test\":\"simulated\"}");
+            usage.setCreatedAt(LocalDateTime.now().minusMinutes(i * 10));
+
+            aiUsageRepository.save(usage);
+        }
+
+        log.info("Simulated {} AI usage records for user {}", count, userId);
+    }
 }

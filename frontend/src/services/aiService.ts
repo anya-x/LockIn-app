@@ -96,6 +96,11 @@ export const aiService = {
     const response = await api.delete<RateLimitStatus>("/ai/rate-limit/reset");
     return response.data;
   },
+
+  simulateUsage: async (count: number): Promise<RateLimitStatus> => {
+    const response = await api.post<RateLimitStatus>(`/ai/rate-limit/simulate/${count}`);
+    return response.data;
+  },
 };
 
 export default aiService;

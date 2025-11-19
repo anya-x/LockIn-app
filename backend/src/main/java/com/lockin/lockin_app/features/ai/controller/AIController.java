@@ -207,4 +207,22 @@ public class AIController extends BaseController {
 
         return ResponseEntity.ok(status);
     }
+
+    @PostMapping("/rate-limit/simulate/{count}")
+    public ResponseEntity<RateLimitStatusDTO> simulateUsage(
+            @PathVariable int count,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getCurrentUserId(userDetails);
+
+        log.warn("Simulating {} AI requests for user: {}", count, getCurrentUserEmail(userDetails));
+        rateLimitService.simulateUsage(userId, count);
+
+        int limit = rateLimitService.getMaxRequests();
+        int used = rateLimitService.getUsedRequests(userId);
+        int remaining = rateLimitService.getRemainingRequests(userId);
+
+        RateLimitStatusDTO status = new RateLimitStatusDTO(limit, remaining, used);
+
+        return ResponseEntity.ok(status);
+    }
 }
