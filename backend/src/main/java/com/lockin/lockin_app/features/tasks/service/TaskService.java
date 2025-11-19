@@ -1,17 +1,17 @@
-package com.lockin.lockin_app.service;
+package com.lockin.lockin_app.features.tasks.service;
 
 import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
-import com.lockin.lockin_app.dto.TaskRequestDTO;
-import com.lockin.lockin_app.dto.TaskResponseDTO;
-import com.lockin.lockin_app.dto.TaskStatisticsDTO;
+import com.lockin.lockin_app.features.tasks.dto.TaskRequestDTO;
+import com.lockin.lockin_app.features.tasks.dto.TaskResponseDTO;
+import com.lockin.lockin_app.features.tasks.dto.TaskStatisticsDTO;
 import com.lockin.lockin_app.features.categories.entity.Category;
-import com.lockin.lockin_app.entity.Task;
-import com.lockin.lockin_app.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.event.TaskCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
-import com.lockin.lockin_app.repository.TaskRepository;
+import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

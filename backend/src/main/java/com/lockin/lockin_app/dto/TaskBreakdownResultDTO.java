@@ -1,7 +1,7 @@
 package com.lockin.lockin_app.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.Task;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

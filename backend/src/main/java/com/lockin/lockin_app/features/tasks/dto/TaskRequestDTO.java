@@ -1,6 +1,6 @@
-package com.lockin.lockin_app.dto;
+package com.lockin.lockin_app.features.tasks.dto;
 
-import com.lockin.lockin_app.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

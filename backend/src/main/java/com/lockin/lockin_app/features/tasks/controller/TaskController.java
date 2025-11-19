@@ -1,11 +1,11 @@
-package com.lockin.lockin_app.controller;
+package com.lockin.lockin_app.features.tasks.controller;
 
 import com.lockin.lockin_app.dto.EisenhowerMatrixDTO;
-import com.lockin.lockin_app.dto.TaskRequestDTO;
-import com.lockin.lockin_app.dto.TaskResponseDTO;
-import com.lockin.lockin_app.dto.TaskStatisticsDTO;
-import com.lockin.lockin_app.entity.TaskStatus;
-import com.lockin.lockin_app.service.TaskService;
+import com.lockin.lockin_app.features.tasks.dto.TaskRequestDTO;
+import com.lockin.lockin_app.features.tasks.dto.TaskResponseDTO;
+import com.lockin.lockin_app.features.tasks.dto.TaskStatisticsDTO;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.service.TaskService;
 import com.lockin.lockin_app.features.users.service.UserService;
 
 import jakarta.validation.Valid;

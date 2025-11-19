@@ -1,7 +1,7 @@
-package com.lockin.lockin_app.repository;
+package com.lockin.lockin_app.features.tasks.repository;
 
-import com.lockin.lockin_app.entity.Task;
-import com.lockin.lockin_app.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

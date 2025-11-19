@@ -1,4 +1,4 @@
-package com.lockin.lockin_app.entity;
+package com.lockin.lockin_app.features.tasks.entity;
 
 import com.lockin.lockin_app.features.categories.entity.Category;
 

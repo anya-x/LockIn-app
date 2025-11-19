@@ -7,7 +7,7 @@ import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.features.categories.repository.CategoryRepository;
-import com.lockin.lockin_app.repository.TaskRepository;
+import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;

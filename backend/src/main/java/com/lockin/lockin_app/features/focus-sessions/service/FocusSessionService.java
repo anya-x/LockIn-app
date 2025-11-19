@@ -4,13 +4,13 @@ import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionRequestDTO;
 import com.lockin.lockin_app.features.focus_sessions.dto.FocusSessionResponseDTO;
 import com.lockin.lockin_app.features.focus_sessions.entity.FocusSession;
 import com.lockin.lockin_app.features.focus_sessions.entity.SessionType;
-import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.event.PomodoroCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.features.focus_sessions.repository.FocusSessionRepository;
-import com.lockin.lockin_app.repository.TaskRepository;
+import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;

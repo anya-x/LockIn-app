@@ -7,7 +7,7 @@ import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.dto.SubtaskSuggestionDTO;
 import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.entity.AIUsage;
-import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.repository.AIUsageRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;

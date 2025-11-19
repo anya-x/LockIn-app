@@ -4,7 +4,7 @@ import com.lockin.lockin_app.dto.TaskBreakdownResultDTO;
 import com.lockin.lockin_app.service.ClaudeAPIClientService;
 import com.lockin.lockin_app.dto.ClaudeResponseDTO;
 import com.lockin.lockin_app.service.TaskBreakdownService;
-import com.lockin.lockin_app.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
