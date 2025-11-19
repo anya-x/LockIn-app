@@ -30,7 +30,14 @@ public class AITestController {
     @GetMapping("/breakdown")
     public TaskBreakdownResultDTO testBreakdown(
             @RequestParam String title,
-            @RequestParam(required = false) String description) {
-        return taskBreakdownService.breakdownTask(title, description);
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Long userId) {
+        // Test endpoint: no deadline, uses provided userId or defaults to 1L
+        return taskBreakdownService.breakdownTask(
+                title,
+                description,
+                null,
+                userId != null ? userId : 1L
+        );
     }
 }

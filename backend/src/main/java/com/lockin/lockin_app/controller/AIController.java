@@ -43,6 +43,7 @@ public class AIController {
             TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(
                     task.getTitle(),
                     task.getDescription(),
+                    task.getDueDate(),
                     userId
             );
 
@@ -78,9 +79,11 @@ public class AIController {
         tempTask.setUser(user);
 
         try {
+            // Preview doesn't have a deadline, so pass null
             TaskBreakdownResultDTO result = taskBreakdownService.breakdownTask(
                     request.getTitle(),
                     request.getDescription(),
+                    null,
                     userId
             );
 

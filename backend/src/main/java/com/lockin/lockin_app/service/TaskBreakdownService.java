@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -39,6 +41,7 @@ public class TaskBreakdownService {
         TaskBreakdownResultDTO result = breakdownTask(
                 task.getTitle(),
                 task.getDescription(),
+                task.getDueDate(),
                 task.getUser().getId()
         );
         result.setOriginalTask(task);
@@ -47,8 +50,8 @@ public class TaskBreakdownService {
     }
     
     @Cacheable(value = "taskBreakdowns", key = "#title + '_' + (#description != null ? #description : '')")
-    public TaskBreakdownResultDTO breakdownTask(String title, String description, Long userId) {
-        log.info("Breaking down task: {} for user: {} (cache miss)", title, userId);
+    public TaskBreakdownResultDTO breakdownTask(String title, String description, LocalDateTime dueDate, Long userId) {
+        log.info("Breaking down task: {} (due: {}) for user: {} (cache miss)", title, dueDate, userId);
 
         // Check rate limit INSIDE @Cacheable method
         // This way, cache hits don't count against the limit
@@ -57,6 +60,9 @@ public class TaskBreakdownService {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Task title cannot be empty");
         }
+
+        // Calculate urgency context from deadline
+        String deadlineContext = formatDeadlineContext(dueDate);
 
         String systemPrompt = """
             You are a productivity assistant that breaks down tasks into actionable subtasks.
@@ -74,6 +80,7 @@ public class TaskBreakdownService {
 
                 Task Title: "%s"
                 Description: "%s"
+                Deadline: %s
 
                 RULES:
                 1. ALWAYS return valid JSON object (no other text)
@@ -83,6 +90,12 @@ public class TaskBreakdownService {
                 5. Classify using Eisenhower Matrix:
                    - isUrgent: true if time-sensitive (deadline-driven, blocking other work)
                    - isImportant: true if contributes to goals/objectives (strategic, high-value)
+
+                6. DEADLINE GUIDANCE for urgency classification:
+                   - Due within 24-48 hours → Most/all subtasks should be URGENT
+                   - Due within 1 week → First few subtasks likely URGENT
+                   - Due within 2+ weeks → Only blocking subtasks URGENT
+                   - No deadline → Base urgency on task nature (blocking work, time-sensitive)
 
                    Examples:
                    • Urgent + Important (Do First): Critical deadlines, crises
@@ -109,7 +122,8 @@ public class TaskBreakdownService {
                 title,
                 description != null && !description.trim().isEmpty()
                         ? description
-                        : "No additional details provided"
+                        : "No additional details provided",
+                deadlineContext
         );
 
         try {
@@ -173,5 +187,35 @@ public class TaskBreakdownService {
         }
 
         return cleaned.trim();
+    }
+
+    /**
+     * Formats deadline information into human-readable context for AI urgency classification.
+     *
+     * @param dueDate The task's due date, or null if no deadline
+     * @return Human-readable deadline context for AI prompt
+     */
+    private String formatDeadlineContext(LocalDateTime dueDate) {
+        if (dueDate == null) {
+            return "No deadline set";
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        long hoursUntilDue = ChronoUnit.HOURS.between(now, dueDate);
+        long daysUntilDue = ChronoUnit.DAYS.between(now, dueDate);
+
+        if (hoursUntilDue < 0) {
+            return "OVERDUE (was due " + Math.abs(daysUntilDue) + " days ago)";
+        } else if (hoursUntilDue < 24) {
+            return "Due in " + hoursUntilDue + " hours (VERY URGENT)";
+        } else if (daysUntilDue == 1) {
+            return "Due tomorrow (" + hoursUntilDue + " hours - URGENT)";
+        } else if (daysUntilDue < 7) {
+            return "Due in " + daysUntilDue + " days (this week)";
+        } else if (daysUntilDue < 14) {
+            return "Due in " + daysUntilDue + " days (next week)";
+        } else {
+            return "Due in " + daysUntilDue + " days (" + (daysUntilDue / 7) + " weeks)";
+        }
     }
 }
