@@ -30,7 +30,9 @@ public class AITestController {
     @GetMapping("/breakdown")
     public TaskBreakdownResultDTO testBreakdown(
             @RequestParam String title,
-            @RequestParam(required = false) String description) {
-        return taskBreakdownService.breakdownTask(title, description);
+            @RequestParam(required = false) String description,
+            @RequestParam(defaultValue = "1") Long userId) {
+        log.warn("TEST ENDPOINT: Breaking down task without authentication - userId: {}", userId);
+        return taskBreakdownService.breakdownTask(title, description, userId);
     }
 }
