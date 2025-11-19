@@ -14,6 +14,8 @@ import com.lockin.lockin_app.features.users.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +43,7 @@ public class GoalService {
      * @throws ResourceNotFoundException if user doesn't exist
      */
     @Transactional
+    @CacheEvict(value = "userGoals", key = "#userId")
     public GoalResponseDTO createGoal(Long userId, GoalRequestDTO request) {
         log.info("Creating goal for user: {}", userId);
 
@@ -108,6 +111,7 @@ public class GoalService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "userGoals", key = "#userId")
     public List<GoalResponseDTO> getUserGoals(Long userId) {
         log.debug("Fetching goals for user: {}", userId);
 
@@ -147,6 +151,7 @@ public class GoalService {
      * @throws UnauthorizedException if user doesn't own goal
      */
     @Transactional
+    @CacheEvict(value = "userGoals", key = "#userId")
     public GoalResponseDTO updateGoal(Long goalId, Long userId, GoalRequestDTO request) {
         log.info("Updating goal: {} for user: {}", goalId, userId);
 
@@ -176,6 +181,7 @@ public class GoalService {
     }
 
     @Transactional
+    @CacheEvict(value = "userGoals", key = "#userId")
     public void deleteGoal(Long goalId, Long userId) {
         log.info("Deleting goal: {} for user: {}", goalId, userId);
 
@@ -207,6 +213,7 @@ public class GoalService {
     }
 
     @Transactional
+    @CacheEvict(value = "userGoals", key = "#userId")
     public void updateGoalsFromSession(Long userId, FocusSessionResponseDTO session) {
         log.debug("Updating goals for user {} after session completion", userId);
 
@@ -281,6 +288,7 @@ public class GoalService {
     }
 
     @Transactional
+    @CacheEvict(value = "userGoals", key = "#userId")
     public void updateGoalsFromTaskCompletion(Long userId, LocalDateTime taskCompletedAt) {
         log.debug("Updating goals for user {} after task completion", userId);
 

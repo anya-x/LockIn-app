@@ -67,6 +67,22 @@ public class CacheConfig {
                                           .maximumSize(500)
                                           .expireAfterWrite(30, TimeUnit.MINUTES)
                                           .recordStats()
+                                          .build()),
+
+                // user categories: 24 hour TTL, 1000 entries
+                new CaffeineCache("userCategories",
+                                  Caffeine.newBuilder()
+                                          .maximumSize(1000)
+                                          .expireAfterWrite(24, TimeUnit.HOURS)
+                                          .recordStats()
+                                          .build()),
+
+                // user goals: 24 hour TTL, 1000 entries
+                new CaffeineCache("userGoals",
+                                  Caffeine.newBuilder()
+                                          .maximumSize(1000)
+                                          .expireAfterWrite(24, TimeUnit.HOURS)
+                                          .recordStats()
                                           .build())
 
         ));

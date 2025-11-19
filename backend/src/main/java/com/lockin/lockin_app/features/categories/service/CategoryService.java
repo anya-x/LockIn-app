@@ -13,6 +13,8 @@ import com.lockin.lockin_app.features.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class CategoryService {
     private final TaskRepository taskRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "userCategories", key = "#userId")
     public List<CategoryResponseDTO> getUserCategories(Long userId) {
         List<Category> categories = categoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
 
@@ -57,6 +60,7 @@ public class CategoryService {
      * @throws ResourceNotFoundException if duplicate name exists
      */
     @Transactional
+    @CacheEvict(value = "userCategories", key = "#userId")
     public CategoryResponseDTO createCategory(Long userId, CategoryRequestDTO request) {
         log.info("Creating category for user: {}", userId);
 
@@ -96,6 +100,7 @@ public class CategoryService {
      * @return returns updated category as DTO
      */
     @Transactional
+    @CacheEvict(value = "userCategories", key = "#userId")
     public CategoryResponseDTO updateCategory(
             Long categoryId, Long userId, CategoryRequestDTO request) {
         log.info("Updating category: {} for user: {}", categoryId, userId);
@@ -129,6 +134,7 @@ public class CategoryService {
 
     /** Deletes a category, associated tasks will have their category set to null */
     @Transactional
+    @CacheEvict(value = "userCategories", key = "#userId")
     public void deleteCategory(Long categoryId, Long userId) {
         log.info("Deleting category: {} for user: {}", categoryId, userId);
 
