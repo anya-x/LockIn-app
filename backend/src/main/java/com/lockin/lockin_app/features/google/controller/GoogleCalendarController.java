@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.util.Base64;
+import java.util.Map;
+
 /**
  * Controller for Google Calendar OAuth integration.
  *
@@ -52,11 +55,35 @@ public class GoogleCalendarController extends BaseController {
     public ResponseEntity<?> connectCalendar(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.info("GET /api/calendar/connect: User: {}", getCurrentUserEmail(userDetails));
+        log.info("User {} initiating Google Calendar connection",
+                getCurrentUserEmail(userDetails));
 
-        Long userId = getCurrentUserId(userDetails);
+        try {
+            // Build Google authorization URL
+            String authUrl = String.format(
+                "https://accounts.google.com/o/oauth2/v2/auth?" +
+                "client_id=%s&" +
+                "redirect_uri=%s&" +
+                "response_type=code&" +
+                "scope=%s&" +
+                "access_type=offline&" +  // Request refresh token
+                "prompt=consent&" +        // Force consent screen
+                "state=%s",                // CSRF protection
+                clientId,
+                redirectUri,
+                scopes,
+                generateStateToken(getCurrentUserEmail(userDetails))
+            );
 
-        return ResponseEntity.ok("Not implemented yet");
+            log.info("Generated auth URL for user");
+
+            return ResponseEntity.ok(Map.of("authorizationUrl", authUrl));
+
+        } catch (Exception e) {
+            log.error("Failed to generate authorization URL", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to generate authorization URL"));
+        }
     }
 
     /**
@@ -83,5 +110,17 @@ public class GoogleCalendarController extends BaseController {
         }
 
         return new RedirectView("http://localhost:5173/settings?success=true");
+    }
+
+    /**
+     * Generate CSRF state token.
+     * TODO: Store in session or database for validation
+     */
+    private String generateStateToken(String username) {
+        // Simple state token (username + timestamp)
+        // TODO: Make this more secure!
+        return Base64.getEncoder().encodeToString(
+            (username + ":" + System.currentTimeMillis()).getBytes()
+        );
     }
 }
