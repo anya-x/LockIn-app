@@ -35,6 +35,7 @@ public class GoogleCalendarService {
     private final GoogleCalendarTokenRepository tokenRepository;
     private final TokenEncryptionService encryptionService;
     private final TaskRepository taskRepository;
+    private final GoogleOAuthService oauthService;
 
     /**
      * Create a calendar event from a task.
@@ -124,11 +125,13 @@ public class GoogleCalendarService {
             throw new RuntimeException("Calendar connection is inactive");
         }
 
-        // Check if token expired
+        // Check if token expired - refresh if needed
         if (tokenEntity.getTokenExpiresAt().isBefore(java.time.ZonedDateTime.now())) {
-            log.warn("Access token expired for user {}", user.getId());
-            // TODO: Implement token refresh!
-            throw new RuntimeException("Access token expired - please reconnect calendar");
+            log.info("Access token expired, attempting refresh...");
+            oauthService.refreshAccessToken(user);
+
+            // Reload token after refresh
+            tokenEntity = tokenRepository.findByUser(user).orElseThrow();
         }
 
         // Decrypt access token

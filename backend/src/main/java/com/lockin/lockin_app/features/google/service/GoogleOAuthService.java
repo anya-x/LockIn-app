@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.features.google.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
@@ -102,6 +103,59 @@ public class GoogleOAuthService {
         } catch (Exception e) {
             log.error("Failed to exchange code for tokens", e);
             throw new RuntimeException("OAuth token exchange failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Refresh expired access token using refresh token.
+     *
+     * WIP: Basic implementation
+     * TODO: Handle errors
+     */
+    @Transactional
+    public void refreshAccessToken(User user) {
+        log.info("Refreshing access token for user {}", user.getId());
+
+        GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
+            .orElseThrow(() -> new RuntimeException("No calendar connection found"));
+
+        if (tokenEntity.getEncryptedRefreshToken() == null) {
+            throw new RuntimeException("No refresh token available");
+        }
+
+        try {
+            String refreshToken = encryptionService.decrypt(
+                tokenEntity.getEncryptedRefreshToken()
+            );
+
+            // Use Google API to refresh token
+            GoogleTokenResponse response = new GoogleRefreshTokenRequest(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                refreshToken,
+                clientId,
+                clientSecret
+            ).execute();
+
+            String newAccessToken = response.getAccessToken();
+            Long expiresInSeconds = response.getExpiresInSeconds();
+
+            // Update token in database
+            tokenEntity.setEncryptedAccessToken(
+                encryptionService.encrypt(newAccessToken)
+            );
+            tokenEntity.setTokenExpiresAt(
+                ZonedDateTime.now().plusSeconds(expiresInSeconds)
+            );
+
+            tokenRepository.save(tokenEntity);
+
+            log.info("Token refreshed successfully for user {}", user.getId());
+
+        } catch (Exception e) {
+            log.error("Token refresh failed for user {}: {}",
+                user.getId(), e.getMessage());
+            throw new RuntimeException("Token refresh failed", e);
         }
     }
 }
