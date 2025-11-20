@@ -47,14 +47,6 @@ public class CalendarSyncScheduler {
             try {
                 User user = token.getUser();
 
-                // Check if token expired
-                if (token.getTokenExpiresAt().isBefore(ZonedDateTime.now())) {
-                    log.warn("Token expired for user {}, skipping sync", user.getId());
-                    // TODO: Try to refresh token
-                    failCount++;
-                    continue;
-                }
-
                 int created = calendarService.syncCalendarToTasks(user);
 
                 // Update last sync time
@@ -64,6 +56,14 @@ public class CalendarSyncScheduler {
                 log.info("Synced calendar for user {}: {} new tasks",
                     user.getId(), created);
                 successCount++;
+
+            } catch (com.lockin.lockin_app.features.google.service.TokenExpiredException e) {
+                // Token expired - mark connection as inactive
+                log.warn("Token expired for user {}, marking as inactive",
+                    token.getUser().getId());
+                token.setIsActive(false);
+                tokenRepository.save(token);
+                failCount++;
 
             } catch (Exception e) {
                 log.error("Failed to sync calendar for user {}: {}",

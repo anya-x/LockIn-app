@@ -125,13 +125,10 @@ public class GoogleCalendarService {
             throw new RuntimeException("Calendar connection is inactive");
         }
 
-        // Check if token expired - refresh if needed
+        // Check if token expired - DON'T refresh, throw exception
         if (tokenEntity.getTokenExpiresAt().isBefore(java.time.ZonedDateTime.now())) {
-            log.info("Access token expired, attempting refresh...");
-            oauthService.refreshAccessToken(user);
-
-            // Reload token after refresh
-            tokenEntity = tokenRepository.findByUser(user).orElseThrow();
+            log.warn("Access token expired for user {}", user.getId());
+            throw new TokenExpiredException("Calendar connection expired - please reconnect");
         }
 
         // Decrypt access token
