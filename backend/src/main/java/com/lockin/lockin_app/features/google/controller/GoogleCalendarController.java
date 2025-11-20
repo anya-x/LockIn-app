@@ -28,6 +28,44 @@ import java.util.Map;
  * Controller for Google Calendar OAuth integration.
  *
  * Handles OAuth flow and calendar connection management.
+ *
+ * INTEGRATION SUMMARY:
+ * ===================
+ *
+ * Features implemented:
+ * - OAuth2 authorization flow with Google Calendar
+ * - Secure token storage with AES-256 encryption
+ * - Two-way sync: Tasks ↔ Calendar Events
+ * - Automatic event creation when tasks have due dates
+ * - Scheduled sync every 15 minutes
+ * - Update/delete calendar events when tasks change
+ * - Connection status checking
+ * - Manual disconnect option
+ *
+ * API Endpoints:
+ * - GET  /api/calendar/connect - Initiate OAuth flow
+ * - GET  /api/calendar/oauth/callback/ - OAuth callback handler
+ * - GET  /api/calendar/test-connection - Test API connection
+ * - GET  /api/calendar/sync-now - Manual sync trigger
+ * - GET  /api/calendar/status - Check connection status
+ * - DELETE /api/calendar/disconnect - Disconnect calendar
+ *
+ * Architecture:
+ * - GoogleCalendarController - HTTP endpoints
+ * - GoogleOAuthService - Token exchange/refresh
+ * - GoogleCalendarService - Calendar API operations
+ * - TokenEncryptionService - AES-256 encryption
+ * - CalendarSyncScheduler - Background sync job
+ * - GoogleCalendarToken entity - Encrypted token storage
+ *
+ * Key decisions:
+ * - NO automatic token refresh (too unreliable)
+ * - Users must manually reconnect when expired
+ * - Silent failures on calendar operations (don't block task CRUD)
+ * - Partial unique index on google_event_id (allows NULLs)
+ * - System default timezone for all events
+ *
+ * Time spent: ~2 days of development + debugging
  */
 @Slf4j
 @RestController
