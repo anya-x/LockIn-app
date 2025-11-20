@@ -100,7 +100,7 @@ public class GoogleCalendarController extends BaseController {
      * @param error error message if authorization failed
      * @return redirect to frontend with success or error status
      */
-    @GetMapping("/oauth/callback")
+    @GetMapping("/oauth/callback/")
     public RedirectView oauthCallback(
             @RequestParam String code,
             @RequestParam(required = false) String state,
