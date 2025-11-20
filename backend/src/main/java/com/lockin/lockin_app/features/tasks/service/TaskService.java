@@ -2,6 +2,7 @@ package com.lockin.lockin_app.features.tasks.service;
 
 import com.lockin.lockin_app.features.categories.service.CategoryService;
 import com.lockin.lockin_app.features.goals.service.GoalService;
+import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.tasks.dto.EisenhowerMatrixDTO;
 import com.lockin.lockin_app.features.tasks.dto.TaskRequestDTO;
 import com.lockin.lockin_app.features.tasks.dto.TaskResponseDTO;
@@ -14,6 +15,7 @@ import com.lockin.lockin_app.event.TaskCompletedEvent;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.exception.UnauthorizedException;
 import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
+import com.lockin.lockin_app.features.users.repository.UserRepository;
 
 import com.lockin.lockin_app.features.users.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,8 @@ public class TaskService {
     private final CategoryService categoryService;
     private final GoalService goalService;
     private final ApplicationEventPublisher eventPublisher;
+    private final GoogleCalendarService calendarService;
+    private final UserRepository userRepository;
 
     /**
      * Creates a new task for the user
@@ -63,6 +67,25 @@ public class TaskService {
         updateTaskFromRequest(task, request);
 
         Task saved = taskRepository.save(task);
+
+        // Create calendar event if user has Google Calendar connected
+        if (saved.getDueDate() != null) {
+            try {
+                User fullUser = userRepository.findById(userId).orElseThrow();
+                String eventId = calendarService.createEventFromTask(saved, fullUser);
+
+                // Store event ID in task for later updates/deletes
+                saved.setGoogleEventId(eventId);
+                taskRepository.save(saved);
+
+                log.info("Created calendar event {} for task {}", eventId, saved.getId());
+
+            } catch (Exception e) {
+                // Don't fail task creation if calendar sync fails
+                log.warn("Failed to create calendar event for task {}: {}",
+                    saved.getId(), e.getMessage());
+            }
+        }
 
         log.info("Created task: {}", saved.getId());
 

@@ -58,6 +58,9 @@ public class Task {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
