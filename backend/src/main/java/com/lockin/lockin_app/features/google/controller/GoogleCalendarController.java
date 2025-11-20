@@ -1,6 +1,8 @@
 package com.lockin.lockin_app.features.google.controller;
 
 import com.google.api.services.calendar.Calendar;
+import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
+import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
 import com.lockin.lockin_app.features.users.entity.User;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Map;
 
@@ -32,6 +35,7 @@ public class GoogleCalendarController extends BaseController {
 
     private final GoogleCalendarService calendarService;
     private final GoogleOAuthService oauthService;
+    private final GoogleCalendarTokenRepository tokenRepository;
 
     @Value("${google.oauth.client-id}")
     private String clientId;
@@ -45,10 +49,12 @@ public class GoogleCalendarController extends BaseController {
     public GoogleCalendarController(
             UserService userService,
             GoogleCalendarService calendarService,
-            GoogleOAuthService oauthService) {
+            GoogleOAuthService oauthService,
+            GoogleCalendarTokenRepository tokenRepository) {
         super(userService);
         this.calendarService = calendarService;
         this.oauthService = oauthService;
+        this.tokenRepository = tokenRepository;
     }
 
     /**
@@ -199,6 +205,48 @@ public class GoogleCalendarController extends BaseController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Check calendar connection status for the authenticated user.
+     *
+     * @param userDetails authenticated user
+     * @return connection status with details
+     */
+    @GetMapping("/status")
+    public ResponseEntity<?> getConnectionStatus(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            User user = userService.getUserByEmail(getCurrentUserEmail(userDetails));
+
+            GoogleCalendarToken token = tokenRepository.findByUser(user).orElse(null);
+
+            if (token == null) {
+                return ResponseEntity.ok(Map.of(
+                    "connected", false,
+                    "message", "No calendar connection found"
+                ));
+            }
+
+            boolean isExpired = token.getTokenExpiresAt().isBefore(ZonedDateTime.now());
+            boolean isActive = token.getIsActive() && !isExpired;
+
+            return ResponseEntity.ok(Map.of(
+                "connected", isActive,
+                "isActive", token.getIsActive(),
+                "isExpired", isExpired,
+                "connectedAt", token.getConnectedAt().toString(),
+                "lastSyncAt", token.getLastSyncAt() != null
+                    ? token.getLastSyncAt().toString()
+                    : "Never"
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to check connection status", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to check connection status"));
         }
     }
 
