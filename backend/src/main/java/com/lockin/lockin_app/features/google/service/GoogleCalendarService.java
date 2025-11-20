@@ -29,17 +29,64 @@ public class GoogleCalendarService {
     /**
      * Create a calendar event from a task.
      *
-     * WIP: Not implemented yet
+     * WIP: Timezone handling is rough!
      */
     public String createEventFromTask(Task task, User user) {
         log.info("Creating calendar event for task: {}", task.getTitle());
 
-        // TODO: Get user's tokens
-        // TODO: Build Calendar API client
-        // TODO: Create event
-        // TODO: Return event ID
+        try {
+            Calendar calendar = buildCalendarClient(user);
 
-        return "not-implemented";
+            // Create event from task
+            com.google.api.services.calendar.model.Event event =
+                new com.google.api.services.calendar.model.Event()
+                    .setSummary(task.getTitle())
+                    .setDescription(task.getDescription());
+
+            // Set start/end times based on task due date
+            if (task.getDueDate() != null) {
+                // WIP: Timezone handling is rough!
+                // TODO: Use user's timezone preference
+                com.google.api.services.calendar.model.EventDateTime start =
+                    new com.google.api.services.calendar.model.EventDateTime()
+                        .setDateTime(new com.google.api.client.util.DateTime(
+                            task.getDueDate().atZone(java.time.ZoneId.systemDefault())
+                                .toInstant().toEpochMilli()
+                        ));
+
+                com.google.api.services.calendar.model.EventDateTime end =
+                    new com.google.api.services.calendar.model.EventDateTime()
+                        .setDateTime(new com.google.api.client.util.DateTime(
+                            task.getDueDate().plusHours(1).atZone(java.time.ZoneId.systemDefault())
+                                .toInstant().toEpochMilli()
+                        ));
+
+                event.setStart(start);
+                event.setEnd(end);
+            }
+
+            // Add custom properties to link back to task
+            event.setExtendedProperties(
+                new com.google.api.services.calendar.model.Event.ExtendedProperties()
+                    .setPrivate(Map.of(
+                        "lockinTaskId", task.getId().toString(),
+                        "source", "lockin"
+                    ))
+            );
+
+            // Create event in Google Calendar
+            event = calendar.events()
+                .insert("primary", event)
+                .execute();
+
+            log.info("Calendar event created: {}", event.getId());
+
+            return event.getId();
+
+        } catch (Exception e) {
+            log.error("Failed to create calendar event", e);
+            throw new RuntimeException("Failed to create calendar event: " + e.getMessage(), e);
+        }
     }
 
     /**
