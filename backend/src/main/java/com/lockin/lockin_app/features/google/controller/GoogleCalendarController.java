@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -247,6 +248,47 @@ public class GoogleCalendarController extends BaseController {
             log.error("Failed to check connection status", e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to check connection status"));
+        }
+    }
+
+    /**
+     * Disconnect calendar by deleting stored tokens.
+     *
+     * @param userDetails authenticated user
+     * @return success message
+     */
+    @DeleteMapping("/disconnect")
+    public ResponseEntity<?> disconnectCalendar(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("User {} disconnecting calendar", getCurrentUserEmail(userDetails));
+
+        try {
+            User user = userService.getUserByEmail(getCurrentUserEmail(userDetails));
+
+            GoogleCalendarToken token = tokenRepository.findByUser(user).orElse(null);
+
+            if (token == null) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "No calendar connection found"
+                ));
+            }
+
+            // Delete token from database
+            tokenRepository.delete(token);
+
+            log.info("Calendar disconnected successfully for user {}", user.getId());
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Calendar disconnected successfully"
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to disconnect calendar", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to disconnect calendar"));
         }
     }
 
