@@ -261,4 +261,91 @@ public class GoogleCalendarService {
 
         return task;
     }
+
+    /**
+     * Update calendar event when task changes.
+     *
+     * WIP: Only updates title/description/dates
+     * TODO: Handle more fields
+     */
+    public void updateEventFromTask(Task task, User user) {
+        if (task.getGoogleEventId() == null) {
+            log.debug("Task {} has no linked event, skipping update", task.getId());
+            return;
+        }
+
+        log.info("Updating calendar event {} for task {}", task.getGoogleEventId(), task.getId());
+
+        try {
+            Calendar calendar = buildCalendarClient(user);
+
+            // Fetch existing event
+            com.google.api.services.calendar.model.Event event = calendar.events()
+                .get("primary", task.getGoogleEventId())
+                .execute();
+
+            // Update fields
+            event.setSummary(task.getTitle());
+            event.setDescription(task.getDescription());
+
+            // Update dates if present
+            if (task.getDueDate() != null) {
+                java.time.ZonedDateTime startZoned = task.getDueDate()
+                    .atZone(java.time.ZoneId.systemDefault());
+                java.time.ZonedDateTime endZoned = task.getDueDate().plusHours(1)
+                    .atZone(java.time.ZoneId.systemDefault());
+
+                com.google.api.client.util.DateTime startDateTime =
+                    new com.google.api.client.util.DateTime(
+                        startZoned.toInstant().toEpochMilli(),
+                        java.util.TimeZone.getTimeZone(startZoned.getZone())
+                    );
+
+                com.google.api.client.util.DateTime endDateTime =
+                    new com.google.api.client.util.DateTime(
+                        endZoned.toInstant().toEpochMilli(),
+                        java.util.TimeZone.getTimeZone(endZoned.getZone())
+                    );
+
+                event.setStart(new com.google.api.services.calendar.model.EventDateTime()
+                    .setDateTime(startDateTime)
+                    .setTimeZone(startZoned.getZone().getId()));
+
+                event.setEnd(new com.google.api.services.calendar.model.EventDateTime()
+                    .setDateTime(endDateTime)
+                    .setTimeZone(endZoned.getZone().getId()));
+            }
+
+            // Update event
+            calendar.events().update("primary", task.getGoogleEventId(), event).execute();
+
+            log.info("Calendar event updated successfully");
+
+        } catch (Exception e) {
+            log.error("Failed to update calendar event: {}", e.getMessage());
+            // Silent fail - don't block task updates
+        }
+    }
+
+    /**
+     * Delete calendar event when task is deleted.
+     */
+    public void deleteEvent(String eventId, User user) {
+        if (eventId == null) {
+            return;
+        }
+
+        log.info("Deleting calendar event {}", eventId);
+
+        try {
+            Calendar calendar = buildCalendarClient(user);
+            calendar.events().delete("primary", eventId).execute();
+
+            log.info("Calendar event deleted successfully");
+
+        } catch (Exception e) {
+            log.error("Failed to delete calendar event: {}", e.getMessage());
+            // Silent fail - don't block task deletion
+        }
+    }
 }

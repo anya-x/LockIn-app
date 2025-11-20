@@ -186,6 +186,18 @@ public class TaskService {
         updateTaskFromRequest(task, request);
         Task updated = taskRepository.save(task);
 
+        // Update linked calendar event if exists
+        if (updated.getGoogleEventId() != null) {
+            try {
+                User fullUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                calendarService.updateEventFromTask(updated, fullUser);
+            } catch (Exception e) {
+                log.warn("Failed to update calendar event for task {}: {}",
+                    updated.getId(), e.getMessage());
+            }
+        }
+
         log.info("Updated task: {}", updated.getId());
 
         return TaskResponseDTO.fromEntity(updated);
@@ -201,6 +213,18 @@ public class TaskService {
                         .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
         validateTaskOwnership(task, userId);
+
+        // Delete linked calendar event if exists
+        if (task.getGoogleEventId() != null) {
+            try {
+                User fullUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                calendarService.deleteEvent(task.getGoogleEventId(), fullUser);
+            } catch (Exception e) {
+                log.warn("Failed to delete calendar event for task {}: {}",
+                    task.getId(), e.getMessage());
+            }
+        }
 
         taskRepository.delete(task);
 
