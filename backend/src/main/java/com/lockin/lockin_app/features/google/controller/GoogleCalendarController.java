@@ -114,16 +114,19 @@ public class GoogleCalendarController extends BaseController {
         }
 
         try {
-            // TODO: Validate state parameter!
-            // TODO: Extract userId from state
+            // Decode state parameter to get user email
+            String decodedState = new String(Base64.getDecoder().decode(state));
+            String[] parts = decodedState.split(":");
+            String userEmail = parts[0];
 
-            // For now, hardcoding user ID for testing
-            // BUG: This won't work in production!
-            Long userId = 1L;
+            log.info("Extracted user email from state: {}", userEmail);
+
+            // Get user ID from email
+            Long userId = userService.getUserIdFromEmail(userEmail);
 
             oauthService.exchangeCodeForTokens(code, userId);
 
-            log.info("OAuth flow completed successfully");
+            log.info("OAuth flow completed successfully for user {}", userId);
             return new RedirectView("http://localhost:5173/settings?connected=true");
 
         } catch (Exception e) {
