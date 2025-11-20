@@ -212,11 +212,15 @@ public class GoogleCalendarService {
                 }
 
                 // Create task from event
-                Task task = createTaskFromEvent(event, user);
-                taskRepository.save(task);
-                created++;
-
-                log.info("Created task from calendar event: {}", event.getSummary());
+                try {
+                    Task task = createTaskFromEvent(event, user);
+                    taskRepository.save(task);
+                    created++;
+                    log.info("Created task from calendar event: {}", event.getSummary());
+                } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                    // Duplicate event ID - skip silently
+                    log.debug("Event {} already has a task, skipping", event.getId());
+                }
             }
 
             log.info("Created {} tasks from calendar events", created);
