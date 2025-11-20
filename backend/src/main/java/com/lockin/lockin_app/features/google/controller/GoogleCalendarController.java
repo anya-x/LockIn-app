@@ -172,6 +172,37 @@ public class GoogleCalendarController extends BaseController {
     }
 
     /**
+     * Test sync - fetch recent calendar events.
+     *
+     * @param userDetails authenticated user
+     * @return list of events
+     */
+    @GetMapping("/sync-now")
+    public ResponseEntity<?> syncNow(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Long userId = getCurrentUserId(userDetails);
+            User user = userService.getUserByEmail(getCurrentUserEmail(userDetails));
+
+            java.util.List<com.google.api.services.calendar.model.Event> events =
+                calendarService.fetchRecentEvents(user, 10);
+
+            return ResponseEntity.ok(Map.of(
+                "eventCount", events.size(),
+                "events", events.stream()
+                    .map(e -> Map.of(
+                        "id", e.getId() != null ? e.getId() : "",
+                        "summary", e.getSummary() != null ? e.getSummary() : ""
+                    ))
+                    .toList()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Generate CSRF state token.
      * TODO: Store in session or database for validation
      */

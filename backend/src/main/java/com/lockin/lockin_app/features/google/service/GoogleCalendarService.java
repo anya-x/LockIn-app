@@ -143,4 +143,38 @@ public class GoogleCalendarService {
 
         return calendar;
     }
+
+    /**
+     * Fetch events from Google Calendar.
+     *
+     * WIP: Basic implementation
+     * TODO: Handle pagination
+     * TODO: Filter by date range
+     */
+    public java.util.List<com.google.api.services.calendar.model.Event> fetchRecentEvents(User user, int maxResults) {
+        log.info("Fetching up to {} events for user {}", maxResults, user.getId());
+
+        try {
+            Calendar calendar = buildCalendarClient(user);
+
+            // Fetch events from primary calendar
+            // WIP: This gets ALL events, need to filter!
+            com.google.api.services.calendar.model.Events events = calendar.events()
+                .list("primary")
+                .setMaxResults(maxResults)
+                .setOrderBy("startTime")
+                .setSingleEvents(true)
+                .execute();
+
+            java.util.List<com.google.api.services.calendar.model.Event> items = events.getItems();
+
+            log.info("Fetched {} events from calendar", items.size());
+
+            return items != null ? items : java.util.List.of();
+
+        } catch (Exception e) {
+            log.error("Failed to fetch calendar events", e);
+            throw new RuntimeException("Failed to fetch calendar events: " + e.getMessage(), e);
+        }
+    }
 }
