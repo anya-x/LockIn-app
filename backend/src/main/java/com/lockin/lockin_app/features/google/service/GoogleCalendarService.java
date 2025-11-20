@@ -43,23 +43,36 @@ public class GoogleCalendarService {
                     .setSummary(task.getTitle())
                     .setDescription(task.getDescription());
 
-            // Set start/end times based on task due date
+            // Set start/end times with timezone
             if (task.getDueDate() != null) {
-                // WIP: Timezone handling is rough!
-                // TODO: Use user's timezone preference
+                // Convert LocalDateTime to ZonedDateTime with timezone
+                java.time.ZonedDateTime startZoned = task.getDueDate()
+                    .atZone(java.time.ZoneId.systemDefault());
+                java.time.ZonedDateTime endZoned = task.getDueDate().plusHours(1)
+                    .atZone(java.time.ZoneId.systemDefault());
+
+                // Convert ZonedDateTime to Google API DateTime with timezone
+                com.google.api.client.util.DateTime startDateTime =
+                    new com.google.api.client.util.DateTime(
+                        startZoned.toInstant().toEpochMilli(),
+                        java.util.TimeZone.getTimeZone(startZoned.getZone())
+                    );
+
+                com.google.api.client.util.DateTime endDateTime =
+                    new com.google.api.client.util.DateTime(
+                        endZoned.toInstant().toEpochMilli(),
+                        java.util.TimeZone.getTimeZone(endZoned.getZone())
+                    );
+
                 com.google.api.services.calendar.model.EventDateTime start =
                     new com.google.api.services.calendar.model.EventDateTime()
-                        .setDateTime(new com.google.api.client.util.DateTime(
-                            task.getDueDate().atZone(java.time.ZoneId.systemDefault())
-                                .toInstant().toEpochMilli()
-                        ));
+                        .setDateTime(startDateTime)
+                        .setTimeZone(startZoned.getZone().getId());
 
                 com.google.api.services.calendar.model.EventDateTime end =
                     new com.google.api.services.calendar.model.EventDateTime()
-                        .setDateTime(new com.google.api.client.util.DateTime(
-                            task.getDueDate().plusHours(1).atZone(java.time.ZoneId.systemDefault())
-                                .toInstant().toEpochMilli()
-                        ));
+                        .setDateTime(endDateTime)
+                        .setTimeZone(endZoned.getZone().getId());
 
                 event.setStart(start);
                 event.setEnd(end);
