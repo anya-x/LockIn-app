@@ -4,12 +4,19 @@ import com.google.api.services.calendar.Calendar;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
+import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
+import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,6 +34,7 @@ public class GoogleCalendarService {
 
     private final GoogleCalendarTokenRepository tokenRepository;
     private final TokenEncryptionService encryptionService;
+    private final TaskRepository taskRepository;
 
     /**
      * Create a calendar event from a task.
@@ -176,5 +184,77 @@ public class GoogleCalendarService {
             log.error("Failed to fetch calendar events", e);
             throw new RuntimeException("Failed to fetch calendar events: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Sync calendar events to tasks.
+     * Creates tasks from calendar events that don't already exist.
+     */
+    @Transactional
+    public int syncCalendarToTasks(User user) {
+        log.info("Syncing calendar events to tasks for user {}", user.getId());
+
+        try {
+            List<com.google.api.services.calendar.model.Event> events = fetchRecentEvents(user, 100);
+            int created = 0;
+
+            for (com.google.api.services.calendar.model.Event event : events) {
+                // Skip events we created (have our custom property)
+                if (isLockinEvent(event)) {
+                    log.debug("Skipping Lockin-created event: {}", event.getId());
+                    continue;
+                }
+
+                // Check if we already have a task for this event
+                if (taskRepository.existsByGoogleEventId(event.getId())) {
+                    log.debug("Task already exists for event: {}", event.getId());
+                    continue;
+                }
+
+                // Create task from event
+                Task task = createTaskFromEvent(event, user);
+                taskRepository.save(task);
+                created++;
+
+                log.info("Created task from calendar event: {}", event.getSummary());
+            }
+
+            log.info("Created {} tasks from calendar events", created);
+            return created;
+
+        } catch (Exception e) {
+            log.error("Failed to sync calendar to tasks", e);
+            throw new RuntimeException("Calendar sync failed: " + e.getMessage(), e);
+        }
+    }
+
+    private boolean isLockinEvent(com.google.api.services.calendar.model.Event event) {
+        if (event.getExtendedProperties() == null) return false;
+        Map<String, String> privateProps = event.getExtendedProperties().getPrivate();
+        return privateProps != null && "lockin".equals(privateProps.get("source"));
+    }
+
+    private Task createTaskFromEvent(com.google.api.services.calendar.model.Event event, User user) {
+        Task task = new Task();
+        task.setUser(user);
+        task.setTitle(event.getSummary() != null ? event.getSummary() : "Untitled Event");
+        task.setDescription(event.getDescription());
+        task.setGoogleEventId(event.getId());
+
+        // Extract due date from event start time
+        if (event.getStart() != null && event.getStart().getDateTime() != null) {
+            long millis = event.getStart().getDateTime().getValue();
+            task.setDueDate(ZonedDateTime.ofInstant(
+                Instant.ofEpochMilli(millis),
+                ZoneId.systemDefault()
+            ).toLocalDateTime());
+        }
+
+        // Default to TODO status and not urgent/important
+        task.setStatus(TaskStatus.TODO);
+        task.setIsUrgent(false);
+        task.setIsImportant(false);
+
+        return task;
     }
 }
