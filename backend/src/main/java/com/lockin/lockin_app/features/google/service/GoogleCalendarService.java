@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.features.google.service;
 
 import com.google.api.services.calendar.Calendar;
+import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.users.entity.User;
@@ -43,15 +44,41 @@ public class GoogleCalendarService {
 
     /**
      * Build Google Calendar API client with user's access token.
-     *
-     * WIP: Not implemented yet
      */
-    private Calendar buildCalendarClient(User user) {
-        // TODO: Get token from database
-        // TODO: Decrypt access token
-        // TODO: Check if expired (refresh if needed)
-        // TODO: Build Calendar API client
+    public Calendar buildCalendarClient(User user) throws Exception {
+        // Get token from database
+        GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
+            .orElseThrow(() -> new RuntimeException("User has not connected Google Calendar"));
 
-        return null;
+        if (!tokenEntity.getIsActive()) {
+            throw new RuntimeException("Calendar connection is inactive");
+        }
+
+        // Check if token expired
+        if (tokenEntity.getTokenExpiresAt().isBefore(java.time.ZonedDateTime.now())) {
+            log.warn("Access token expired for user {}", user.getId());
+            // TODO: Implement token refresh!
+            throw new RuntimeException("Access token expired - please reconnect calendar");
+        }
+
+        // Decrypt access token
+        String accessToken = encryptionService.decrypt(tokenEntity.getEncryptedAccessToken());
+
+        // Build Google Calendar API client
+        com.google.api.client.googleapis.auth.oauth2.GoogleCredential credential =
+            new com.google.api.client.googleapis.auth.oauth2.GoogleCredential()
+                .setAccessToken(accessToken);
+
+        Calendar calendar = new Calendar.Builder(
+            new com.google.api.client.http.javanet.NetHttpTransport(),
+            com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+            credential
+        )
+        .setApplicationName("Lockin Task Manager")
+        .build();
+
+        log.info("Built Calendar API client for user {}", user.getId());
+
+        return calendar;
     }
 }

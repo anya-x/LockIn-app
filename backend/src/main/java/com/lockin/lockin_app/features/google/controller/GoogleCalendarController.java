@@ -1,7 +1,9 @@
 package com.lockin.lockin_app.features.google.controller;
 
+import com.google.api.services.calendar.Calendar;
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
 import lombok.extern.slf4j.Slf4j;
@@ -132,6 +134,40 @@ public class GoogleCalendarController extends BaseController {
         } catch (Exception e) {
             log.error("OAuth callback failed", e);
             return new RedirectView("http://localhost:5173/settings?error=token_exchange_failed");
+        }
+    }
+
+    /**
+     * Test calendar connection.
+     *
+     * @param userDetails authenticated user
+     * @return connection status
+     */
+    @GetMapping("/test-connection")
+    public ResponseEntity<?> testConnection(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            Long userId = getCurrentUserId(userDetails);
+            User user = userService.getUserByEmail(getCurrentUserEmail(userDetails));
+
+            Calendar calendar = calendarService.buildCalendarClient(user);
+
+            // Try to get calendar info
+            com.google.api.services.calendar.model.Calendar primaryCalendar =
+                calendar.calendars().get("primary").execute();
+
+            return ResponseEntity.ok(Map.of(
+                "connected", true,
+                "calendarSummary", primaryCalendar.getSummary()
+            ));
+
+        } catch (Exception e) {
+            log.error("Calendar connection test failed", e);
+            return ResponseEntity.ok(Map.of(
+                "connected", false,
+                "error", e.getMessage()
+            ));
         }
     }
 
