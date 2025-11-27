@@ -3,7 +3,10 @@ package com.lockin.lockin_app.features.google.service;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
+import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventDateTime;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
@@ -13,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 /**
  * Service for interacting with Google Calendar API.
@@ -28,16 +33,60 @@ public class GoogleCalendarService {
 
     /**
      * Create a calendar event from a task.
-     *
-     * WIP: Not implemented yet
      */
     public String createEventFromTask(Task task, User user) {
         log.info("Creating calendar event for task: {}", task.getTitle());
 
-        // TODO: Build event and create in calendar
-        // TODO: Return event ID
+        try {
+            Calendar calendar = buildCalendarClient(user);
 
-        return "not-implemented";
+            // Create event from task
+            Event event = new Event()
+                    .setSummary(task.getTitle())
+                    .setDescription(task.getDescription());
+
+            // Set start/end times based on task due date
+            if (task.getDueDate() != null) {
+                // WIP: Timezone handling is rough!
+                // TODO: Use user's timezone preference
+                // BUG: This doesn't include timezone info properly!
+                DateTime startDateTime = new DateTime(
+                        task.getDueDate().toInstant(ZoneOffset.UTC).toEpochMilli()
+                );
+
+                DateTime endDateTime = new DateTime(
+                        task.getDueDate().plusHours(1).toInstant(ZoneOffset.UTC).toEpochMilli()
+                );
+
+                EventDateTime start = new EventDateTime().setDateTime(startDateTime);
+                EventDateTime end = new EventDateTime().setDateTime(endDateTime);
+
+                event.setStart(start);
+                event.setEnd(end);
+            }
+
+            // Add custom properties to link back to task
+            event.setExtendedProperties(
+                    new Event.ExtendedProperties()
+                            .setPrivate(Map.of(
+                                    "lockinTaskId", task.getId().toString(),
+                                    "source", "lockin"
+                            ))
+            );
+
+            // Create event in Google Calendar
+            event = calendar.events()
+                    .insert("primary", event)
+                    .execute();
+
+            log.info("Calendar event created: {}", event.getId());
+
+            return event.getId();
+
+        } catch (Exception e) {
+            log.error("Failed to create calendar event", e);
+            throw new RuntimeException("Failed to create calendar event: " + e.getMessage(), e);
+        }
     }
 
     /**
