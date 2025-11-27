@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -276,5 +277,49 @@ public class GoogleCalendarService {
         task.setIsImportant(false);
 
         return task;
+    }
+
+    /**
+     * Get connection status for frontend display.
+     */
+    public Map<String, Object> getConnectionStatus(User user) {
+        Map<String, Object> status = new HashMap<>();
+
+        var tokenOpt = tokenRepository.findByUser(user);
+
+        if (tokenOpt.isEmpty()) {
+            status.put("connected", false);
+            return status;
+        }
+
+        var token = tokenOpt.get();
+        status.put("connected", token.getIsActive());
+        status.put("connectedAt", token.getConnectedAt());
+        status.put("lastSyncAt", token.getLastSyncAt());
+        status.put("tokenExpiresAt", token.getTokenExpiresAt());
+
+        // Check if token expired
+        boolean isExpired = token.getTokenExpiresAt().isBefore(ZonedDateTime.now());
+        status.put("isExpired", isExpired);
+
+        if (isExpired) {
+            status.put("message", "Connection expired - please reconnect");
+        }
+
+        return status;
+    }
+
+    /**
+     * Disconnect user's calendar.
+     * Removes stored tokens.
+     */
+    @Transactional
+    public void disconnectCalendar(User user) {
+        log.info("Disconnecting calendar for user {}", user.getId());
+
+        tokenRepository.findByUser(user).ifPresent(token -> {
+            tokenRepository.delete(token);
+            log.info("Deleted calendar token for user {}", user.getId());
+        });
     }
 }
