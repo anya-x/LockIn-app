@@ -146,23 +146,33 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead();
+      const updated = await notificationService.markAllAsRead();
+      // Update local state immediately for responsiveness
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, isRead: true }))
       );
       setUnreadCount(0);
+      console.log(`Marked ${updated} notifications as read`);
     } catch (error) {
       console.error("Failed to mark all as read:", error);
+      // Refresh count in case of partial success
+      updateUnreadCount();
     }
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    // Mark as read first
     if (!notification.isRead) {
       handleMarkAsRead(notification.id);
     }
+
+    // Navigate if there's an action URL
     if (notification.actionUrl) {
-      setOpen(false);
-      navigate(notification.actionUrl);
+      // Small delay to let the mark-as-read state update
+      setTimeout(() => {
+        setOpen(false);
+        navigate(notification.actionUrl);
+      }, 100);
     }
   };
 
