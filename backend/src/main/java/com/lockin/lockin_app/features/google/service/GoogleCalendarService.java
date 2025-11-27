@@ -7,6 +7,7 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.Events;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -156,5 +159,39 @@ public class GoogleCalendarService {
         return tokenRepository.findByUser(user)
                 .map(GoogleCalendarToken::getIsActive)
                 .orElse(false);
+    }
+
+    /**
+     * Fetch events from Google Calendar.
+     *
+     * WIP: Basic implementation
+     * TODO: Handle pagination
+     * TODO: Filter by date range properly
+     */
+    public List<Event> fetchRecentEvents(User user, int maxResults) {
+        log.info("Fetching up to {} events for user {}", maxResults, user.getId());
+
+        try {
+            Calendar calendar = buildCalendarClient(user);
+
+            // Fetch events from primary calendar
+            // WIP: This gets ALL events, need to filter better!
+            Events events = calendar.events()
+                    .list("primary")
+                    .setMaxResults(maxResults)
+                    .setOrderBy("startTime")
+                    .setSingleEvents(true)
+                    .execute();
+
+            List<Event> items = events.getItems();
+
+            log.info("Fetched {} events from calendar", items != null ? items.size() : 0);
+
+            return items != null ? items : Collections.emptyList();
+
+        } catch (Exception e) {
+            log.error("Failed to fetch calendar events", e);
+            throw new RuntimeException("Failed to fetch calendar events: " + e.getMessage(), e);
+        }
     }
 }
