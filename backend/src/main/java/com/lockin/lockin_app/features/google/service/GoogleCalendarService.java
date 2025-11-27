@@ -166,30 +166,33 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Fetch events from Google Calendar.
-     *
-     * WIP: Basic implementation
-     * TODO: Handle pagination
-     * TODO: Filter by date range properly
+     * Fetch upcoming events from Google Calendar.
+     * Only fetches events from now to 30 days in the future.
      */
     public List<Event> fetchRecentEvents(User user, int maxResults) {
-        log.info("Fetching up to {} events for user {}", maxResults, user.getId());
+        log.info("Fetching up to {} upcoming events for user {}", maxResults, user.getId());
 
         try {
             Calendar calendar = buildCalendarClient(user);
 
-            // Fetch events from primary calendar
-            // WIP: This gets ALL events, need to filter better!
+            // Only fetch events from now onwards (next 30 days)
+            DateTime now = new DateTime(System.currentTimeMillis());
+            DateTime thirtyDaysFromNow = new DateTime(
+                    System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000)
+            );
+
             Events events = calendar.events()
                     .list("primary")
                     .setMaxResults(maxResults)
+                    .setTimeMin(now)
+                    .setTimeMax(thirtyDaysFromNow)
                     .setOrderBy("startTime")
                     .setSingleEvents(true)
                     .execute();
 
             List<Event> items = events.getItems();
 
-            log.info("Fetched {} events from calendar", items != null ? items.size() : 0);
+            log.info("Fetched {} upcoming events from calendar", items != null ? items.size() : 0);
 
             return items != null ? items : Collections.emptyList();
 
