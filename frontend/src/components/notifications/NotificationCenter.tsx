@@ -78,6 +78,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
 
   const updateUnreadCount = useCallback(async () => {
     try {
@@ -88,11 +91,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
   }, []);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (pageNum: number = 0, append: boolean = false) => {
     setLoading(true);
     try {
-      const data = await notificationService.getAllNotifications();
-      setNotifications(data);
+      const data = await notificationService.getNotifications(pageNum, PAGE_SIZE);
+      if (append) {
+        setNotifications((prev) => [...prev, ...data.content]);
+      } else {
+        setNotifications(data.content);
+      }
+      setHasMore(!data.last);
+      setPage(data.number);
       updateUnreadCount();
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -101,15 +110,23 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
   }, [updateUnreadCount]);
 
-  // Fetch unread count on mount
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      fetchNotifications(page + 1, true);
+    }
+  }, [loading, hasMore, page, fetchNotifications]);
+
+  // Fetch unread count on mount (lightweight)
   useEffect(() => {
     updateUnreadCount();
   }, [updateUnreadCount]);
 
-  // Fetch full list when drawer opens
+  // Fetch first page when drawer opens
   useEffect(() => {
     if (open) {
-      fetchNotifications();
+      setPage(0);
+      setHasMore(true);
+      fetchNotifications(0, false);
     }
   }, [open, fetchNotifications]);
 
@@ -312,6 +329,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   {index < notifications.length - 1 && <Divider />}
                 </React.Fragment>
               ))
+            )}
+            {/* Load more button */}
+            {hasMore && notifications.length > 0 && (
+              <Box sx={{ p: 2, textAlign: "center" }}>
+                <Button
+                  onClick={loadMore}
+                  disabled={loading}
+                  variant="text"
+                  size="small"
+                >
+                  {loading ? "Loading..." : "Load more"}
+                </Button>
+              </Box>
             )}
           </List>
         )}
