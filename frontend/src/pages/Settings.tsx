@@ -24,6 +24,7 @@ import { useAIPreferences } from "../context/AIPreferencesContext";
 import type { ThemeColor } from "../themes/themeConfig";
 import PageHeader from "../components/shared/PageHeader";
 import CalendarSettings from "../components/calendar/CalendarSettings";
+import NotificationSettings from "../components/notifications/NotificationSettings";
 
 const Settings: React.FC = () => {
   const theme = useTheme();
@@ -252,6 +253,7 @@ const Settings: React.FC = () => {
         </CardContent>
       </Card>
       <CalendarSettings />
+      <NotificationSettings />
     </Box>
   );
 };
