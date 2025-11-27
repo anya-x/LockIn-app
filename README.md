@@ -75,6 +75,14 @@ A science based task management tool that's going to change how you view product
 - GET `/api/tasks/search?query={term}` - search tasks
 - GET `/api/tasks/filter?status=...&categoryId=...&isUrgent=...&isImportant=...` - multi-criteria filtering
 
+### Google Calendar Integration (Authenticated)
+
+- GET `/api/calendar/connect` - get OAuth authorization URL
+- GET `/api/calendar/oauth/callback/` - OAuth callback handler (redirects to frontend)
+- GET `/api/calendar/status` - get calendar connection status
+- POST `/api/calendar/sync-now` - trigger manual sync
+- DELETE `/api/calendar/disconnect` - disconnect calendar
+
 ## Features & Roadmap
 
 ## Epic 1: Authentication & Foundation
@@ -270,7 +278,28 @@ A science based task management tool that's going to change how you view product
 
 ## Epic 5: Intelligent Features
 
-#### US-5.1:
+#### [x] US-5.1: Google Calendar Integration
+
+**As a** user
+**I want to** sync tasks with Google Calendar
+**So that** I can see my tasks alongside calendar events
+
+**ACs**
+
+- OAuth2 flow with Google
+- Two-way sync: tasks create calendar events, calendar events create tasks
+- Automatic sync every 15 minutes
+- Manual sync trigger from settings
+- Connection status and disconnect option
+- Token encryption at rest (AES-256)
+- Graceful handling of token expiration (reconnect prompt)
+
+**Known Issues**
+
+- Token refresh can fail with invalid_grant - requires manual reconnect
+- All-day events converted to midnight-to-midnight tasks
+
+#### US-5.2:
 
 ## Epic 6: Production Readiness
 
@@ -308,6 +337,8 @@ A science based task management tool that's going to change how you view product
 
 **To do (low priority)**
 
+- Google Calendar: update/delete events when task changes
+- Google Calendar: all-day event handling improvements
 - Dark mode
 - Mobile app (React Native)
 - Team collaboration
@@ -340,4 +371,4 @@ All productivity features are backed by research:
 
 " - overwork detection 6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
 
-**Last Updated:** 3 June 2025
+**Last Updated:** 27 November 2025
