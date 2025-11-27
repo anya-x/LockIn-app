@@ -8,7 +8,6 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
-import com.google.api.services.tasks.Tasks;
 import com.google.api.services.tasks.model.TaskList;
 import com.google.api.services.tasks.model.TaskLists;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
@@ -208,7 +207,7 @@ public class GoogleCalendarService {
     /**
      * Build Google Tasks API client with user's access token.
      */
-    public Tasks buildTasksClient(User user) throws Exception {
+    public com.google.api.services.tasks.Tasks buildTasksClient(User user) throws Exception {
         GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("User has not connected Google Calendar"));
 
@@ -226,7 +225,7 @@ public class GoogleCalendarService {
         @SuppressWarnings("deprecation")
         GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
 
-        Tasks tasks = new Tasks.Builder(
+        com.google.api.services.tasks.Tasks tasks = new com.google.api.services.tasks.Tasks.Builder(
                 new NetHttpTransport(),
                 GsonFactory.getDefaultInstance(),
                 credential
@@ -250,7 +249,7 @@ public class GoogleCalendarService {
         log.info("Syncing Google Tasks to Lockin for user {}", user.getId());
 
         try {
-            Tasks tasksClient = buildTasksClient(user);
+            com.google.api.services.tasks.Tasks tasksClient = buildTasksClient(user);
             int created = 0;
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime sixtyDaysFromNow = now.plusDays(60);
