@@ -58,30 +58,33 @@ export function getNotificationTypeLabel(type: string): string {
  * Check if notification type is AI-related.
  */
 export function isAINotification(type: string): boolean {
-  return [
+  const aiTypes: string[] = [
     NotificationType.AI_BREAKDOWN,
     NotificationType.DAILY_BRIEFING,
     NotificationType.AI_ENHANCEMENT,
-  ].includes(type as NotificationTypeValue);
+  ];
+  return aiTypes.includes(type);
 }
 
 /**
  * Check if notification type is calendar-related.
  */
 export function isCalendarNotification(type: string): boolean {
-  return [
+  const calendarTypes: string[] = [
     NotificationType.CALENDAR_SYNC,
     NotificationType.CALENDAR_CONNECTED,
-  ].includes(type as NotificationTypeValue);
+  ];
+  return calendarTypes.includes(type);
 }
 
 /**
  * Check if notification type is task-related.
  */
 export function isTaskNotification(type: string): boolean {
-  return [
+  const taskTypes: string[] = [
     NotificationType.TASK_DUE,
     NotificationType.TASK_OVERDUE,
     NotificationType.TASK_COMPLETED,
-  ].includes(type as NotificationTypeValue);
+  ];
+  return taskTypes.includes(type);
 }

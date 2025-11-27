@@ -48,7 +48,7 @@ import Settings from "./Settings";
 import NotificationCenter from "../components/notifications/NotificationCenter";
 import { websocketService } from "../services/websocketService";
 import { browserNotificationService } from "../services/browserNotificationService";
-import { Notification } from "../services/notificationService";
+import type { Notification } from "../services/notificationService";
 
 const drawerWidth = 240;
 

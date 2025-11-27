@@ -23,10 +23,8 @@ import SmartToyIcon from "@mui/icons-material/SmartToy";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import InfoIcon from "@mui/icons-material/Info";
-import {
-  notificationService,
-  Notification,
-} from "../../services/notificationService";
+import { notificationService } from "../../services/notificationService";
+import type { Notification } from "../../services/notificationService";
 import { useNavigate } from "react-router-dom";
 
 /**
@@ -172,10 +170,11 @@ const NotificationCenter: React.FC = () => {
 
     // Navigate if there's an action URL
     if (notification.actionUrl) {
+      const url = notification.actionUrl;
       // Small delay to let the mark-as-read state update
       setTimeout(() => {
         setOpen(false);
-        navigate(notification.actionUrl);
+        navigate(url);
       }, 100);
     }
   };
