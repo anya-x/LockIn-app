@@ -240,7 +240,7 @@ public class GoogleCalendarService {
 
     /**
      * Sync Google Tasks to Lockin tasks.
-     * Only imports incomplete tasks from Google Tasks.
+     * Only imports incomplete tasks with future due dates.
      */
     @Transactional
     public int syncCalendarToTasks(User user) {
@@ -249,6 +249,7 @@ public class GoogleCalendarService {
         try {
             Tasks tasksClient = buildTasksClient(user);
             int created = 0;
+            LocalDateTime now = LocalDateTime.now();
 
             // Get all task lists
             TaskLists taskLists = tasksClient.tasklists().list().execute();
@@ -273,6 +274,28 @@ public class GoogleCalendarService {
                 }
 
                 for (com.google.api.services.tasks.model.Task googleTask : googleTasks.getItems()) {
+                    // Skip tasks without a due date
+                    if (googleTask.getDue() == null) {
+                        log.debug("Skipping task without due date: {}", googleTask.getTitle());
+                        continue;
+                    }
+
+                    // Skip tasks with past due dates
+                    try {
+                        long millis = DateTime.parseRfc3339(googleTask.getDue()).getValue();
+                        LocalDateTime dueDate = LocalDateTime.ofInstant(
+                                Instant.ofEpochMilli(millis),
+                                ZoneId.systemDefault()
+                        );
+                        if (dueDate.isBefore(now)) {
+                            log.debug("Skipping past task: {}", googleTask.getTitle());
+                            continue;
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse due date for task: {}", googleTask.getTitle());
+                        continue;
+                    }
+
                     // Skip if already imported
                     if (taskRepository.existsByGoogleEventId(googleTask.getId())) {
                         log.debug("Task already exists: {}", googleTask.getTitle());
