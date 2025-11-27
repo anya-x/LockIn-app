@@ -16,9 +16,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Service for interacting with Google Calendar API.
@@ -47,22 +48,40 @@ public class GoogleCalendarService {
 
             // Set start/end times based on task due date
             if (task.getDueDate() != null) {
-                // WIP: Timezone handling is rough!
-                // TODO: Use user's timezone preference
-                // BUG: This doesn't include timezone info properly!
-                DateTime startDateTime = new DateTime(
-                        task.getDueDate().toInstant(ZoneOffset.UTC).toEpochMilli()
-                );
+                // Use system default timezone (could be user preference in future)
+                ZoneId zoneId = ZoneId.systemDefault();
+                TimeZone timeZone = TimeZone.getTimeZone(zoneId);
+                String timeZoneStr = zoneId.getId();
 
-                DateTime endDateTime = new DateTime(
-                        task.getDueDate().plusHours(1).toInstant(ZoneOffset.UTC).toEpochMilli()
-                );
+                // Convert LocalDateTime to epoch millis with timezone
+                long startMillis = task.getDueDate()
+                        .atZone(zoneId)
+                        .toInstant()
+                        .toEpochMilli();
 
-                EventDateTime start = new EventDateTime().setDateTime(startDateTime);
-                EventDateTime end = new EventDateTime().setDateTime(endDateTime);
+                long endMillis = task.getDueDate()
+                        .plusHours(1)
+                        .atZone(zoneId)
+                        .toInstant()
+                        .toEpochMilli();
+
+                // Create DateTime with timezone (FIXED!)
+                DateTime startDateTime = new DateTime(startMillis, timeZone);
+                DateTime endDateTime = new DateTime(endMillis, timeZone);
+
+                // Set timezone explicitly in EventDateTime
+                EventDateTime start = new EventDateTime()
+                        .setDateTime(startDateTime)
+                        .setTimeZone(timeZoneStr);
+
+                EventDateTime end = new EventDateTime()
+                        .setDateTime(endDateTime)
+                        .setTimeZone(timeZoneStr);
 
                 event.setStart(start);
                 event.setEnd(end);
+
+                log.debug("Event times: {} to {} ({})", startDateTime, endDateTime, timeZoneStr);
             }
 
             // Add custom properties to link back to task
