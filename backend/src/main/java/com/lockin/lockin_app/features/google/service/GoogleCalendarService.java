@@ -280,7 +280,7 @@ public class GoogleCalendarService {
                     // Check due date if present
                     if (googleTask.getDue() != null) {
                         try {
-                            long millis = DateTime.parseRfc3339(googleTask.getDue()).getValue();
+                            long millis = DateTime.parseRfc3339(googleTask.getDue().toString()).getValue();
                             LocalDateTime dueDate = LocalDateTime.ofInstant(
                                     Instant.ofEpochMilli(millis),
                                     ZoneId.systemDefault()
@@ -338,7 +338,7 @@ public class GoogleCalendarService {
         // Extract due date if present
         if (googleTask.getDue() != null) {
             try {
-                long millis = DateTime.parseRfc3339(googleTask.getDue()).getValue();
+                long millis = DateTime.parseRfc3339(googleTask.getDue().toString()).getValue();
                 task.setDueDate(LocalDateTime.ofInstant(
                         Instant.ofEpochMilli(millis),
                         ZoneId.systemDefault()
