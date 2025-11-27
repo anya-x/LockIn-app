@@ -129,7 +129,7 @@ class WebSocketService {
         if (this.client) {
           try {
             this.client.deactivate();
-          } catch (e) {
+          } catch {
             // Ignore cleanup errors
           }
           this.client = null;
@@ -153,7 +153,7 @@ class WebSocketService {
     if (this.subscription) {
       try {
         this.subscription.unsubscribe();
-      } catch (e) {
+      } catch {
         // Ignore unsubscribe errors
       }
       this.subscription = null;
@@ -162,7 +162,7 @@ class WebSocketService {
     if (this.client) {
       try {
         this.client.deactivate();
-      } catch (e) {
+      } catch {
         // Ignore deactivate errors
       }
       this.client = null;

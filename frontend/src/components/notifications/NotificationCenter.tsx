@@ -60,18 +60,12 @@ function formatTimeAgo(date: string): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-interface NotificationCenterProps {
-  onNewNotification?: (notification: Notification) => void;
-}
-
 /**
  * Notification center with slide-out drawer.
  *
  * Modern UI with Material-UI v7.
  */
-const NotificationCenter: React.FC<NotificationCenterProps> = ({
-  onNewNotification,
-}) => {
+const NotificationCenter: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -175,18 +169,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       }, 100);
     }
   };
-
-  /**
-   * Add new notification from WebSocket.
-   */
-  const addNotification = useCallback((notification: Notification) => {
-    setNotifications((prev) => [notification, ...prev]);
-    setUnreadCount((prev) => prev + 1);
-    onNewNotification?.(notification);
-  }, [onNewNotification]);
-
-  // Expose addNotification via ref or context if needed
-  // For now, parent can use websocketService to call this
 
   return (
     <>
