@@ -24,6 +24,7 @@ class WebSocketService {
 
   /**
    * Connect to WebSocket server.
+   * Sends JWT token in STOMP CONNECT headers for authentication.
    */
   connect(
     userEmail: string,
@@ -43,8 +44,12 @@ class WebSocketService {
     const wsUrl =
       import.meta.env.VITE_WS_URL || "http://localhost:8080/ws";
 
+    // Get JWT token from localStorage for authentication
+    const token = localStorage.getItem("token");
+
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       reconnectDelay: 0, // We handle reconnection ourselves
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
