@@ -23,6 +23,7 @@ import { useAppTheme } from "../context/ThemeContext";
 import { useAIPreferences } from "../context/AIPreferencesContext";
 import type { ThemeColor } from "../themes/themeConfig";
 import PageHeader from "../components/shared/PageHeader";
+import CalendarSettings from "../components/calendar/CalendarSettings";
 
 const Settings: React.FC = () => {
   const theme = useTheme();
@@ -220,7 +221,7 @@ const Settings: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box
             sx={{
@@ -254,6 +255,8 @@ const Settings: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
+
+      <CalendarSettings />
     </Box>
   );
 };
