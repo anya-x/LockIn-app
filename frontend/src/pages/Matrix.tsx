@@ -143,7 +143,7 @@ const Matrix: React.FC = () => {
     title,
     subtitle,
     tasks,
-    color,
+    color: _color,
     borderColor,
   }) => {
     const { setNodeRef, isOver } = useDroppable({ id });

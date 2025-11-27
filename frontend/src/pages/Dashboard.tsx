@@ -2,8 +2,6 @@ import React, { useCallback, useMemo } from "react";
 import {
   Box,
   Drawer,
-  AppBar,
-  Toolbar,
   Typography,
   IconButton,
   List,
@@ -11,7 +9,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   useTheme,
   useMediaQuery,
   Chip,

@@ -104,9 +104,10 @@ const PomodoroTimer: React.FC = () => {
       return;
     }
 
+    const sessionStartedAt = timer.sessionStartedAt;
     const updateElapsed = () => {
       const currentElapsedMs = timer.isRunning
-        ? Date.now() - timer.sessionStartedAt
+        ? Date.now() - sessionStartedAt
         : 0;
       const totalElapsedMs = (timer.pausedElapsedMs || 0) + currentElapsedMs;
       setTotalElapsedSeconds(Math.floor(totalElapsedMs / 1000));
@@ -263,7 +264,7 @@ const PomodoroTimer: React.FC = () => {
     }
   };
 
-  const handleTaskChange = (event: any, newValue: Task | null) => {
+  const handleTaskChange = (_event: any, newValue: Task | null) => {
     setSelectedTask(newValue);
   };
 

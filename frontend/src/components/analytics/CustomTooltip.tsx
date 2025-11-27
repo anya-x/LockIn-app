@@ -13,7 +13,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
   active,
   payload,
   label,
-  metricName = "Value",
+  metricName: _metricName = "Value",
   averageValue,
 }) => {
   if (!active || !payload || !payload.length) {

@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  sessionService,
-  type FocusSessionResponse,
-} from "../services/sessionService";
+import { sessionService } from "../services/sessionService";
 
 export const useSessionHistory = () => {
   const {

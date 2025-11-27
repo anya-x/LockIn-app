@@ -1,8 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import goalService, {
-  type Goal,
-  type CreateGoalRequest,
-} from "../services/goalService";
+import goalService, { type CreateGoalRequest } from "../services/goalService";
 
 export function useGoals() {
   return useQuery({

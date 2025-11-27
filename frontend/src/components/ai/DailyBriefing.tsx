@@ -18,7 +18,7 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 import TodayIcon from "@mui/icons-material/Today";
 import SettingsIcon from "@mui/icons-material/Settings";
-import aiService, { type BriefingResult } from "../../services/aiService";
+import aiService from "../../services/aiService";
 import { useRateLimit } from "../../hooks/useRateLimit";
 import { useAIPreferences } from "../../context/AIPreferencesContext";
 import RateLimitIndicator from "../ai/RateLimitIndicator";
