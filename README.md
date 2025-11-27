@@ -4,8 +4,9 @@ A science based task management tool that's going to change how you view product
 
 ## Tech Stack
 
-- **Backend:** Spring Boot 3.2, PostgreSQL 17, JWT Authentication
-- **Frontend:** React 18, TypeScript, Material-UI v7, Vite
+- **Backend:** Spring Boot 3.4, PostgreSQL 17, JWT Authentication
+- **Frontend:** React 19, TypeScript, Material-UI v7, Vite
+- **Real-time:** WebSocket (STOMP over SockJS) for notifications
 - **Architecture:** RESTful API, responsive SPA
 
 ## Prerequisites
@@ -63,6 +64,29 @@ A science based task management tool that's going to change how you view product
 - GET `/api/analytics/range?days={number}` - get analytics for date range
 - POST `/api/analytics/calculate/{date}` - calculate analytics for specific date
 - GET `/api/analytics/weekly-report` - get weekly performance report
+
+### Notifications (Authenticated)
+
+- GET `/api/notifications` - get user notifications (paginated)
+- GET `/api/notifications/unread` - get unread notifications
+- GET `/api/notifications/unread/count` - get unread count
+- PUT `/api/notifications/{id}/read` - mark notification as read
+- PUT `/api/notifications/read-all` - mark all as read
+- WS `/ws` - WebSocket endpoint for real-time notifications
+
+### Calendar Integration (Authenticated)
+
+- GET `/api/calendar/status` - get calendar connection status
+- GET `/api/calendar/oauth/url` - get OAuth authorization URL
+- GET `/api/calendar/oauth/callback` - OAuth callback handler
+- POST `/api/calendar/sync` - trigger manual calendar sync
+- DELETE `/api/calendar/disconnect` - disconnect calendar
+
+### AI Features (Authenticated)
+
+- POST `/api/ai/breakdown/{taskId}` - break down task into subtasks
+- POST `/api/ai/enhance` - enhance task description
+- POST `/api/ai/daily-briefing` - generate daily briefing
 
 ### Eisenhower Matrix Endpoints
 
@@ -268,9 +292,62 @@ A science based task management tool that's going to change how you view product
 **I want to** export productivity reports  
 **So that** I can share with manager or reflect on my own progress
 
-## Epic 5: Intelligent Features
+## Epic 5: Intelligent Features & Notifications
 
-#### US-5.1:
+#### [x] US-5.1: AI Task Breakdown
+
+**As a** user
+**I want** AI to break down complex tasks into subtasks
+**So that** I can tackle overwhelming tasks more easily
+
+**ACs**
+
+- Claude AI integration for task analysis
+- Automatic subtask generation
+- Subtasks inherit parent task properties
+- Notifications when breakdown is complete
+
+#### [x] US-5.2: Real-time Notifications
+
+**As a** user
+**I want** real-time notifications
+**So that** I stay informed about task updates and AI results
+
+**ACs**
+
+- WebSocket-based real-time delivery
+- Browser push notifications (with permission)
+- Notification center with unread count
+- Mark as read / mark all as read
+- Configurable notification preferences
+- iOS Safari graceful degradation
+
+#### [x] US-5.3: Calendar Integration
+
+**As a** user
+**I want** to sync my Google Calendar events
+**So that** I can see all my commitments in one place
+
+**ACs**
+
+- Google OAuth 2.0 integration
+- Automatic task creation from calendar events
+- Scheduled sync (every 15 minutes)
+- Manual sync trigger
+- Connection status indicator
+
+#### [x] US-5.4: Daily Briefing
+
+**As a** user
+**I want** a daily AI-generated briefing
+**So that** I can start my day with clear priorities
+
+**ACs**
+
+- AI-generated productivity summary
+- Today's priority recommendations
+- Overdue task reminders
+- Scheduled delivery notifications
 
 ## Epic 6: Production Readiness
 
@@ -340,4 +417,4 @@ All productivity features are backed by research:
 
 " - overwork detection 6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
 
-**Last Updated:** 3 June 2025
+**Last Updated:** 27 November 2025
