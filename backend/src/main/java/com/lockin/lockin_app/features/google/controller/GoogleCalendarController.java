@@ -139,15 +139,42 @@ public class GoogleCalendarController extends BaseController {
             Long userId = getCurrentUserId(userDetails);
             User user = userService.getUserById(userId);
 
-            int created = calendarService.syncCalendarToTasks(user);
+            // Bidirectional sync: pull from Google and push to Google
+            int imported = calendarService.syncCalendarToTasks(user);
+            int exported = calendarService.syncTasksToGoogle(user);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "tasksCreated", created
+                    "tasksImported", imported,
+                    "tasksExported", exported
             ));
 
         } catch (Exception e) {
             log.error("Failed to sync calendar", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/push-to-google")
+    public ResponseEntity<Map<String, Object>> pushToGoogle(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("POST /api/calendar/push-to-google : User: {}", getCurrentUserEmail(userDetails));
+
+        try {
+            Long userId = getCurrentUserId(userDetails);
+            User user = userService.getUserById(userId);
+
+            int exported = calendarService.syncTasksToGoogle(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "tasksExported", exported
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to push tasks to Google", e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", e.getMessage()));
         }

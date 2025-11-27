@@ -467,6 +467,78 @@ public class GoogleCalendarService {
     }
 
     /**
+     * Sync Lockin tasks to Google Tasks.
+     * Exports:
+     * - Incomplete tasks with due dates within the next 60 days
+     * - Incomplete tasks without a due date
+     */
+    @Transactional
+    public int syncTasksToGoogle(User user) {
+        log.info("Syncing Lockin tasks to Google Tasks for user {}", user.getId());
+
+        try {
+            com.google.api.services.tasks.Tasks tasksClient = buildTasksClient(user);
+            int created = 0;
+            LocalDateTime sixtyDaysFromNow = LocalDateTime.now().plusDays(60);
+
+            // Get tasks that need to be synced
+            List<Task> tasksToSync = taskRepository.findTasksToSyncToGoogle(
+                    user.getId(),
+                    sixtyDaysFromNow
+            );
+
+            if (tasksToSync.isEmpty()) {
+                log.info("No tasks to sync to Google");
+                return 0;
+            }
+
+            // Get or create the default task list
+            TaskLists taskLists = tasksClient.tasklists().list().execute();
+            String taskListId = "@default";
+            if (taskLists.getItems() != null && !taskLists.getItems().isEmpty()) {
+                taskListId = taskLists.getItems().get(0).getId();
+            }
+
+            for (Task task : tasksToSync) {
+                try {
+                    com.google.api.services.tasks.model.Task googleTask = createGoogleTaskFromLockin(task);
+                    com.google.api.services.tasks.model.Task createdTask = tasksClient.tasks()
+                            .insert(taskListId, googleTask)
+                            .execute();
+
+                    // Store the Google Task ID back to our task
+                    task.setGoogleEventId(createdTask.getId());
+                    taskRepository.save(task);
+                    created++;
+                    log.info("Created Google Task from Lockin task: {}", task.getTitle());
+                } catch (Exception e) {
+                    log.warn("Failed to create Google Task for task {}: {}", task.getId(), e.getMessage());
+                }
+            }
+
+            log.info("Exported {} tasks to Google Tasks", created);
+            return created;
+
+        } catch (Exception e) {
+            log.error("Failed to sync tasks to Google", e);
+            throw new RuntimeException("Google Tasks sync failed: " + e.getMessage(), e);
+        }
+    }
+
+    private com.google.api.services.tasks.model.Task createGoogleTaskFromLockin(Task task) {
+        com.google.api.services.tasks.model.Task googleTask = new com.google.api.services.tasks.model.Task();
+        googleTask.setTitle(task.getTitle());
+        googleTask.setNotes(task.getDescription());
+
+        if (task.getDueDate() != null) {
+            long millis = task.getDueDate().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            googleTask.setDue(new DateTime(millis).toStringRfc3339());
+        }
+
+        return googleTask;
+    }
+
+    /**
      * Disconnect user's calendar.
      * Removes stored tokens.
      */
