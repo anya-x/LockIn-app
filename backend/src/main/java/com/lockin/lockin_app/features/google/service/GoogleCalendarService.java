@@ -17,6 +17,7 @@ import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -221,7 +222,6 @@ public class GoogleCalendarService {
                 }
 
                 // Check if we already have a task for this event
-                // BUG: This check might not work properly in same transaction!
                 if (taskRepository.existsByGoogleEventId(event.getId())) {
                     log.debug("Task already exists for event: {}", event.getId());
                     continue;
@@ -229,10 +229,14 @@ public class GoogleCalendarService {
 
                 // Create task from event
                 Task task = createTaskFromEvent(event, user);
-                taskRepository.save(task);
-                created++;
-
-                log.info("Created task from calendar event: {}", event.getSummary());
+                try {
+                    taskRepository.save(task);
+                    created++;
+                    log.info("Created task from calendar event: {}", event.getSummary());
+                } catch (DataIntegrityViolationException e) {
+                    // Duplicate event ID - skip silently (partial unique index caught it)
+                    log.debug("Event {} already has a task (caught by constraint), skipping", event.getId());
+                }
             }
 
             log.info("Created {} tasks from calendar events", created);
