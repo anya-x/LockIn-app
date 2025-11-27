@@ -46,6 +46,7 @@ public class SecurityConfig {
                         auth.requestMatchers("/api/auth/**")
                             .permitAll()
                             .requestMatchers("/api/calendar/oauth/callback/**").permitAll()
+                            .requestMatchers("/ws/**").permitAll() // WebSocket endpoint
                             .anyRequest()
                             .authenticated();
                     })
