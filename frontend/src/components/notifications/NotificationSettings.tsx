@@ -8,6 +8,9 @@ import {
   FormControlLabel,
   Divider,
   useTheme,
+  Snackbar,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
@@ -64,6 +67,12 @@ const NotificationSettings: React.FC = () => {
   const theme = useTheme();
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
+  const [requestingPermission, setRequestingPermission] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info";
+  }>({ open: false, message: "", severity: "success" });
 
   useEffect(() => {
     setPreferences(loadNotificationPreferences());
@@ -79,21 +88,56 @@ const NotificationSettings: React.FC = () => {
     };
     setPreferences(newPreferences);
     saveNotificationPreferences(newPreferences);
+    setSnackbar({
+      open: true,
+      message: "Preferences saved",
+      severity: "success",
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   const handleBrowserNotificationToggle = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (event.target.checked) {
-      const granted = await browserNotificationService.requestPermission();
-      setBrowserPermission(granted ? "granted" : "denied");
+      setRequestingPermission(true);
+      try {
+        const granted = await browserNotificationService.requestPermission();
+        setBrowserPermission(granted ? "granted" : "denied");
 
-      const newPreferences = {
-        ...preferences,
-        browserNotifications: granted,
-      };
-      setPreferences(newPreferences);
-      saveNotificationPreferences(newPreferences);
+        const newPreferences = {
+          ...preferences,
+          browserNotifications: granted,
+        };
+        setPreferences(newPreferences);
+        saveNotificationPreferences(newPreferences);
+
+        if (granted) {
+          setSnackbar({
+            open: true,
+            message: "Browser notifications enabled",
+            severity: "success",
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: "Browser notifications were denied",
+            severity: "info",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to request notification permission:", error);
+        setSnackbar({
+          open: true,
+          message: "Failed to enable notifications",
+          severity: "error",
+        });
+      } finally {
+        setRequestingPermission(false);
+      }
     } else {
       const newPreferences = {
         ...preferences,
@@ -101,6 +145,11 @@ const NotificationSettings: React.FC = () => {
       };
       setPreferences(newPreferences);
       saveNotificationPreferences(newPreferences);
+      setSnackbar({
+        open: true,
+        message: "Browser notifications disabled",
+        severity: "info",
+      });
     }
   };
 
@@ -150,19 +199,23 @@ const NotificationSettings: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={
-                    preferences.browserNotifications &&
-                    browserPermission === "granted"
-                  }
-                  onChange={handleBrowserNotificationToggle}
-                  disabled={isIOSSafari || browserPermission === "denied"}
-                />
-              }
-              label=""
-            />
+            {requestingPermission ? (
+              <CircularProgress size={20} sx={{ mr: 1.5 }} />
+            ) : (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={
+                      preferences.browserNotifications &&
+                      browserPermission === "granted"
+                    }
+                    onChange={handleBrowserNotificationToggle}
+                    disabled={isIOSSafari || browserPermission === "denied"}
+                  />
+                }
+                label=""
+              />
+            )}
           </Box>
         </Box>
 
@@ -267,6 +320,23 @@ const NotificationSettings: React.FC = () => {
           </Box>
         </Box>
       </CardContent>
+
+      {/* Save feedback snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Card>
   );
 };
