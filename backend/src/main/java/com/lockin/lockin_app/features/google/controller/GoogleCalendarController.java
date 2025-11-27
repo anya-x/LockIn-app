@@ -1,11 +1,11 @@
 package com.lockin.lockin_app.features.google.controller;
 
+import com.lockin.lockin_app.config.GoogleOAuthConfig;
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,23 +25,17 @@ public class GoogleCalendarController extends BaseController {
 
     private final GoogleCalendarService calendarService;
     private final GoogleOAuthService oauthService;
-
-    @Value("${google.oauth.client-id}")
-    private String clientId;
-
-    @Value("${google.oauth.redirect-uri}")
-    private String redirectUri;
-
-    @Value("${google.oauth.scopes}")
-    private String scopes;
+    private final GoogleOAuthConfig oauthConfig;
 
     public GoogleCalendarController(
             UserService userService,
             GoogleCalendarService calendarService,
-            GoogleOAuthService oauthService) {
+            GoogleOAuthService oauthService,
+            GoogleOAuthConfig oauthConfig) {
         super(userService);
         this.calendarService = calendarService;
         this.oauthService = oauthService;
+        this.oauthConfig = oauthConfig;
     }
 
     @GetMapping("/connect")
@@ -52,6 +46,7 @@ public class GoogleCalendarController extends BaseController {
                  getCurrentUserEmail(userDetails));
 
         try {
+            // Build Google OAuth authorization URL using config
             String authUrl = String.format(
                     "https://accounts.google.com/o/oauth2/v2/auth?" +
                             "client_id=%s&" +
@@ -61,9 +56,9 @@ public class GoogleCalendarController extends BaseController {
                             "access_type=offline&" +
                             "prompt=consent&" +
                             "state=%s",
-                    clientId,
-                    redirectUri,
-                    scopes,
+                    oauthConfig.getClientId(),
+                    oauthConfig.getRedirectUri(),
+                    oauthConfig.getScopes(),
                     generateStateToken(getCurrentUserEmail(userDetails))
             );
 
