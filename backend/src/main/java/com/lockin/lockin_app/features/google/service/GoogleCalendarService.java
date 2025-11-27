@@ -77,8 +77,8 @@ public class GoogleCalendarService {
                         .toEpochMilli();
 
                 // Create DateTime with timezone (FIXED!)
-                DateTime startDateTime = new DateTime(startMillis, timeZone);
-                DateTime endDateTime = new DateTime(endMillis, timeZone);
+                DateTime startDateTime = new DateTime(new java.util.Date(startMillis), timeZone);
+                DateTime endDateTime = new DateTime(new java.util.Date(endMillis), timeZone);
 
                 // Set timezone explicitly in EventDateTime
                 EventDateTime start = new EventDateTime()
