@@ -115,6 +115,16 @@ const NotificationCenter: React.FC = () => {
     updateUnreadCount();
   }, [updateUnreadCount]);
 
+  // Periodic refresh of unread count (fallback for missed WebSocket updates)
+  useEffect(() => {
+    const REFRESH_INTERVAL = 60000; // 1 minute
+    const interval = setInterval(() => {
+      updateUnreadCount();
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [updateUnreadCount]);
+
   // Fetch first page when drawer opens
   useEffect(() => {
     if (open) {
