@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 /**
  * Service for interacting with Google Calendar API.
@@ -61,7 +60,6 @@ public class GoogleCalendarService {
             if (task.getDueDate() != null) {
                 // Use system default timezone (could be user preference in future)
                 ZoneId zoneId = ZoneId.systemDefault();
-                TimeZone timeZone = TimeZone.getTimeZone(zoneId);
                 String timeZoneStr = zoneId.getId();
 
                 // Convert LocalDateTime to epoch millis with timezone
@@ -76,23 +74,20 @@ public class GoogleCalendarService {
                         .toInstant()
                         .toEpochMilli();
 
-                // Create DateTime with timezone (FIXED!)
-                DateTime startDateTime = new DateTime(new java.util.Date(startMillis), timeZone);
-                DateTime endDateTime = new DateTime(new java.util.Date(endMillis), timeZone);
-
-                // Set timezone explicitly in EventDateTime
+                // Create EventDateTime with timezone
+                // DateTime(millis) creates UTC time, but EventDateTime.setTimeZone handles display
                 EventDateTime start = new EventDateTime()
-                        .setDateTime(startDateTime)
+                        .setDateTime(new DateTime(startMillis))
                         .setTimeZone(timeZoneStr);
 
                 EventDateTime end = new EventDateTime()
-                        .setDateTime(endDateTime)
+                        .setDateTime(new DateTime(endMillis))
                         .setTimeZone(timeZoneStr);
 
                 event.setStart(start);
                 event.setEnd(end);
 
-                log.debug("Event times: {} to {} ({})", startDateTime, endDateTime, timeZoneStr);
+                log.debug("Event times: {} to {} ({})", start.getDateTime(), end.getDateTime(), timeZoneStr);
             }
 
             // Add custom properties to link back to task
