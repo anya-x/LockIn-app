@@ -129,6 +129,12 @@
             <version>v3-rev20250404-2.0.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-tasks</artifactId>
+            <version>v1-rev20240922-2.0.0</version>
+        </dependency>
+
         <!-- For token encryption -->
         <dependency>
             <groupId>org.jasypt</groupId>

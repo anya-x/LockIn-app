@@ -8,6 +8,9 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
+import com.google.api.services.tasks.Tasks;
+import com.google.api.services.tasks.model.TaskList;
+import com.google.api.services.tasks.model.TaskLists;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.tasks.entity.Task;
@@ -203,12 +206,131 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Sync calendar events to tasks.
-     * Creates tasks from calendar events that don't already exist.
+     * Build Google Tasks API client with user's access token.
+     */
+    public Tasks buildTasksClient(User user) throws Exception {
+        GoogleCalendarToken tokenEntity = tokenRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("User has not connected Google Calendar"));
+
+        if (!tokenEntity.getIsActive()) {
+            throw new RuntimeException("Calendar connection is inactive");
+        }
+
+        if (tokenEntity.getTokenExpiresAt().isBefore(ZonedDateTime.now())) {
+            log.warn("Access token expired for user {}", user.getId());
+            throw new RuntimeException("Access token expired - please reconnect calendar");
+        }
+
+        String accessToken = encryptionService.decrypt(tokenEntity.getEncryptedAccessToken());
+
+        @SuppressWarnings("deprecation")
+        GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
+
+        Tasks tasks = new Tasks.Builder(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                credential
+        )
+                .setApplicationName("Lockin Task Manager")
+                .build();
+
+        log.info("Built Tasks API client for user {}", user.getId());
+        return tasks;
+    }
+
+    /**
+     * Sync Google Tasks to Lockin tasks.
+     * Only imports incomplete tasks from Google Tasks.
      */
     @Transactional
     public int syncCalendarToTasks(User user) {
-        log.info("Syncing calendar events to tasks for user {}", user.getId());
+        log.info("Syncing Google Tasks to Lockin for user {}", user.getId());
+
+        try {
+            Tasks tasksClient = buildTasksClient(user);
+            int created = 0;
+
+            // Get all task lists
+            TaskLists taskLists = tasksClient.tasklists().list().execute();
+
+            if (taskLists.getItems() == null) {
+                log.info("No task lists found");
+                return 0;
+            }
+
+            for (TaskList taskList : taskLists.getItems()) {
+                log.info("Processing task list: {}", taskList.getTitle());
+
+                // Get tasks from this list (only incomplete tasks)
+                com.google.api.services.tasks.model.Tasks googleTasks = tasksClient.tasks()
+                        .list(taskList.getId())
+                        .setShowCompleted(false)
+                        .setShowHidden(false)
+                        .execute();
+
+                if (googleTasks.getItems() == null) {
+                    continue;
+                }
+
+                for (com.google.api.services.tasks.model.Task googleTask : googleTasks.getItems()) {
+                    // Skip if already imported
+                    if (taskRepository.existsByGoogleEventId(googleTask.getId())) {
+                        log.debug("Task already exists: {}", googleTask.getTitle());
+                        continue;
+                    }
+
+                    // Create Lockin task from Google Task
+                    Task task = createTaskFromGoogleTask(googleTask, user);
+                    try {
+                        taskRepository.save(task);
+                        created++;
+                        log.info("Created task from Google Task: {}", googleTask.getTitle());
+                    } catch (DataIntegrityViolationException e) {
+                        log.debug("Task {} already exists (caught by constraint)", googleTask.getId());
+                    }
+                }
+            }
+
+            log.info("Imported {} tasks from Google Tasks", created);
+            return created;
+
+        } catch (Exception e) {
+            log.error("Failed to sync Google Tasks", e);
+            throw new RuntimeException("Google Tasks sync failed: " + e.getMessage(), e);
+        }
+    }
+
+    private Task createTaskFromGoogleTask(com.google.api.services.tasks.model.Task googleTask, User user) {
+        Task task = new Task();
+        task.setUser(user);
+        task.setTitle(googleTask.getTitle() != null ? googleTask.getTitle() : "Untitled Task");
+        task.setDescription(googleTask.getNotes());
+        task.setGoogleEventId(googleTask.getId());
+
+        // Extract due date if present
+        if (googleTask.getDue() != null) {
+            try {
+                long millis = DateTime.parseRfc3339(googleTask.getDue()).getValue();
+                task.setDueDate(LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(millis),
+                        ZoneId.systemDefault()
+                ));
+            } catch (Exception e) {
+                log.warn("Failed to parse due date: {}", googleTask.getDue());
+            }
+        }
+
+        task.setStatus(TaskStatus.TODO);
+        task.setIsUrgent(false);
+        task.setIsImportant(false);
+
+        return task;
+    }
+
+    // Keeping this method for potential future use
+    @SuppressWarnings("unused")
+    private int importEventsAsTasks(User user) {
+        log.info("Importing calendar events as tasks for user {}", user.getId());
 
         try {
             List<Event> events = fetchRecentEvents(user, 100);
