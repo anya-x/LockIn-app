@@ -239,9 +239,7 @@ public class GoogleCalendarService {
 
     /**
      * Sync Google Tasks to Lockin tasks.
-     * Imports:
-     * - Incomplete tasks with future due dates (next 60 days)
-     * - Incomplete tasks without a due date
+     * Imports incomplete tasks with due dates within the next 30 days.
      * Does NOT import calendar events.
      */
     @Transactional
@@ -252,7 +250,7 @@ public class GoogleCalendarService {
             com.google.api.services.tasks.Tasks tasksClient = buildTasksClient(user);
             int created = 0;
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime sixtyDaysFromNow = now.plusDays(60);
+            LocalDateTime thirtyDaysFromNow = now.plusDays(30);
 
             // Get all task lists
             TaskLists taskLists = tasksClient.tasklists().list().execute();
@@ -277,29 +275,33 @@ public class GoogleCalendarService {
                 }
 
                 for (com.google.api.services.tasks.model.Task googleTask : googleTasks.getItems()) {
-                    // Check due date if present
-                    if (googleTask.getDue() != null) {
-                        try {
-                            long millis = DateTime.parseRfc3339(googleTask.getDue().toString()).getValue();
-                            LocalDateTime dueDate = LocalDateTime.ofInstant(
-                                    Instant.ofEpochMilli(millis),
-                                    ZoneId.systemDefault()
-                            );
-                            // Skip past due dates
-                            if (dueDate.isBefore(now)) {
-                                log.debug("Skipping past task: {}", googleTask.getTitle());
-                                continue;
-                            }
-                            // Skip tasks more than 60 days in the future
-                            if (dueDate.isAfter(sixtyDaysFromNow)) {
-                                log.debug("Skipping task too far in future: {}", googleTask.getTitle());
-                                continue;
-                            }
-                        } catch (Exception e) {
-                            log.warn("Failed to parse due date for task: {}", googleTask.getTitle());
-                        }
+                    // Skip tasks without due date
+                    if (googleTask.getDue() == null) {
+                        log.debug("Skipping task without due date: {}", googleTask.getTitle());
+                        continue;
                     }
-                    // Tasks without due date are allowed (incomplete tasks)
+
+                    // Check due date is within 30 days
+                    try {
+                        long millis = DateTime.parseRfc3339(googleTask.getDue().toString()).getValue();
+                        LocalDateTime dueDate = LocalDateTime.ofInstant(
+                                Instant.ofEpochMilli(millis),
+                                ZoneId.systemDefault()
+                        );
+                        // Skip past due dates
+                        if (dueDate.isBefore(now)) {
+                            log.debug("Skipping past task: {}", googleTask.getTitle());
+                            continue;
+                        }
+                        // Skip tasks more than 30 days in the future
+                        if (dueDate.isAfter(thirtyDaysFromNow)) {
+                            log.debug("Skipping task too far in future: {}", googleTask.getTitle());
+                            continue;
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse due date for task: {}", googleTask.getTitle());
+                        continue;
+                    }
 
                     // Skip if already imported
                     if (taskRepository.existsByGoogleEventId(googleTask.getId())) {
