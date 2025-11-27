@@ -3,6 +3,7 @@ package com.lockin.lockin_app.features.google.controller;
 import com.lockin.lockin_app.config.GoogleOAuthConfig;
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
 
@@ -113,9 +114,9 @@ public class GoogleCalendarController extends BaseController {
 
         try {
             Long userId = getCurrentUserId(userDetails);
-            var user = userService.getUserById(userId);
+            User user = userService.getUserById(userId);
 
-            var status = calendarService.getConnectionStatus(user);
+            Map<String, Object> status = calendarService.getConnectionStatus(user);
 
             return ResponseEntity.ok(status);
 
@@ -136,7 +137,7 @@ public class GoogleCalendarController extends BaseController {
 
         try {
             Long userId = getCurrentUserId(userDetails);
-            var user = userService.getUserById(userId);
+            User user = userService.getUserById(userId);
 
             int created = calendarService.syncCalendarToTasks(user);
 
@@ -160,7 +161,7 @@ public class GoogleCalendarController extends BaseController {
 
         try {
             Long userId = getCurrentUserId(userDetails);
-            var user = userService.getUserById(userId);
+            User user = userService.getUserById(userId);
 
             calendarService.disconnectCalendar(user);
 

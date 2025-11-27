@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Service for interacting with Google Calendar API.
@@ -280,14 +281,14 @@ public class GoogleCalendarService {
     public Map<String, Object> getConnectionStatus(User user) {
         Map<String, Object> status = new HashMap<>();
 
-        var tokenOpt = tokenRepository.findByUser(user);
+        Optional<GoogleCalendarToken> tokenOpt = tokenRepository.findByUser(user);
 
         if (tokenOpt.isEmpty()) {
             status.put("connected", false);
             return status;
         }
 
-        var token = tokenOpt.get();
+        GoogleCalendarToken token = tokenOpt.get();
         status.put("connected", token.getIsActive());
         status.put("connectedAt", token.getConnectedAt());
         status.put("lastSyncAt", token.getLastSyncAt());
