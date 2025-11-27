@@ -215,6 +215,12 @@ public class GoogleCalendarService {
             int created = 0;
 
             for (Event event : events) {
+                // Skip all-day events (birthdays, holidays) - they have date but no dateTime
+                if (event.getStart() == null || event.getStart().getDateTime() == null) {
+                    log.debug("Skipping all-day event: {}", event.getSummary());
+                    continue;
+                }
+
                 // Skip events we created (have our custom property)
                 if (isLockinEvent(event)) {
                     log.debug("Skipping Lockin-created event: {}", event.getId());
