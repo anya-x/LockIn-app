@@ -18,7 +18,7 @@ import {
   LinkOff as DisconnectIcon,
 } from "@mui/icons-material";
 import { useSearchParams } from "react-router-dom";
-import calendarService from "../../services/calendarService";
+import { calendarService } from "../../services/calendarService";
 import type { CalendarStatus } from "../../services/calendarService";
 
 const CalendarSettings: React.FC = () => {

@@ -5,16 +5,13 @@ import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
 import com.lockin.lockin_app.features.google.service.GoogleOAuthService;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.Base64;
@@ -41,14 +38,12 @@ public class GoogleCalendarController extends BaseController {
     }
 
     @GetMapping("/connect")
-    public ResponseEntity<?> connectCalendar(
+    public ResponseEntity<Map<String, String>> connectCalendar(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.info("User {} initiating Google Calendar connection",
-                 getCurrentUserEmail(userDetails));
+        log.debug("GET /api/calendar/connect : User: {}", getCurrentUserEmail(userDetails));
 
         try {
-            // Build Google OAuth authorization URL using config
             String authUrl = String.format(
                     "https://accounts.google.com/o/oauth2/v2/auth?" +
                             "client_id=%s&" +
@@ -64,8 +59,6 @@ public class GoogleCalendarController extends BaseController {
                     generateStateToken(getCurrentUserEmail(userDetails))
             );
 
-            log.info("Generated auth URL for user");
-
             return ResponseEntity.ok(Map.of("authorizationUrl", authUrl));
 
         } catch (Exception e) {
@@ -75,14 +68,13 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-
     @GetMapping("/oauth/callback/")
     public RedirectView oauthCallback(
             @RequestParam String code,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String error) {
 
-        log.info("OAuth callback received");
+        log.debug("GET /api/calendar/oauth/callback/");
 
         if (error != null) {
             log.error("OAuth error: {}", error);
@@ -94,13 +86,11 @@ public class GoogleCalendarController extends BaseController {
             String[] parts = decodedState.split(":");
             String userEmail = parts[0];
 
-            log.info("Extracted user email from state: {}", userEmail);
-
             Long userId = userService.getUserIdFromEmail(userEmail);
 
             oauthService.exchangeCodeForTokens(code, userId);
 
-            log.info("OAuth flow completed successfully for user {}", userId);
+            log.info("OAuth flow completed for user {}", userId);
             return new RedirectView("http://localhost:5173/settings?connected=true");
 
         } catch (Exception e) {
@@ -109,23 +99,20 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-
     private String generateStateToken(String username) {
         return Base64.getEncoder().encodeToString(
                 (username + ":" + System.currentTimeMillis()).getBytes()
         );
     }
 
-    /**
-     * Get calendar connection status.
-     * Used by frontend to show current state.
-     */
     @GetMapping("/status")
-    public ResponseEntity<?> getStatus(
+    public ResponseEntity<Map<String, Object>> getStatus(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("GET /api/calendar/status : User: {}", getCurrentUserEmail(userDetails));
+
         try {
-            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            Long userId = getCurrentUserId(userDetails);
             var user = userService.getUserById(userId);
 
             var status = calendarService.getConnectionStatus(user);
@@ -141,15 +128,14 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-    /**
-     * Manual sync trigger.
-     */
     @PostMapping("/sync-now")
-    public ResponseEntity<?> syncNow(
+    public ResponseEntity<Map<String, Object>> syncNow(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("POST /api/calendar/sync-now : User: {}", getCurrentUserEmail(userDetails));
+
         try {
-            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            Long userId = getCurrentUserId(userDetails);
             var user = userService.getUserById(userId);
 
             int created = calendarService.syncCalendarToTasks(user);
@@ -166,16 +152,14 @@ public class GoogleCalendarController extends BaseController {
         }
     }
 
-    /**
-     * Disconnect calendar.
-     * Removes stored tokens.
-     */
     @DeleteMapping("/disconnect")
-    public ResponseEntity<?> disconnect(
+    public ResponseEntity<Map<String, Object>> disconnect(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.debug("DELETE /api/calendar/disconnect : User: {}", getCurrentUserEmail(userDetails));
+
         try {
-            Long userId = userService.getUserIdFromEmail(getCurrentUserEmail(userDetails));
+            Long userId = getCurrentUserId(userDetails);
             var user = userService.getUserById(userId);
 
             calendarService.disconnectCalendar(user);
