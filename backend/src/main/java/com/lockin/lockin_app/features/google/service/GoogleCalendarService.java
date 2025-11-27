@@ -532,7 +532,7 @@ public class GoogleCalendarService {
 
         if (task.getDueDate() != null) {
             long millis = task.getDueDate().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-            googleTask.setDue(new DateTime(millis).toStringRfc3339());
+            googleTask.setDue(new DateTime(millis));
         }
 
         return googleTask;
