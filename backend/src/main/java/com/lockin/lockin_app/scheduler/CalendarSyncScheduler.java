@@ -3,6 +3,7 @@ package com.lockin.lockin_app.scheduler;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.google.service.GoogleCalendarService;
+import com.lockin.lockin_app.features.notifications.service.NotificationService;
 import com.lockin.lockin_app.features.users.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class CalendarSyncScheduler {
 
     private final GoogleCalendarTokenRepository tokenRepository;
     private final GoogleCalendarService calendarService;
+    private final NotificationService notificationService;
 
     @Scheduled(fixedRate = 15 * 60 * 1000)
     public void syncAllUsers() {
@@ -58,6 +60,22 @@ public class CalendarSyncScheduler {
                         user.getId(),
                         created);
                 successCount++;
+
+                // Send notification if new tasks were created
+                if (created > 0) {
+                    try {
+                        notificationService.createNotification(
+                                user,
+                                "CALENDAR_SYNC",
+                                "Calendar Sync Complete",
+                                String.format("%d new task%s imported from Google Calendar",
+                                        created, created > 1 ? "s" : ""),
+                                "/tasks"
+                        );
+                    } catch (Exception e) {
+                        log.warn("Failed to send calendar sync notification: {}", e.getMessage());
+                    }
+                }
 
             } catch (Exception e) {
                 log.error(

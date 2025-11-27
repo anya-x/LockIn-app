@@ -7,6 +7,7 @@ import com.lockin.lockin_app.features.tasks.entity.Task;
 import com.lockin.lockin_app.features.tasks.entity.TaskStatus;
 import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.ai.repository.AIUsageRepository;
+import com.lockin.lockin_app.features.notifications.service.NotificationService;
 import com.lockin.lockin_app.features.tasks.repository.TaskRepository;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class DailyBriefingService {
     private final AIUsageRepository aiUsageRepository;
     private final UserRepository userRepository;
     private final RateLimitService rateLimitService;
+    private final NotificationService notificationService;
 
     @Cacheable(value = "dailyBriefings", key = "#userId + '_' + T(java.time.LocalDate).now()")
     public BriefingResultDTO generateDailyBriefing(Long userId) {
@@ -129,6 +131,20 @@ public class DailyBriefingService {
                      totalActiveTasks,
                      response.getTotalTokens(),
                      String.format("%.4f", response.getEstimatedCost()));
+
+            // Send notification about daily briefing
+            try {
+                notificationService.createNotification(
+                        user,
+                        "DAILY_BRIEFING",
+                        "Your Daily Briefing is Ready",
+                        "Check out your personalized productivity advice for today!",
+                        "/tasks"
+                );
+            } catch (Exception e) {
+                log.warn("Failed to send briefing notification: {}", e.getMessage());
+                // Don't fail the request if notification fails
+            }
 
             return result;
 
