@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeToken
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.lockin.lockin_app.config.GoogleOAuthConfig;
 import com.lockin.lockin_app.features.google.entity.GoogleCalendarToken;
 import com.lockin.lockin_app.features.google.repository.GoogleCalendarTokenRepository;
 import com.lockin.lockin_app.features.users.entity.User;
@@ -11,7 +12,6 @@ import com.lockin.lockin_app.features.users.repository.UserRepository;
 import com.lockin.lockin_app.security.TokenEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,15 +26,7 @@ public class GoogleOAuthService {
     private final GoogleCalendarTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final TokenEncryptionService encryptionService;
-
-    @Value("${google.oauth.client-id}")
-    private String clientId;
-
-    @Value("${google.oauth.client-secret}")
-    private String clientSecret;
-
-    @Value("${google.oauth.redirect-uri}")
-    private String redirectUri;
+    private final GoogleOAuthConfig oauthConfig;
 
     @Transactional
     public void exchangeCodeForTokens(String code, Long userId) {
@@ -45,10 +37,10 @@ public class GoogleOAuthService {
                     new NetHttpTransport(),
                     GsonFactory.getDefaultInstance(),
                     "https://oauth2.googleapis.com/token",
-                    clientId,
-                    clientSecret,
+                    oauthConfig.getClientId(),
+                    oauthConfig.getClientSecret(),
                     code,
-                    redirectUri
+                    oauthConfig.getRedirectUri()
             ).execute();
 
             String accessToken = tokenResponse.getAccessToken();
