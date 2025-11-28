@@ -45,13 +45,21 @@ interface NotesSectionHandle {
 
 const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
   function NotesSection({ onSaveNotes, isRunning, hasSession }, ref) {
-    const [localNotes, setLocalNotes] = useState("");
+    const [localNotes, setLocalNotes] = useState(() => {
+      // Initialize from localStorage
+      return localStorage.getItem("timer-session-notes") || "";
+    });
     const [showNotes, setShowNotes] = useState(() => {
       // Initialize from localStorage
       const stored = localStorage.getItem("timer-notes-expanded");
       return stored === "true";
     });
     const [saving, setSaving] = useState(false);
+
+    // Persist notes to localStorage
+    useEffect(() => {
+      localStorage.setItem("timer-session-notes", localNotes);
+    }, [localNotes]);
 
     // Persist showNotes to localStorage
     useEffect(() => {
@@ -61,7 +69,10 @@ const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
     // Expose methods to parent via ref
     useImperativeHandle(ref, () => ({
       getNotes: () => localNotes,
-      clearNotes: () => setLocalNotes(""),
+      clearNotes: () => {
+        setLocalNotes("");
+        localStorage.removeItem("timer-session-notes");
+      },
     }), [localNotes]);
 
     const handleSave = async () => {
