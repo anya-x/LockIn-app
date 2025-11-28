@@ -68,10 +68,24 @@ export const CompactBriefing: React.FC = () => {
           display: "flex",
           alignItems: "center",
           gap: 2,
-          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+          background: (theme) =>
+            `linear-gradient(135deg, ${alpha(theme.palette.grey[400], 0.08)} 0%, ${theme.palette.background.paper} 100%)`,
+          border: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <AIIcon sx={{ color: "text.secondary" }} />
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+            bgcolor: "action.disabledBackground",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <AIIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+        </Box>
         <Box flex={1}>
           <Typography variant="body2" color="text.secondary">
             AI Briefing disabled
@@ -93,7 +107,9 @@ export const CompactBriefing: React.FC = () => {
     <Paper
       sx={{
         overflow: "hidden",
-        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
+        background: (theme) =>
+          `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${theme.palette.background.paper} 100%)`,
+        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
       }}
     >
       {/* Header - always visible */}
@@ -107,7 +123,20 @@ export const CompactBriefing: React.FC = () => {
         }}
         onClick={() => setExpanded(!expanded)}
       >
-        <AIIcon sx={{ color: "primary.main", fontSize: 20 }} />
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+            bgcolor: "primary.main",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <AIIcon sx={{ color: "white", fontSize: 20 }} />
+        </Box>
         <Typography variant="subtitle2" fontWeight={600} flex={1}>
           AI Daily Briefing
         </Typography>

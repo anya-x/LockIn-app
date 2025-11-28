@@ -2,20 +2,20 @@ import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
-  Container,
   Box,
   TextField,
   Button,
   Typography,
   Alert,
-  Paper,
   useTheme,
   alpha,
+  useMediaQuery,
 } from "@mui/material";
-import { Timer as TimerIcon } from "@mui/icons-material";
+import { Check as CheckIcon } from "@mui/icons-material";
 
 const Login: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -41,66 +41,119 @@ const Login: React.FC = () => {
     }
   };
 
+  const features = [
+    "Eisenhower Matrix prioritization",
+    "Pomodoro focus profiles",
+    "AI-powered daily briefings",
+    "Track your productivity streaks",
+  ];
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: `linear-gradient(135deg, ${alpha(
-          theme.palette.primary.main,
-          0.05
-        )} 0%, ${alpha(theme.palette.primary.light, 0.02)} 100%)`,
-        p: 3,
+        flexDirection: isMobile ? "column" : "row",
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
+      {/* Left Panel - Branding */}
+      <Box
+        sx={{
+          width: isMobile ? "100%" : "45%",
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          p: { xs: 4, md: 6 },
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          minHeight: isMobile ? "auto" : "100vh",
+        }}
+      >
+        <Typography
+          variant="h3"
           sx={{
-            p: { xs: 4, sm: 6 },
-            borderRadius: 4,
-            boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.1)}`,
+            fontWeight: 700,
+            color: "white",
+            mb: 1.5,
           }}
         >
-          {/* Logo and Brand */}
-          <Box sx={{ textAlign: "center", mb: 4 }}>
+          LockIn
+        </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            color: "rgba(255, 255, 255, 0.9)",
+            mb: 4,
+            fontWeight: 400,
+          }}
+        >
+          Focus on what matters.
+        </Typography>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {features.map((feature, index) => (
             <Box
+              key={index}
               sx={{
-                width: 64,
-                height: 64,
-                borderRadius: 3,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                mx: "auto",
-                mb: 2,
-                boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+                gap: 1.5,
               }}
             >
-              <TimerIcon sx={{ fontSize: 32, color: "white" }} />
+              <Box
+                sx={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(255, 255, 255, 0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CheckIcon sx={{ fontSize: 14, color: "white" }} />
+              </Box>
+              <Typography
+                sx={{
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "0.95rem",
+                }}
+              >
+                {feature}
+              </Typography>
             </Box>
-            <Typography
-              variant="h4"
-              fontWeight={700}
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                color: "transparent",
-              }}
-            >
-              LockIn
-            </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mt: 1 }}
-            >
-              Focus on what matters most
-            </Typography>
-          </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* Right Panel - Form */}
+      <Box
+        sx={{
+          flex: 1,
+          bgcolor: "#FAFAFA",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: { xs: 4, md: 6 },
+        }}
+      >
+        <Box sx={{ width: "100%", maxWidth: 380 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+              mb: 0.5,
+            }}
+          >
+            Welcome back
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 4 }}
+          >
+            Sign in to continue to your dashboard
+          </Typography>
 
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
@@ -110,7 +163,6 @@ const Login: React.FC = () => {
 
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
-              margin="normal"
               required
               fullWidth
               label="Email Address"
@@ -119,10 +171,14 @@ const Login: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               autoFocus
-              sx={{ mb: 2 }}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "white",
+                },
+              }}
             />
             <TextField
-              margin="normal"
               required
               fullWidth
               label="Password"
@@ -130,7 +186,12 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              sx={{ mb: 3 }}
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "white",
+                },
+              }}
             />
             <Button
               type="submit"
@@ -147,37 +208,26 @@ const Login: React.FC = () => {
             >
               {loading ? "Signing In..." : "Sign In"}
             </Button>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography variant="body2" color="text.secondary">
-                Don't have an account?{" "}
-                <Link
-                  to="/register"
-                  style={{
-                    textDecoration: "none",
-                    color: theme.palette.primary.main,
-                    fontWeight: 600,
-                  }}
-                >
-                  Sign Up
-                </Link>
-              </Typography>
-            </Box>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: "center" }}
+            >
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                style={{
+                  textDecoration: "none",
+                  color: theme.palette.primary.main,
+                  fontWeight: 600,
+                }}
+              >
+                Sign up
+              </Link>
+            </Typography>
           </Box>
-        </Paper>
-
-        {/* Footer */}
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            display: "block",
-            textAlign: "center",
-            mt: 4,
-          }}
-        >
-          Focus, Track, Achieve
-        </Typography>
-      </Container>
+        </Box>
+      </Box>
     </Box>
   );
 };

@@ -101,41 +101,42 @@ const StatPill: React.FC<StatPillProps> = ({
     <Stack direction="row" spacing={1.5} alignItems="center">
       <Box sx={{ color: pillColor, display: "flex" }}>{icon}</Box>
       <Box>
-        <Stack direction="row" spacing={0.5} alignItems="baseline">
+        <Stack direction="row" spacing={0.75} alignItems="center">
           <Typography variant="h6" fontWeight={700}>
             {value}
           </Typography>
           {trend && trendValue && (
-            <Chip
-              size="small"
-              icon={
-                trend === "up" ? (
-                  <TrendingUp sx={{ fontSize: 14 }} />
-                ) : trend === "down" ? (
-                  <TrendingDown sx={{ fontSize: 14 }} />
-                ) : undefined
-              }
-              label={trendValue}
+            <Box
               sx={{
-                height: 20,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.25,
+                px: 1,
+                py: 0.25,
+                borderRadius: 10,
                 fontSize: "0.7rem",
+                fontWeight: 600,
                 bgcolor:
                   trend === "up"
-                    ? alpha(theme.palette.success.main, 0.1)
+                    ? alpha(theme.palette.success.main, 0.15)
                     : trend === "down"
-                    ? alpha(theme.palette.error.main, 0.1)
-                    : "action.hover",
+                    ? alpha(theme.palette.error.main, 0.15)
+                    : alpha(theme.palette.grey[500], 0.1),
                 color:
                   trend === "up"
-                    ? "success.main"
+                    ? theme.palette.success.main
                     : trend === "down"
-                    ? "error.main"
-                    : "text.secondary",
-                "& .MuiChip-icon": {
-                  color: "inherit",
-                },
+                    ? theme.palette.error.main
+                    : theme.palette.text.secondary,
               }}
-            />
+            >
+              {trend === "up" ? (
+                <TrendingUp sx={{ fontSize: 12 }} />
+              ) : trend === "down" ? (
+                <TrendingDown sx={{ fontSize: 12 }} />
+              ) : null}
+              {trendValue}
+            </Box>
           )}
         </Stack>
         <Typography variant="caption" color="text.secondary">
@@ -432,16 +433,42 @@ const Insights: React.FC = () => {
             trend={getTrend(comparisonData?.productivityTrend)}
             trendValue={formatChange(comparisonData?.productivityChange)}
           />
-          {streakData && streakData.currentStreak > 0 && (
-            <StatPill
-              icon={<FireIcon fontSize="small" />}
-              value={streakData.currentStreak}
-              label="day streak"
-              color={theme.palette.warning.main}
-            />
-          )}
         </Stack>
       </Paper>
+
+      {/* Streak Banner */}
+      {streakData && streakData.currentStreak > 0 && (
+        <Paper
+          sx={{
+            p: 2.5,
+            mb: 3,
+            background: `linear-gradient(135deg, ${alpha("#FEF3C7", 0.8)} 0%, ${theme.palette.background.paper} 100%)`,
+            border: `1px solid ${alpha("#F59E0B", 0.2)}`,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              fontSize: 32,
+              lineHeight: 1,
+            }}
+          >
+            🔥
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700} color="text.primary">
+              {streakData.currentStreak} Day Streak!
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {streakData.longestStreak > streakData.currentStreak
+                ? `Your longest: ${streakData.longestStreak} days`
+                : "This is your longest streak!"}
+            </Typography>
+          </Box>
+        </Paper>
+      )}
 
       {/* Burnout Alert */}
       {todayAnalytics.burnoutRiskScore > 0 && (

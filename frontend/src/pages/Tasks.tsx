@@ -570,6 +570,20 @@ const Tasks: React.FC = () => {
                 }}
               />
 
+              {/* Urgent Indicator Dot */}
+              {task.isUrgent && task.isImportant && task.status !== "COMPLETED" && (
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: "#EF4444",
+                    flexShrink: 0,
+                    boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.2)",
+                  }}
+                />
+              )}
+
               {/* Task Content */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box display="flex" alignItems="center" gap={1} mb={0.5}>
