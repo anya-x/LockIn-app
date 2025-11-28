@@ -11,6 +11,8 @@ import {
   useTheme,
   LinearProgress,
   Skeleton,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import {
   PlayArrow as PlayIcon,
@@ -19,6 +21,9 @@ import {
   Timer as TimerIcon,
   LocalFireDepartment as FireIcon,
   TrendingUp as TrendingIcon,
+  CheckBoxOutlineBlank as UncheckedIcon,
+  IndeterminateCheckBox as InProgressIcon,
+  CheckBox as CheckedIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -85,13 +90,29 @@ const Today: React.FC = () => {
     return "Good evening";
   };
 
-  const handleQuickComplete = async (task: Task) => {
+  // Cycle through: TODO → IN_PROGRESS → COMPLETED → TODO
+  const handleStatusCycle = async (task: Task) => {
     try {
+      let newStatus: "TODO" | "IN_PROGRESS" | "COMPLETED";
+      switch (task.status) {
+        case "TODO":
+          newStatus = "IN_PROGRESS";
+          break;
+        case "IN_PROGRESS":
+          newStatus = "COMPLETED";
+          break;
+        case "COMPLETED":
+          newStatus = "TODO";
+          break;
+        default:
+          newStatus = "TODO";
+      }
+
       await taskService.updateTask(task.id, {
         title: task.title,
         description: task.description,
         dueDate: task.dueDate,
-        status: "COMPLETED",
+        status: newStatus,
         isUrgent: task.isUrgent,
         isImportant: task.isImportant,
         categoryId: task.category?.id,
@@ -100,7 +121,29 @@ const Today: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["priority-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-statistics"] });
     } catch (err) {
-      console.error("Failed to complete task:", err);
+      console.error("Failed to update task:", err);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "IN_PROGRESS":
+        return <InProgressIcon sx={{ fontSize: 22 }} />;
+      case "COMPLETED":
+        return <CheckedIcon sx={{ fontSize: 22 }} />;
+      default:
+        return <UncheckedIcon sx={{ fontSize: 22 }} />;
+    }
+  };
+
+  const getStatusIconColor = (status: string) => {
+    switch (status) {
+      case "IN_PROGRESS":
+        return "warning.main";
+      case "COMPLETED":
+        return "success.main";
+      default:
+        return "action.active";
     }
   };
 
@@ -333,34 +376,48 @@ const Today: React.FC = () => {
                   alignItems: "center",
                   gap: 2,
                   transition: "all 0.2s ease",
+                  opacity: task.status === "COMPLETED" ? 0.7 : 1,
                   "&:hover": {
                     boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`,
                   },
                 }}
               >
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => handleQuickComplete(task)}
-                  sx={{
-                    minWidth: 32,
-                    width: 32,
-                    height: 32,
-                    p: 0,
-                    borderRadius: "50%",
-                    borderColor: "divider",
-                    "&:hover": {
-                      bgcolor: "success.light",
-                      borderColor: "success.main",
-                      color: "success.main",
-                    },
-                  }}
+                {/* Status Toggle - cycles through TODO → IN_PROGRESS → COMPLETED */}
+                <Tooltip
+                  title={
+                    task.status === "TODO"
+                      ? "Click to start"
+                      : task.status === "IN_PROGRESS"
+                      ? "Click to complete"
+                      : "Click to reopen"
+                  }
+                  placement="top"
                 >
-                  <CheckIcon fontSize="small" />
-                </Button>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleStatusCycle(task)}
+                    sx={{
+                      p: 0.5,
+                      color: getStatusIconColor(task.status),
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      },
+                    }}
+                  >
+                    {getStatusIcon(task.status)}
+                  </IconButton>
+                </Tooltip>
 
                 <Box flex={1} minWidth={0}>
-                  <Typography variant="body1" fontWeight={500} noWrap>
+                  <Typography
+                    variant="body1"
+                    fontWeight={500}
+                    noWrap
+                    sx={{
+                      textDecoration: task.status === "COMPLETED" ? "line-through" : "none",
+                      color: task.status === "COMPLETED" ? "text.secondary" : "text.primary",
+                    }}
+                  >
                     {task.title}
                   </Typography>
                   <Box display="flex" gap={0.5} mt={0.5}>

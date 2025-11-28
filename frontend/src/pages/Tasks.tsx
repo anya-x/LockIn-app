@@ -17,8 +17,8 @@ import {
   Pagination,
   useTheme,
   alpha,
-  Checkbox,
   Paper,
+  Tooltip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -26,6 +26,9 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   AutoAwesome as AutoAwesomeIcon,
+  CheckBoxOutlineBlank as UncheckedIcon,
+  IndeterminateCheckBox as InProgressIcon,
+  CheckBox as CheckedIcon,
 } from "@mui/icons-material";
 import { useSearchParams } from "react-router-dom";
 import { debounce } from "lodash";
@@ -292,9 +295,24 @@ const Tasks: React.FC = () => {
     }
   };
 
-  const handleQuickComplete = async (task: Task) => {
+  // Cycle through: TODO → IN_PROGRESS → COMPLETED → TODO
+  const handleStatusCycle = async (task: Task) => {
     try {
-      const newStatus = task.status === "COMPLETED" ? "TODO" : "COMPLETED";
+      let newStatus: "TODO" | "IN_PROGRESS" | "COMPLETED";
+      switch (task.status) {
+        case "TODO":
+          newStatus = "IN_PROGRESS";
+          break;
+        case "IN_PROGRESS":
+          newStatus = "COMPLETED";
+          break;
+        case "COMPLETED":
+          newStatus = "TODO";
+          break;
+        default:
+          newStatus = "TODO";
+      }
+
       const updated = await taskService.updateTask(task.id, {
         title: task.title,
         description: task.description,
@@ -308,6 +326,28 @@ const Tasks: React.FC = () => {
       fetchStatistics();
     } catch (err) {
       console.error("Failed to update task:", err);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "IN_PROGRESS":
+        return <InProgressIcon sx={{ fontSize: 22 }} />;
+      case "COMPLETED":
+        return <CheckedIcon sx={{ fontSize: 22 }} />;
+      default:
+        return <UncheckedIcon sx={{ fontSize: 22 }} />;
+    }
+  };
+
+  const getStatusIconColor = (status: string) => {
+    switch (status) {
+      case "IN_PROGRESS":
+        return "warning.main";
+      case "COMPLETED":
+        return "success.main";
+      default:
+        return "action.active";
     }
   };
 
@@ -569,18 +609,31 @@ const Tasks: React.FC = () => {
                 },
               }}
             >
-              {/* Quick Complete Checkbox */}
-              <Checkbox
-                checked={task.status === "COMPLETED"}
-                onChange={() => handleQuickComplete(task)}
-                sx={{
-                  p: 0.5,
-                  color: task.status === "COMPLETED" ? "success.main" : "action.active",
-                  "&.Mui-checked": {
-                    color: "success.main",
-                  },
-                }}
-              />
+              {/* Status Toggle - cycles through TODO → IN_PROGRESS → COMPLETED */}
+              <Tooltip
+                title={
+                  task.status === "TODO"
+                    ? "Click to start"
+                    : task.status === "IN_PROGRESS"
+                    ? "Click to complete"
+                    : "Click to reopen"
+                }
+                placement="top"
+              >
+                <IconButton
+                  size="small"
+                  onClick={() => handleStatusCycle(task)}
+                  sx={{
+                    p: 0.5,
+                    color: getStatusIconColor(task.status),
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    },
+                  }}
+                >
+                  {getStatusIcon(task.status)}
+                </IconButton>
+              </Tooltip>
 
               {/* Task Content */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
