@@ -27,8 +27,7 @@ import {
   GridOn as GridOnIcon,
   ExitToApp as LogoutIcon,
   Timer as TimerIcon,
-  BarChart as StatsIcon,
-  Analytics as AnalyticsIcon,
+  Insights as InsightsIcon,
   Checklist as GoalsIcon,
   EmojiEvents as BadgesIcon,
   Settings as SettingsIcon,
@@ -40,9 +39,8 @@ import { useTimer } from "../context/TimerContext";
 import PomodoroTimer from "./PomodoroTimer";
 import Categories from "./Categories";
 import Matrix from "./Matrix";
-import Statistics from "./Statistics";
 import Tasks from "./Tasks";
-import Analytics from "./Analytics";
+import Insights from "./Insights";
 import Goals from "./Goals";
 import Badges from "./Badges";
 import Settings from "./Settings";
@@ -206,9 +204,8 @@ const Dashboard: React.FC = () => {
     | "tasks"
     | "categories"
     | "matrix"
-    | "statistics"
+    | "insights"
     | "timer"
-    | "analytics"
     | "goals"
     | "badges"
     | "settings" => {
@@ -217,9 +214,8 @@ const Dashboard: React.FC = () => {
     if (path === "/tasks") return "tasks";
     if (path === "/categories") return "categories";
     if (path === "/matrix") return "matrix";
-    if (path === "/statistics") return "statistics";
+    if (path === "/insights" || path === "/statistics" || path === "/analytics") return "insights";
     if (path === "/timer") return "timer";
-    if (path === "/analytics") return "analytics";
     if (path === "/goals") return "goals";
     if (path === "/badges") return "badges";
     if (path === "/settings") return "settings";
@@ -239,9 +235,8 @@ const Dashboard: React.FC = () => {
         | "tasks"
         | "categories"
         | "matrix"
-        | "statistics"
+        | "insights"
         | "timer"
-        | "analytics"
         | "goals"
         | "badges"
         | "settings"
@@ -274,10 +269,9 @@ const Dashboard: React.FC = () => {
       ],
     },
     {
-      section: "INSIGHTS",
+      section: "TRACK",
       items: [
-        { view: "statistics", icon: <StatsIcon />, label: "Statistics" },
-        { view: "analytics", icon: <AnalyticsIcon />, label: "Analytics" },
+        { view: "insights", icon: <InsightsIcon />, label: "Insights" },
         { view: "goals", icon: <GoalsIcon />, label: "Goals" },
         { view: "badges", icon: <BadgesIcon />, label: "Achievements" },
       ],
@@ -478,12 +472,10 @@ const Dashboard: React.FC = () => {
         return <Categories />;
       case "matrix":
         return <Matrix />;
-      case "statistics":
-        return <Statistics />;
+      case "insights":
+        return <Insights />;
       case "timer":
         return <PomodoroTimer />;
-      case "analytics":
-        return <Analytics />;
       case "goals":
         return <Goals />;
       case "badges":
