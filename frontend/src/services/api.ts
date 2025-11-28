@@ -8,6 +8,17 @@ const API_BASE_URL =
  */
 export const getAuthToken = (): string | null => localStorage.getItem("token");
 
+/**
+ * Get WebSocket URL derived from API base URL.
+ */
+export const getWsUrl = (): string => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  // Derive from API URL: http://localhost:8080/api -> http://localhost:8080/ws
+  return API_BASE_URL.replace(/\/api$/, "/ws");
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
