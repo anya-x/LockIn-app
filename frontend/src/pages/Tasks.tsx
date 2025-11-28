@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Typography,
   Chip,
   IconButton,
@@ -17,41 +15,29 @@ import {
   MenuItem,
   InputAdornment,
   Pagination,
-  Grid,
   useTheme,
   alpha,
+  Checkbox,
+  Paper,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  CheckCircle,
-  RadioButtonUnchecked,
-  Schedule,
-  TrendingUp,
   AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { debounce } from "lodash";
 import { taskService, type TaskStatistics } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
 import TaskFilters from "../components/tasks/TaskFilters";
-import StatCard from "../components/shared/StatCard";
-import PageHeader from "../components/shared/PageHeader";
+import StatPills from "../components/shared/StatPills";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/ai/AITaskBreakdown";
-import DailyBriefing from "../components/ai/DailyBriefing";
+import CompactBriefing from "../components/ai/CompactBriefing";
 import EmptyState from "../components/shared/EmptyState";
 import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
-
-interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
 
 const Tasks: React.FC = () => {
   const theme = useTheme();
@@ -248,7 +234,7 @@ const Tasks: React.FC = () => {
   };
 
   const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
+    _event: React.ChangeEvent<unknown>,
     page: number
   ) => {
     setCurrentPage(page - 1);
@@ -291,6 +277,25 @@ const Tasks: React.FC = () => {
         alert("Failed to save task. Please try again.");
       }
       throw err;
+    }
+  };
+
+  const handleQuickComplete = async (task: Task) => {
+    try {
+      const newStatus = task.status === "COMPLETED" ? "TODO" : "COMPLETED";
+      const updated = await taskService.updateTask(task.id, {
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate,
+        status: newStatus,
+        isUrgent: task.isUrgent,
+        isImportant: task.isImportant,
+        categoryId: task.category?.id,
+      });
+      setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
+      fetchStatistics();
+    } catch (err) {
+      console.error("Failed to update task:", err);
     }
   };
 
@@ -381,33 +386,6 @@ const Tasks: React.FC = () => {
     }
   });
 
-  const statCards = [
-    {
-      label: "Total Tasks",
-      value: stats.totalTasks,
-      color: "#1976d2",
-      icon: <Schedule sx={{ fontSize: 40, color: "#1976d2" }} />,
-    },
-    {
-      label: "To Do",
-      value: stats.todoCount,
-      color: "#757575",
-      icon: <RadioButtonUnchecked sx={{ fontSize: 40, color: "#757575" }} />,
-    },
-    {
-      label: "In Progress",
-      value: stats.inProgressCount,
-      color: "#ff9800",
-      icon: <TrendingUp sx={{ fontSize: 40, color: "#ff9800" }} />,
-    },
-    {
-      label: "Completed",
-      value: stats.completedCount,
-      color: "#4caf50",
-      icon: <CheckCircle sx={{ fontSize: 40, color: "#4caf50" }} />,
-    },
-  ];
-
   if (loading && tasks.length === 0) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -427,81 +405,96 @@ const Tasks: React.FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="My Tasks"
-        subtitle="Organize and track your tasks efficiently"
-        action={
-          <Box display="flex" gap={2} alignItems="center">
-            <TextField
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment: isSearching ? (
-                    <InputAdornment position="end">
-                      <CircularProgress size={16} />
-                    </InputAdornment>
-                  ) : null,
-                },
-              }}
-              size="small"
-              sx={{ minWidth: 250 }}
-            />
-            <TextField
-              select
-              size="small"
-              label="Sort by"
-              value={sortBy}
-              onChange={(e) =>
-                setSortBy(e.target.value as "date" | "priority" | "status")
-              }
-              sx={{ minWidth: 150 }}
-            >
-              <MenuItem value="date">Due Date</MenuItem>
-              <MenuItem value="priority">Priority</MenuItem>
-              <MenuItem value="status">Status</MenuItem>
-            </TextField>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenModal()}
-            >
-              Add Task
-            </Button>
-          </Box>
-        }
-      />
+      {/* Compact Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            Tasks
+          </Typography>
+        </Box>
 
-      <Box mb={3}>
-        <Grid container spacing={2}>
-          {statCards.map((stat, index) => (
-            <Grid key={index} size={{ xs: 6, md: 3 }}>
-              <StatCard
-                label={stat.label}
-                value={stat.value}
-                color={stat.color}
-                icon={stat.icon}
-                loading={statsLoading}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
+          <TextField
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: isSearching ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={16} />
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
+            size="small"
+            sx={{ width: 180 }}
+          />
+          <TextField
+            select
+            size="small"
+            value={sortBy}
+            onChange={(e) =>
+              setSortBy(e.target.value as "date" | "priority" | "status")
+            }
+            sx={{ width: 120 }}
+          >
+            <MenuItem value="date">Due Date</MenuItem>
+            <MenuItem value="priority">Priority</MenuItem>
+            <MenuItem value="status">Status</MenuItem>
+          </TextField>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenModal()}
+            size="small"
+          >
+            Add Task
+          </Button>
+        </Box>
       </Box>
-      <Box mb={3}>
-        <DailyBriefing />
+
+      {/* Stat Pills + AI Briefing Row */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Box sx={{ flex: { xs: "1", md: "0 0 auto" } }}>
+          <StatPills stats={stats} loading={statsLoading} />
+        </Box>
       </Box>
+
+      {/* AI Briefing */}
+      <Box mb={3}>
+        <CompactBriefing />
+      </Box>
+
+      {/* Filters */}
       <TaskFilters
         filters={filters}
         categories={categories}
         onFilterChange={handleFilterChange}
       />
 
+      {/* Pagination Info */}
       {!searchTerm && (
         <Box
           display="flex"
@@ -510,19 +503,18 @@ const Tasks: React.FC = () => {
           mb={2}
         >
           <Typography variant="body2" color="text.secondary">
-            Showing {start}-{end} of {totalElements} tasks
+            {start}-{end} of {totalElements}
             {hasActiveFilters() && " (filtered)"}
           </Typography>
           <TextField
             select
             size="small"
-            label="Per page"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
               setCurrentPage(0);
             }}
-            sx={{ minWidth: 100 }}
+            sx={{ width: 80 }}
           >
             <MenuItem value={10}>10</MenuItem>
             <MenuItem value={20}>20</MenuItem>
@@ -531,11 +523,12 @@ const Tasks: React.FC = () => {
         </Box>
       )}
 
+      {/* Task List */}
       {sortedTasks.length === 0 ? (
         <EmptyState
           title={
             searchTerm || hasActiveFilters()
-              ? "No tasks match your search or filters"
+              ? "No tasks match your criteria"
               : "No tasks yet"
           }
           description={
@@ -545,150 +538,171 @@ const Tasks: React.FC = () => {
           }
         />
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {sortedTasks.map((task) => (
-            <Card
+            <Paper
               key={task.id}
               sx={{
+                p: 2,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 2,
                 transition: "all 0.2s ease",
+                opacity: task.status === "COMPLETED" ? 0.7 : 1,
                 "&:hover": {
                   boxShadow: `0 4px 12px ${alpha(
                     theme.palette.primary.main,
-                    0.15
+                    0.12
                   )}`,
-                  transform: "translateY(-2px)",
                 },
               }}
             >
-              <CardContent>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="start"
-                >
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      {task.title}
-                    </Typography>
-                    <Typography
-                      color="text.secondary"
-                      variant="body2"
-                      sx={{ mb: 1.5 }}
-                    >
-                      {task.description}
-                    </Typography>
-                    {task.dueDate && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        sx={{ mb: 2, fontSize: "0.8125rem" }}
-                      >
-                        Due:{" "}
-                        {new Date(task.dueDate).toLocaleString(undefined, {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Typography>
-                    )}
-                    <Box mt={2} display="flex" gap={1} flexWrap="wrap">
-                      <Chip
-                        label={task.status.replace("_", " ")}
-                        color={getStatusColor(task.status)}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                      />
-                      {task.isUrgent && (
-                        <Chip
-                          label="Urgent"
-                          size="small"
-                          sx={{
-                            backgroundColor: alpha("#EF4444", 0.1),
-                            color: "#EF4444",
-                            fontWeight: 500,
-                            border: `1px solid ${alpha("#EF4444", 0.3)}`,
-                          }}
-                        />
-                      )}
-                      {task.isImportant && (
-                        <Chip
-                          label="Important"
-                          size="small"
-                          sx={{
-                            backgroundColor: alpha("#F59E0B", 0.1),
-                            color: "#F59E0B",
-                            fontWeight: 500,
-                            border: `1px solid ${alpha("#F59E0B", 0.3)}`,
-                          }}
-                        />
-                      )}
-                      {task.category && (
-                        <Chip
-                          label={`${task.category.icon || ""} ${
-                            task.category.name
-                          }`}
-                          size="small"
-                          sx={{
-                            backgroundColor: alpha(task.category.color, 0.1),
-                            color: task.category.color,
-                            fontWeight: 500,
-                            border: `1px solid ${alpha(
-                              task.category.color,
-                              0.3
-                            )}`,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: "flex", gap: 0.5 }}>
-                    <IconButton
-                      onClick={() => handleAIBreakdownClick(task)}
-                      size="small"
-                      sx={{
-                        color: "#9333EA",
-                        "&:hover": { backgroundColor: alpha("#9333EA", 0.1) },
-                      }}
-                      title="AI Breakdown"
-                    >
-                      <AutoAwesomeIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleOpenModal(task)}
-                      size="small"
-                      sx={{
-                        color: theme.palette.primary.main,
-                        "&:hover": {
-                          backgroundColor: alpha(
-                            theme.palette.primary.main,
-                            0.1
-                          ),
-                        },
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteClick(task.id!)}
-                      size="small"
-                      sx={{
-                        color: "#EF4444",
-                        "&:hover": { backgroundColor: alpha("#EF4444", 0.1) },
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
+              {/* Quick Complete Checkbox */}
+              <Checkbox
+                checked={task.status === "COMPLETED"}
+                onChange={() => handleQuickComplete(task)}
+                sx={{
+                  p: 0.5,
+                  color: task.status === "COMPLETED" ? "success.main" : "action.active",
+                  "&.Mui-checked": {
+                    color: "success.main",
+                  },
+                }}
+              />
+
+              {/* Task Content */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={600}
+                    sx={{
+                      textDecoration:
+                        task.status === "COMPLETED" ? "line-through" : "none",
+                      color:
+                        task.status === "COMPLETED"
+                          ? "text.secondary"
+                          : "text.primary",
+                    }}
+                  >
+                    {task.title}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
+
+                {task.description && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      mb: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {task.description}
+                  </Typography>
+                )}
+
+                <Box display="flex" gap={0.75} flexWrap="wrap" alignItems="center">
+                  <Chip
+                    label={task.status.replace("_", " ")}
+                    color={getStatusColor(task.status)}
+                    size="small"
+                    sx={{ fontSize: "0.7rem", height: 22 }}
+                  />
+                  {task.isUrgent && (
+                    <Chip
+                      label="Urgent"
+                      size="small"
+                      sx={{
+                        fontSize: "0.7rem",
+                        height: 22,
+                        bgcolor: alpha("#EF4444", 0.1),
+                        color: "#EF4444",
+                        border: `1px solid ${alpha("#EF4444", 0.3)}`,
+                      }}
+                    />
+                  )}
+                  {task.isImportant && (
+                    <Chip
+                      label="Important"
+                      size="small"
+                      sx={{
+                        fontSize: "0.7rem",
+                        height: 22,
+                        bgcolor: alpha("#F59E0B", 0.1),
+                        color: "#F59E0B",
+                        border: `1px solid ${alpha("#F59E0B", 0.3)}`,
+                      }}
+                    />
+                  )}
+                  {task.category && (
+                    <Chip
+                      label={`${task.category.icon || ""} ${task.category.name}`}
+                      size="small"
+                      sx={{
+                        fontSize: "0.7rem",
+                        height: 22,
+                        bgcolor: alpha(task.category.color, 0.1),
+                        color: task.category.color,
+                      }}
+                    />
+                  )}
+                  {task.dueDate && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ ml: 0.5 }}
+                    >
+                      Due {new Date(task.dueDate).toLocaleDateString()}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Actions */}
+              <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+                <IconButton
+                  onClick={() => handleAIBreakdownClick(task)}
+                  size="small"
+                  sx={{
+                    color: "#9333EA",
+                    "&:hover": { bgcolor: alpha("#9333EA", 0.1) },
+                  }}
+                  title="AI Breakdown"
+                >
+                  <AutoAwesomeIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleOpenModal(task)}
+                  size="small"
+                  sx={{
+                    color: theme.palette.primary.main,
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    },
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleDeleteClick(task.id!)}
+                  size="small"
+                  sx={{
+                    color: "#EF4444",
+                    "&:hover": { bgcolor: alpha("#EF4444", 0.1) },
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Paper>
           ))}
         </Box>
       )}
 
+      {/* Pagination */}
       {totalPages > 1 && !searchTerm && (
         <Box display="flex" justifyContent="center" mt={3}>
           <Pagination
@@ -702,6 +716,7 @@ const Tasks: React.FC = () => {
         </Box>
       )}
 
+      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Delete Task?</DialogTitle>
         <DialogContent>
@@ -722,6 +737,7 @@ const Tasks: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Task Form Modal */}
       <TaskFormModal
         open={modalOpen}
         onClose={handleCloseModal}
@@ -729,6 +745,7 @@ const Tasks: React.FC = () => {
         task={editingTask}
       />
 
+      {/* AI Breakdown Modal */}
       {taskForBreakdown && (
         <AITaskBreakdown
           task={taskForBreakdown}
