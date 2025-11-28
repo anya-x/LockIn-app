@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useImperativeHandle, forwardRef } from "react";
-import { useBlocker } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -278,13 +278,43 @@ const PomodoroTimer: React.FC = () => {
 
   const completionTriggeredRef = useRef(false);
   const notesSectionRef = useRef<NotesSectionHandle>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Block navigation when there are unsaved notes
-  const blocker = useBlocker(
-    useCallback(() => {
-      return notesSectionRef.current?.hasUnsavedNotes() ?? false;
-    }, [])
-  );
+  // Intercept navigation when there are unsaved notes
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+
+      if (anchor && anchor.href && !anchor.href.startsWith("javascript:")) {
+        const url = new URL(anchor.href);
+        // Only intercept internal navigation
+        if (url.origin === window.location.origin && url.pathname !== location.pathname) {
+          if (notesSectionRef.current?.hasUnsavedNotes()) {
+            e.preventDefault();
+            e.stopPropagation();
+            setPendingNavigation(url.pathname);
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [location.pathname]);
+
+  const handleConfirmLeave = () => {
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
+
+  const handleCancelLeave = () => {
+    setPendingNavigation(null);
+  };
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
   const lastSessionTypeRef = useRef(timer.sessionType);
@@ -747,8 +777,8 @@ const PomodoroTimer: React.FC = () => {
 
       {/* Unsaved Notes Warning Dialog */}
       <Dialog
-        open={blocker.state === "blocked"}
-        onClose={() => blocker.reset?.()}
+        open={!!pendingNavigation}
+        onClose={handleCancelLeave}
       >
         <DialogTitle>Unsaved Notes</DialogTitle>
         <DialogContent>
@@ -757,13 +787,10 @@ const PomodoroTimer: React.FC = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => blocker.reset?.()} color="primary">
+          <Button onClick={handleCancelLeave} color="primary">
             Stay
           </Button>
-          <Button
-            onClick={() => blocker.proceed?.()}
-            color="error"
-          >
+          <Button onClick={handleConfirmLeave} color="error">
             Leave Anyway
           </Button>
         </DialogActions>
