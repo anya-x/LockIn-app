@@ -32,6 +32,7 @@ import {
   Checklist as GoalsIcon,
   EmojiEvents as BadgesIcon,
   Settings as SettingsIcon,
+  Home as HomeIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -45,6 +46,7 @@ import Analytics from "./Analytics";
 import Goals from "./Goals";
 import Badges from "./Badges";
 import Settings from "./Settings";
+import Today from "./Today";
 import NotificationCenter from "../components/notifications/NotificationCenter";
 import { websocketService } from "../services/websocketService";
 import { browserNotificationService } from "../services/browserNotificationService";
@@ -200,6 +202,7 @@ const Dashboard: React.FC = () => {
   }, [user?.email]);
 
   const getCurrentView = ():
+    | "today"
     | "tasks"
     | "categories"
     | "matrix"
@@ -210,6 +213,7 @@ const Dashboard: React.FC = () => {
     | "badges"
     | "settings" => {
     const path = location.pathname;
+    if (path === "/" || path === "/today") return "today";
     if (path === "/tasks") return "tasks";
     if (path === "/categories") return "categories";
     if (path === "/matrix") return "matrix";
@@ -219,7 +223,7 @@ const Dashboard: React.FC = () => {
     if (path === "/goals") return "goals";
     if (path === "/badges") return "badges";
     if (path === "/settings") return "settings";
-    return "tasks";
+    return "today";
   };
 
   const currentView = getCurrentView();
@@ -231,6 +235,7 @@ const Dashboard: React.FC = () => {
   const handleMenuItemClick = useCallback(
     (
       view:
+        | "today"
         | "tasks"
         | "categories"
         | "matrix"
@@ -241,7 +246,7 @@ const Dashboard: React.FC = () => {
         | "badges"
         | "settings"
     ) => {
-      navigate(`/${view}`);
+      navigate(view === "today" ? "/" : `/${view}`);
       if (isMobile) {
         setMobileOpen(false);
       }
@@ -257,6 +262,7 @@ const Dashboard: React.FC = () => {
     {
       section: "MAIN",
       items: [
+        { view: "today", icon: <HomeIcon />, label: "Today" },
         { view: "tasks", icon: <TaskIcon />, label: "Tasks" },
         { view: "matrix", icon: <GridOnIcon />, label: "Matrix" },
         {
@@ -464,6 +470,8 @@ const Dashboard: React.FC = () => {
 
   const renderContent = useMemo(() => {
     switch (currentView) {
+      case "today":
+        return <Today />;
       case "tasks":
         return <Tasks />;
       case "categories":
@@ -483,7 +491,7 @@ const Dashboard: React.FC = () => {
       case "settings":
         return <Settings />;
       default:
-        return <Tasks />;
+        return <Today />;
     }
   }, [currentView]);
 

@@ -12,7 +12,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
 
   if (isAuthenticated) {
-    return <Navigate to="/tasks" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -44,11 +44,7 @@ function App() {
             <Dashboard />
           </PrivateRoute>
         }
-      >
-        <Route index element={<Navigate to="/tasks" replace />} />
-        <Route path="dashboard" element={<Navigate to="/tasks" replace />} />
-      </Route>
-
+      />
       <Route
         path="/tasks"
         element={
