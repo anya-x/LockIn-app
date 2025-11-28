@@ -376,287 +376,6 @@ const PomodoroTimer: React.FC = () => {
       ? Math.min(100, (totalElapsedSeconds / (timer.plannedMinutes * 60)) * 100)
       : 0;
 
-  // Timer Panel Component
-  const TimerPanel = () => (
-    <Paper
-      sx={{
-        p: 3,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        bgcolor: alpha(selectedProfile.color, 0.1),
-        border: `1px solid ${alpha(selectedProfile.color, 0.25)}`,
-        transition: "background-color 0.3s ease, border-color 0.3s ease",
-      }}
-    >
-      <Typography
-        variant="caption"
-        sx={{
-          color: "text.secondary",
-          textTransform: "uppercase",
-          letterSpacing: 2,
-          fontSize: "0.7rem",
-          fontWeight: 600,
-        }}
-      >
-        {timer.sessionType.replace("_", " ")}
-      </Typography>
-
-      <Typography
-        sx={{
-          fontSize: { xs: "5rem", md: "6rem" },
-          fontWeight: 200,
-          fontVariantNumeric: "tabular-nums",
-          color: getTimerColor(),
-          lineHeight: 1,
-          my: 2,
-          transition: "color 0.3s ease",
-        }}
-      >
-        {formatTime()}
-      </Typography>
-
-      {/* Progress Bar */}
-      <Box
-        sx={{
-          height: 4,
-          bgcolor: "action.hover",
-          borderRadius: 2,
-          overflow: "hidden",
-          width: "100%",
-          maxWidth: 280,
-          mb: 3,
-        }}
-      >
-        <Box
-          sx={{
-            height: "100%",
-            width: `${timer.sessionType === "WORK" ? 100 - progress : progress}%`,
-            bgcolor: getTimerColor(),
-            borderRadius: 2,
-            transition: "width 1s linear",
-          }}
-        />
-      </Box>
-
-      {/* Session Type Buttons */}
-      <Box display="flex" gap={1} justifyContent="center" mb={3}>
-        {[
-          { type: "WORK", label: "Focus" },
-          { type: "SHORT_BREAK", label: "Short" },
-          { type: "LONG_BREAK", label: "Long" },
-        ].map(({ type, label }) => (
-          <Chip
-            key={type}
-            label={label}
-            onClick={() => !timer.isRunning && handleSessionTypeChange(type)}
-            variant={timer.sessionType === type ? "filled" : "outlined"}
-            color={timer.sessionType === type ? "primary" : "default"}
-            disabled={timer.isRunning}
-            sx={{
-              fontWeight: 600,
-              fontSize: "0.8rem",
-            }}
-          />
-        ))}
-      </Box>
-
-      {/* Main Action Buttons */}
-      <Box display="flex" gap={2} justifyContent="center" mb={selectedTask ? 2 : 0}>
-        {!timer.isRunning ? (
-          <Button
-            variant="contained"
-            onClick={handleStart}
-            disabled={
-              loading || (displayMinutes === 0 && displaySeconds === 0)
-            }
-            size="large"
-            startIcon={<PlayArrowIcon />}
-            sx={{
-              borderRadius: 3,
-              py: 1.5,
-              px: 5,
-              fontSize: "1rem",
-              fontWeight: 600,
-            }}
-          >
-            {timer.sessionId ? "Resume" : "Start"}
-          </Button>
-        ) : (
-          <>
-            <Button
-              variant="contained"
-              onClick={pauseTimer}
-              color="warning"
-              size="large"
-              startIcon={<PauseIcon />}
-              sx={{
-                borderRadius: 3,
-                py: 1.5,
-                px: 3,
-                fontSize: "1rem",
-                fontWeight: 600,
-              }}
-            >
-              Pause
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={handleStop}
-              size="large"
-              startIcon={<StopIcon />}
-              sx={{
-                borderRadius: 3,
-                py: 1.5,
-                px: 3,
-                fontSize: "1rem",
-                fontWeight: 600,
-              }}
-            >
-              Stop
-            </Button>
-          </>
-        )}
-      </Box>
-
-      {/* Linked Task Indicator */}
-      {selectedTask && (
-        <Chip
-          icon={<AssignmentIcon sx={{ fontSize: 16 }} />}
-          label={selectedTask.title}
-          size="small"
-          variant="outlined"
-          sx={{
-            maxWidth: 280,
-            "& .MuiChip-label": {
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            },
-          }}
-        />
-      )}
-    </Paper>
-  );
-
-  // Controls Panel Component
-  const ControlsPanel = () => (
-    <Paper
-      sx={{
-        p: 3,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        border: `1px solid ${theme.palette.divider}`,
-      }}
-    >
-      {/* Linked Task Section */}
-      <Box sx={{ mb: 3 }}>
-        <Box display="flex" alignItems="center" gap={1} mb={1.5}>
-          <AssignmentIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-          <Typography variant="subtitle2" fontWeight={600}>
-            Link to Task
-          </Typography>
-        </Box>
-
-        {selectedTask ? (
-          <Paper
-            elevation={0}
-            sx={{
-              p: 2,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              bgcolor: alpha(theme.palette.primary.main, 0.08),
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-            }}
-          >
-            <Box flex={1}>
-              <Typography variant="body2" fontWeight={600}>
-                {selectedTask.title}
-              </Typography>
-              {selectedTask.category && (
-                <Typography variant="caption" color="text.secondary">
-                  {selectedTask.category.icon} {selectedTask.category.name}
-                </Typography>
-              )}
-            </Box>
-            {!timer.isRunning && (
-              <IconButton
-                size="small"
-                onClick={() => setSelectedTask(null)}
-                sx={{ color: "text.secondary" }}
-              >
-                <LinkOffIcon fontSize="small" />
-              </IconButton>
-            )}
-          </Paper>
-        ) : (
-          <Autocomplete
-            options={tasks}
-            value={selectedTask}
-            onChange={(_, newValue) => setSelectedTask(newValue)}
-            getOptionLabel={(option) => option.title}
-            disabled={timer.isRunning}
-            loading={loadingTasks}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            size="small"
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Search tasks..."
-                size="small"
-              />
-            )}
-            renderOption={(props, option) => (
-              <Box component="li" {...props} key={option.id}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box>
-                    <Typography variant="body2" fontWeight={500}>
-                      {option.title}
-                    </Typography>
-                    {option.category && (
-                      <Typography variant="caption" color="text.secondary">
-                        {option.category.icon} {option.category.name}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            )}
-            noOptionsText={
-              loadingTasks
-                ? "Loading..."
-                : tasks.length === 0
-                ? "No incomplete tasks"
-                : "No matching tasks"
-            }
-          />
-        )}
-      </Box>
-
-      {/* Session Notes Section (Collapsible) - Memoized to prevent re-renders */}
-      <NotesSection
-        ref={notesSectionRef}
-        onSaveNotes={handleSaveNotes}
-        isRunning={timer.isRunning}
-        hasSession={!!timer.sessionId}
-      />
-
-      {/* Focus Profile Section (no header - self explanatory) */}
-      <Box sx={{ flex: 1 }}>
-        <CompactProfileSelector
-          selectedProfile={selectedProfile}
-          onProfileChange={setProfile}
-          disabled={timer.isRunning}
-        />
-      </Box>
-    </Paper>
-  );
-
   return (
     <Box sx={{ maxWidth: 1000, mx: "auto", px: 2 }}>
       {alert.show && (
@@ -675,24 +394,295 @@ const PomodoroTimer: React.FC = () => {
           alignItems: "stretch",
         }}
       >
-        {/* Left: Timer */}
+        {/* Left: Timer Panel */}
         <Box
           sx={{
             flex: { xs: "1 1 auto", md: "1 1 55%" },
             minHeight: { md: 420 },
           }}
         >
-          <TimerPanel />
+          <Paper
+            sx={{
+              p: 3,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              bgcolor: alpha(selectedProfile.color, 0.1),
+              border: `1px solid ${alpha(selectedProfile.color, 0.25)}`,
+              transition: "background-color 0.3s ease, border-color 0.3s ease",
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: 2,
+                fontSize: "0.7rem",
+                fontWeight: 600,
+              }}
+            >
+              {timer.sessionType.replace("_", " ")}
+            </Typography>
+
+            <Typography
+              sx={{
+                fontSize: { xs: "5rem", md: "6rem" },
+                fontWeight: 200,
+                fontVariantNumeric: "tabular-nums",
+                color: getTimerColor(),
+                lineHeight: 1,
+                my: 2,
+                transition: "color 0.3s ease",
+              }}
+            >
+              {formatTime()}
+            </Typography>
+
+            {/* Progress Bar */}
+            <Box
+              sx={{
+                height: 4,
+                bgcolor: "action.hover",
+                borderRadius: 2,
+                overflow: "hidden",
+                width: "100%",
+                maxWidth: 280,
+                mb: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  height: "100%",
+                  width: `${timer.sessionType === "WORK" ? 100 - progress : progress}%`,
+                  bgcolor: getTimerColor(),
+                  borderRadius: 2,
+                  transition: "width 1s linear",
+                }}
+              />
+            </Box>
+
+            {/* Session Type Buttons */}
+            <Box display="flex" gap={1} justifyContent="center" mb={3}>
+              {[
+                { type: "WORK", label: "Focus" },
+                { type: "SHORT_BREAK", label: "Short" },
+                { type: "LONG_BREAK", label: "Long" },
+              ].map(({ type, label }) => (
+                <Chip
+                  key={type}
+                  label={label}
+                  onClick={() => !timer.isRunning && handleSessionTypeChange(type)}
+                  variant={timer.sessionType === type ? "filled" : "outlined"}
+                  color={timer.sessionType === type ? "primary" : "default"}
+                  disabled={timer.isRunning}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                  }}
+                />
+              ))}
+            </Box>
+
+            {/* Main Action Buttons */}
+            <Box display="flex" gap={2} justifyContent="center" mb={selectedTask ? 2 : 0}>
+              {!timer.isRunning ? (
+                <Button
+                  variant="contained"
+                  onClick={handleStart}
+                  disabled={
+                    loading || (displayMinutes === 0 && displaySeconds === 0)
+                  }
+                  size="large"
+                  startIcon={<PlayArrowIcon />}
+                  sx={{
+                    borderRadius: 3,
+                    py: 1.5,
+                    px: 5,
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {timer.sessionId ? "Resume" : "Start"}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="contained"
+                    onClick={pauseTimer}
+                    color="warning"
+                    size="large"
+                    startIcon={<PauseIcon />}
+                    sx={{
+                      borderRadius: 3,
+                      py: 1.5,
+                      px: 3,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Pause
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={handleStop}
+                    size="large"
+                    startIcon={<StopIcon />}
+                    sx={{
+                      borderRadius: 3,
+                      py: 1.5,
+                      px: 3,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Stop
+                  </Button>
+                </>
+              )}
+            </Box>
+
+            {/* Linked Task Indicator */}
+            {selectedTask && (
+              <Chip
+                icon={<AssignmentIcon sx={{ fontSize: 16 }} />}
+                label={selectedTask.title}
+                size="small"
+                variant="outlined"
+                sx={{
+                  maxWidth: 280,
+                  "& .MuiChip-label": {
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  },
+                }}
+              />
+            )}
+          </Paper>
         </Box>
 
-        {/* Right: Controls (always visible) */}
+        {/* Right: Controls Panel (always visible) */}
         <Box
           sx={{
             flex: { xs: "1 1 auto", md: "1 1 45%" },
             minHeight: { md: 420 },
           }}
         >
-          <ControlsPanel />
+          <Paper
+            sx={{
+              p: 3,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              border: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            {/* Linked Task Section */}
+            <Box sx={{ mb: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+                <AssignmentIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Link to Task
+                </Typography>
+              </Box>
+
+              {selectedTask ? (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  }}
+                >
+                  <Box flex={1}>
+                    <Typography variant="body2" fontWeight={600}>
+                      {selectedTask.title}
+                    </Typography>
+                    {selectedTask.category && (
+                      <Typography variant="caption" color="text.secondary">
+                        {selectedTask.category.icon} {selectedTask.category.name}
+                      </Typography>
+                    )}
+                  </Box>
+                  {!timer.isRunning && (
+                    <IconButton
+                      size="small"
+                      onClick={() => setSelectedTask(null)}
+                      sx={{ color: "text.secondary" }}
+                    >
+                      <LinkOffIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Paper>
+              ) : (
+                <Autocomplete
+                  options={tasks}
+                  value={selectedTask}
+                  onChange={(_, newValue) => setSelectedTask(newValue)}
+                  getOptionLabel={(option) => option.title}
+                  disabled={timer.isRunning}
+                  loading={loadingTasks}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  size="small"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Search tasks..."
+                      size="small"
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>
+                            {option.title}
+                          </Typography>
+                          {option.category && (
+                            <Typography variant="caption" color="text.secondary">
+                              {option.category.icon} {option.category.name}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
+                  noOptionsText={
+                    loadingTasks
+                      ? "Loading..."
+                      : tasks.length === 0
+                      ? "No incomplete tasks"
+                      : "No matching tasks"
+                  }
+                />
+              )}
+            </Box>
+
+            {/* Session Notes Section (Collapsible) - Memoized to prevent re-renders */}
+            <NotesSection
+              ref={notesSectionRef}
+              onSaveNotes={handleSaveNotes}
+              isRunning={timer.isRunning}
+              hasSession={!!timer.sessionId}
+            />
+
+            {/* Focus Profile Section (no header - self explanatory) */}
+            <Box sx={{ flex: 1 }}>
+              <CompactProfileSelector
+                selectedProfile={selectedProfile}
+                onProfileChange={setProfile}
+                disabled={timer.isRunning}
+              />
+            </Box>
+          </Paper>
         </Box>
       </Box>
 
