@@ -12,6 +12,7 @@ import {
   Chip,
   useTheme,
   alpha,
+  Stack,
 } from "@mui/material";
 import type { Task } from "../types/task";
 import {
@@ -28,7 +29,6 @@ import { CSS } from "@dnd-kit/utilities";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { useCategories } from "../hooks/useCategories";
 import { useMatrix, useUpdateTaskQuadrant } from "../hooks/useMatrix";
-import PageHeader from "../components/shared/PageHeader";
 
 const Matrix: React.FC = () => {
   const theme = useTheme();
@@ -134,8 +134,8 @@ const Matrix: React.FC = () => {
     title: string;
     subtitle: string;
     tasks: Task[];
-    color: string;
     borderColor: string;
+    position: "top-left" | "top-right" | "bottom-left" | "bottom-right";
   }
 
   const DroppableQuadrant: React.FC<DroppableQuadrantProps> = ({
@@ -143,43 +143,62 @@ const Matrix: React.FC = () => {
     title,
     subtitle,
     tasks,
-    color,
     borderColor,
+    position,
   }) => {
     const { setNodeRef, isOver } = useDroppable({ id });
 
+    // Subtle internal borders to show 2x2 structure
+    const getBorderStyles = () => {
+      const borderStyle = `1px solid ${alpha(theme.palette.divider, 0.5)}`;
+      switch (position) {
+        case "top-left":
+          return { borderRight: borderStyle, borderBottom: borderStyle };
+        case "top-right":
+          return { borderBottom: borderStyle };
+        case "bottom-left":
+          return { borderRight: borderStyle };
+        case "bottom-right":
+          return {};
+        default:
+          return {};
+      }
+    };
+
     return (
-      <Paper
+      <Box
         ref={setNodeRef}
         sx={{
-          p: 3,
-          minHeight: { xs: 200, md: 320 },
+          p: 2.5,
+          minHeight: { xs: 180, md: 280 },
           backgroundColor: isOver
-            ? alpha(borderColor, 0.15)
-            : alpha(borderColor, 0.04),
-          border: `2px solid ${isOver ? borderColor : alpha(borderColor, 0.2)}`,
-          borderRadius: 3,
-          transition: "all 0.3s ease",
-          "&:hover": {
-            borderColor: alpha(borderColor, 0.4),
-            boxShadow: `0 4px 12px ${alpha(borderColor, 0.15)}`,
-          },
+            ? alpha(borderColor, 0.08)
+            : "transparent",
+          transition: "all 0.2s ease",
+          ...getBorderStyles(),
         }}
       >
+        {/* Header */}
         <Box
           display="flex"
           justifyContent="space-between"
-          alignItems="center"
-          mb={2.5}
+          alignItems="flex-start"
+          mb={2}
         >
           <Box>
-            <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                color: borderColor,
+                mb: 0.25,
+              }}
+            >
               {title}
             </Typography>
             <Typography
-              variant="body2"
+              variant="caption"
               color="text.secondary"
-              sx={{ fontSize: "0.8125rem" }}
             >
               {subtitle}
             </Typography>
@@ -187,52 +206,52 @@ const Matrix: React.FC = () => {
 
           <Box
             sx={{
-              backgroundColor: borderColor,
-              color: "white",
-              borderRadius: "50%",
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 600,
+              backgroundColor: alpha(borderColor, 0.1),
+              color: borderColor,
+              borderRadius: 2,
+              px: 1.5,
+              py: 0.5,
+              fontWeight: 700,
               fontSize: "0.875rem",
-              boxShadow: `0 2px 8px ${alpha(borderColor, 0.3)}`,
             }}
           >
             {tasks.length}
           </Box>
         </Box>
 
-        <Box>
+        {/* Tasks */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {tasks.length === 0 ? (
             <Box
               sx={{
-                py: 4,
+                py: 3,
                 textAlign: "center",
-                color: "text.secondary",
+                color: "text.disabled",
                 borderRadius: 2,
-                backgroundColor: alpha(borderColor, 0.02),
                 border: `1px dashed ${alpha(borderColor, 0.2)}`,
+                backgroundColor: alpha(borderColor, 0.02),
               }}
             >
-              <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-                No tasks in this quadrant
+              <Typography variant="body2">
+                Drag tasks here
               </Typography>
             </Box>
           ) : (
-            tasks.map((task) => <DraggableTask key={task.id} task={task} />)
+            tasks.map((task) => (
+              <DraggableTask key={task.id} task={task} quadrantColor={borderColor} />
+            ))
           )}
         </Box>
-      </Paper>
+      </Box>
     );
   };
 
   interface DraggableTaskProps {
     task: Task;
+    quadrantColor: string;
   }
 
-  const DraggableTask: React.FC<DraggableTaskProps> = ({ task }) => {
+  const DraggableTask: React.FC<DraggableTaskProps> = ({ task, quadrantColor }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
       useDraggable({
         id: task.id!,
@@ -240,7 +259,7 @@ const Matrix: React.FC = () => {
 
     const style = {
       transform: CSS.Translate.toString(transform),
-      opacity: isDragging ? 0.6 : 1,
+      opacity: isDragging ? 0.5 : 1,
     };
 
     return (
@@ -249,45 +268,70 @@ const Matrix: React.FC = () => {
         style={style}
         {...listeners}
         {...attributes}
+        elevation={0}
         sx={{
-          p: 2,
-          mb: 1.5,
+          p: 1.5,
           cursor: isDragging ? "grabbing" : "grab",
           backgroundColor: theme.palette.background.paper,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-          borderRadius: 2,
-          transition: "all 0.2s ease-in-out",
+          borderLeft: `3px solid ${quadrantColor}`,
+          borderRadius: 1.5,
+          transition: "all 0.15s ease",
+          boxShadow: isDragging
+            ? `0 8px 24px ${alpha(quadrantColor, 0.2)}`
+            : `0 1px 3px ${alpha(theme.palette.common.black, 0.05)}`,
           "&:hover": {
-            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
-            transform: "translateY(-2px)",
-            borderColor: alpha(theme.palette.primary.main, 0.3),
+            boxShadow: `0 4px 12px ${alpha(quadrantColor, 0.15)}`,
+            transform: isDragging ? undefined : "translateY(-1px)",
           },
         }}
       >
         <Typography
           variant="body2"
           fontWeight={600}
-          sx={{ mb: task.dueDate ? 0.5 : 0 }}
+          sx={{
+            mb: (task.dueDate || task.category) ? 0.75 : 0,
+            lineHeight: 1.4,
+          }}
         >
           {task.title}
         </Typography>
-        {task.dueDate && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: "0.75rem" }}
-            >
-              Due: {new Date(task.dueDate).toLocaleDateString()}
-            </Typography>
-          </Box>
+
+        {(task.dueDate || task.category) && (
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            {task.category && (
+              <Chip
+                label={`${task.category.icon || ""} ${task.category.name}`}
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.7rem",
+                  bgcolor: alpha(task.category.color, 0.1),
+                  color: task.category.color,
+                  fontWeight: 500,
+                  "& .MuiChip-label": { px: 1 },
+                }}
+              />
+            )}
+            {task.dueDate && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: "0.7rem" }}
+              >
+                Due {new Date(task.dueDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Typography>
+            )}
+          </Stack>
         )}
       </Paper>
     );
   };
 
   const MatrixSkeleton = () => (
-    <Paper sx={{ p: 2, minHeight: { xs: 200, md: 300 } }}>
+    <Box sx={{ p: 2.5 }}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -295,22 +339,22 @@ const Matrix: React.FC = () => {
         mb={2}
       >
         <Box>
-          <Skeleton variant="text" width={150} height={32} />
-          <Skeleton variant="text" width={120} height={20} />
+          <Skeleton variant="text" width={120} height={24} />
+          <Skeleton variant="text" width={100} height={16} />
         </Box>
-        <Skeleton variant="circular" width={32} height={32} />
+        <Skeleton variant="rounded" width={32} height={28} />
       </Box>
       <Box>
         {[1, 2, 3].map((i) => (
           <Skeleton
             key={i}
-            variant="rectangular"
-            height={60}
-            sx={{ mb: 1, borderRadius: 1 }}
+            variant="rounded"
+            height={52}
+            sx={{ mb: 1, borderRadius: 1.5 }}
           />
         ))}
       </Box>
-    </Paper>
+    </Box>
   );
 
   if (loading) {
@@ -320,22 +364,21 @@ const Matrix: React.FC = () => {
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          mb={4}
+          mb={3}
         >
-          <Box>
-            <Skeleton variant="text" width={250} height={48} />
-            <Skeleton variant="text" width={300} height={24} />
-          </Box>
-          <Skeleton variant="rectangular" width={220} height={40} />
+          <Skeleton variant="text" width={200} height={36} />
+          <Skeleton variant="rounded" width={180} height={40} />
         </Box>
 
-        <Grid container spacing={3}>
-          {[1, 2, 3, 4].map((i) => (
-            <Grid size={{ xs: 12, md: 6 }} key={i}>
-              <MatrixSkeleton />
-            </Grid>
-          ))}
-        </Grid>
+        <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
+          <Grid container>
+            {[1, 2, 3, 4].map((i) => (
+              <Grid size={{ xs: 12, md: 6 }} key={i}>
+                <MatrixSkeleton />
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
       </Box>
     );
   }
@@ -347,37 +390,39 @@ const Matrix: React.FC = () => {
   const quadrants = [
     {
       id: "doFirst",
-      title: "🔥 Do First",
+      title: "Do First",
       subtitle: "Urgent & Important",
       tasks: filterByCategory(matrix.doFirst),
-      color: alpha("#EF4444", 0.05),
       borderColor: "#EF4444",
+      position: "top-left" as const,
     },
     {
       id: "schedule",
-      title: "📅 Schedule",
-      subtitle: "Not Urgent & Important",
+      title: "Schedule",
+      subtitle: "Important, Not Urgent",
       tasks: filterByCategory(matrix.schedule),
-      color: alpha("#3B82F6", 0.05),
       borderColor: "#3B82F6",
+      position: "top-right" as const,
     },
     {
       id: "delegate",
-      title: "👥 Delegate",
-      subtitle: "Urgent & Not Important",
+      title: "Delegate",
+      subtitle: "Urgent, Not Important",
       tasks: filterByCategory(matrix.delegate),
-      color: alpha("#F59E0B", 0.05),
       borderColor: "#F59E0B",
+      position: "bottom-left" as const,
     },
     {
       id: "eliminate",
-      title: "🗑️ Eliminate",
-      subtitle: "Not Urgent & Not Important",
+      title: "Eliminate",
+      subtitle: "Neither Urgent nor Important",
       tasks: filterByCategory(matrix.eliminate),
-      color: alpha("#8B5CF6", 0.05),
       borderColor: "#8B5CF6",
+      position: "bottom-right" as const,
     },
   ];
+
+  const totalTasks = quadrants.reduce((sum, q) => sum + q.tasks.length, 0);
 
   return (
     <DndContext
@@ -387,97 +432,152 @@ const Matrix: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <Box>
-        <PageHeader
-          title="Eisenhower Matrix"
-          subtitle="Organize your tasks by urgency and importance"
-          action={
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Chip
-                label="Showing incomplete tasks only"
-                size="small"
-                color="info"
-                variant="outlined"
-                sx={{ fontWeight: 500 }}
-              />
-              <FormControl sx={{ minWidth: 220 }} size="small">
-                <InputLabel id="category-filter-label">
-                  Filter by Category
-                </InputLabel>
-                <Select
-                  labelId="category-filter-label"
-                  value={selectedCategory}
-                  label="Filter by Category"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedCategory(
-                      value === "all" ? "all" : Number(value)
-                    );
-                  }}
-                  disabled={categoriesLoading}
-                >
-                  <MenuItem value="all">All Categories</MenuItem>
-                  {categoriesLoading ? (
-                    <MenuItem disabled>Loading categories...</MenuItem>
-                  ) : (
-                    categories.map((cat) => (
-                      <MenuItem key={cat.id} value={cat.id}>
-                        {cat.icon} {cat.name}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
-            </Box>
-          }
-        />
+        {/* Simplified Header */}
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+          flexWrap="wrap"
+          gap={2}
+        >
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              Eisenhower Matrix
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {totalTasks} incomplete {totalTasks === 1 ? "task" : "tasks"}
+            </Typography>
+          </Box>
 
-        <Grid container spacing={3}>
-          {quadrants.map((quadrant) => (
-            <Grid size={{ xs: 12, md: 6 }} key={quadrant.id}>
-              <DroppableQuadrant
-                id={quadrant.id}
-                title={quadrant.title}
-                subtitle={quadrant.subtitle}
-                tasks={quadrant.tasks}
-                color={quadrant.color}
-                borderColor={quadrant.borderColor}
-              />
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+          <FormControl sx={{ minWidth: 180 }} size="small">
+            <InputLabel id="category-filter-label">Category</InputLabel>
+            <Select
+              labelId="category-filter-label"
+              value={selectedCategory}
+              label="Category"
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedCategory(value === "all" ? "all" : Number(value));
+              }}
+              disabled={categoriesLoading}
+            >
+              <MenuItem value="all">All Categories</MenuItem>
+              {categoriesLoading ? (
+                <MenuItem disabled>Loading...</MenuItem>
+              ) : (
+                categories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+        </Box>
 
-      <DragOverlay>
-        {activeId ? (
-          <Paper
+        {/* Matrix Grid - wrapped in Paper for unified appearance */}
+        <Paper
+          sx={{
+            borderRadius: 3,
+            overflow: "hidden",
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          {/* Axis Labels */}
+          <Box
             sx={{
-              p: 2,
-              opacity: 0.8,
-              cursor: "grabbing",
-              boxShadow: `0 8px 24px ${alpha(
-                theme.palette.primary.main,
-                0.25
-              )}`,
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-              borderRadius: 2,
+              display: "flex",
+              justifyContent: "center",
+              py: 1.5,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              bgcolor: alpha(theme.palette.primary.main, 0.02),
             }}
           >
             <Typography
-              variant="body2"
+              variant="caption"
               fontWeight={600}
-              sx={{ mb: getActiveTask()?.dueDate ? 0.5 : 0 }}
+              color="text.secondary"
+              sx={{ letterSpacing: 1 }}
             >
-              {getActiveTask()?.title || "Task"}
+              IMPORTANT →
             </Typography>
-            {getActiveTask()?.dueDate && (
+          </Box>
+
+          <Box sx={{ display: "flex" }}>
+            {/* Urgent Label (vertical) */}
+            <Box
+              sx={{
+                writingMode: "vertical-rl",
+                textOrientation: "mixed",
+                transform: "rotate(180deg)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                px: 1.5,
+                borderRight: `1px solid ${theme.palette.divider}`,
+                bgcolor: alpha(theme.palette.primary.main, 0.02),
+              }}
+            >
               <Typography
                 variant="caption"
+                fontWeight={600}
                 color="text.secondary"
-                sx={{ fontSize: "0.75rem" }}
+                sx={{ letterSpacing: 1 }}
               >
-                Due: {new Date(getActiveTask()?.dueDate!).toLocaleDateString()}
+                URGENT →
               </Typography>
+            </Box>
+
+            {/* Quadrants Grid */}
+            <Box sx={{ flex: 1 }}>
+              <Grid container>
+                {quadrants.map((quadrant) => (
+                  <Grid size={{ xs: 12, md: 6 }} key={quadrant.id}>
+                    <DroppableQuadrant
+                      id={quadrant.id}
+                      title={quadrant.title}
+                      subtitle={quadrant.subtitle}
+                      tasks={quadrant.tasks}
+                      borderColor={quadrant.borderColor}
+                      position={quadrant.position}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {activeId ? (
+          <Paper
+            elevation={8}
+            sx={{
+              p: 1.5,
+              cursor: "grabbing",
+              backgroundColor: theme.palette.background.paper,
+              borderRadius: 1.5,
+              borderLeft: `3px solid ${theme.palette.primary.main}`,
+              boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.25)}`,
+              transform: "rotate(2deg)",
+            }}
+          >
+            <Typography variant="body2" fontWeight={600}>
+              {getActiveTask()?.title || "Task"}
+            </Typography>
+            {getActiveTask()?.category && (
+              <Chip
+                label={`${getActiveTask()?.category?.icon || ""} ${getActiveTask()?.category?.name}`}
+                size="small"
+                sx={{
+                  mt: 0.5,
+                  height: 20,
+                  fontSize: "0.7rem",
+                }}
+              />
             )}
           </Paper>
         ) : null}
