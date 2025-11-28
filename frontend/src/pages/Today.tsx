@@ -468,7 +468,7 @@ const Today: React.FC = () => {
 
                 <Button
                   size="small"
-                  onClick={() => navigate("/timer")}
+                  onClick={() => navigate("/timer", { state: { preselectedTask: task } })}
                   sx={{ minWidth: 80 }}
                 >
                   Focus

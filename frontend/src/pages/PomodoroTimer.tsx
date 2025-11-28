@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useImperativeHandle, forwardRef } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -308,6 +309,17 @@ const PomodoroTimer: React.FC = () => {
   const notesSectionRef = useRef<NotesSectionHandle>(null);
   const [hasSavedNotes, setHasSavedNotes] = useState(false);
   const { registerGuard, unregisterGuard, setGuardMessage } = useNavigationGuard();
+  const location = useLocation();
+
+  // Handle preselected task from navigation state (e.g., from Today page "Focus" button)
+  useEffect(() => {
+    const state = location.state as { preselectedTask?: Task } | null;
+    if (state?.preselectedTask && !timer.isRunning) {
+      setSelectedTask(state.preselectedTask);
+      // Clear the state so it doesn't persist on page refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, timer.isRunning]);
 
   // Register navigation guard for unsaved notes
   useEffect(() => {
