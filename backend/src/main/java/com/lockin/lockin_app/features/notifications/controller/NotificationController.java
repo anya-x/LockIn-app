@@ -1,7 +1,9 @@
 package com.lockin.lockin_app.features.notifications.controller;
 
 import com.lockin.lockin_app.features.notifications.dto.NotificationDTO;
+import com.lockin.lockin_app.features.notifications.dto.NotificationPreferenceDTO;
 import com.lockin.lockin_app.features.notifications.service.NotificationService;
+import com.lockin.lockin_app.features.users.entity.User;
 import com.lockin.lockin_app.features.users.service.UserService;
 import com.lockin.lockin_app.shared.controller.BaseController;
 
@@ -126,5 +128,38 @@ public class NotificationController extends BaseController {
         int updated = notificationService.markAllAsRead(userId);
 
         return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
+    // ==================== Preference Endpoints ====================
+
+    /**
+     * Get notification preferences for current user.
+     */
+    @GetMapping("/preferences")
+    public ResponseEntity<NotificationPreferenceDTO> getPreferences(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("Getting notification preferences for user {}", getCurrentUserEmail(userDetails));
+
+        Long userId = getCurrentUserId(userDetails);
+        NotificationPreferenceDTO preferences = notificationService.getPreferences(userId);
+
+        return ResponseEntity.ok(preferences);
+    }
+
+    /**
+     * Update notification preferences for current user.
+     */
+    @PutMapping("/preferences")
+    public ResponseEntity<NotificationPreferenceDTO> updatePreferences(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody NotificationPreferenceDTO dto) {
+
+        log.info("Updating notification preferences for user {}", getCurrentUserEmail(userDetails));
+
+        User user = getCurrentUser(userDetails);
+        NotificationPreferenceDTO updated = notificationService.updatePreferences(user, dto);
+
+        return ResponseEntity.ok(updated);
     }
 }

@@ -21,6 +21,13 @@ export interface PaginatedNotifications {
   last: boolean;
 }
 
+export interface NotificationPreferences {
+  browserNotifications: boolean;
+  aiNotifications: boolean;
+  calendarNotifications: boolean;
+  taskReminders: boolean;
+}
+
 export const notificationService = {
   /**
    * Get notifications with pagination.
@@ -72,6 +79,22 @@ export const notificationService = {
   markAllAsRead: async (): Promise<number> => {
     const response = await api.put<{ updated: number }>("/notifications/read-all");
     return response.data.updated;
+  },
+
+  /**
+   * Get notification preferences.
+   */
+  getPreferences: async (): Promise<NotificationPreferences> => {
+    const response = await api.get<NotificationPreferences>("/notifications/preferences");
+    return response.data;
+  },
+
+  /**
+   * Update notification preferences.
+   */
+  updatePreferences: async (preferences: Partial<NotificationPreferences>): Promise<NotificationPreferences> => {
+    const response = await api.put<NotificationPreferences>("/notifications/preferences", preferences);
+    return response.data;
   },
 };
 

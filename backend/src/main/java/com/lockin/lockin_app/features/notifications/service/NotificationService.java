@@ -1,7 +1,10 @@
 package com.lockin.lockin_app.features.notifications.service;
 
 import com.lockin.lockin_app.features.notifications.dto.NotificationDTO;
+import com.lockin.lockin_app.features.notifications.dto.NotificationPreferenceDTO;
 import com.lockin.lockin_app.features.notifications.entity.Notification;
+import com.lockin.lockin_app.features.notifications.entity.NotificationPreference;
+import com.lockin.lockin_app.features.notifications.repository.NotificationPreferenceRepository;
 import com.lockin.lockin_app.features.notifications.repository.NotificationRepository;
 import com.lockin.lockin_app.features.users.entity.User;
 
@@ -30,6 +33,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationPreferenceRepository preferenceRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
@@ -156,5 +160,58 @@ public class NotificationService {
         log.info("Marking all notifications as read for user {}", userId);
 
         return notificationRepository.markAllAsReadByUserId(userId);
+    }
+
+    // ==================== Preference Methods ====================
+
+    /**
+     * Get notification preferences for user.
+     */
+    @Transactional(readOnly = true)
+    public NotificationPreferenceDTO getPreferences(Long userId) {
+        return preferenceRepository.findByUserId(userId)
+                .map(NotificationPreferenceDTO::fromEntity)
+                .orElse(NotificationPreferenceDTO.defaults());
+    }
+
+    /**
+     * Update notification preferences for user.
+     */
+    @Transactional
+    public NotificationPreferenceDTO updatePreferences(User user, NotificationPreferenceDTO dto) {
+        log.info("Updating notification preferences for user {}", user.getId());
+
+        NotificationPreference preference = preferenceRepository.findByUserId(user.getId())
+                .orElseGet(() -> {
+                    NotificationPreference newPref = new NotificationPreference();
+                    newPref.setUser(user);
+                    return newPref;
+                });
+
+        if (dto.getBrowserNotifications() != null) {
+            preference.setBrowserNotifications(dto.getBrowserNotifications());
+        }
+        if (dto.getAiNotifications() != null) {
+            preference.setAiNotifications(dto.getAiNotifications());
+        }
+        if (dto.getCalendarNotifications() != null) {
+            preference.setCalendarNotifications(dto.getCalendarNotifications());
+        }
+        if (dto.getTaskReminders() != null) {
+            preference.setTaskReminders(dto.getTaskReminders());
+        }
+
+        preference = preferenceRepository.save(preference);
+        return NotificationPreferenceDTO.fromEntity(preference);
+    }
+
+    /**
+     * Check if user has task reminders enabled.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasTaskRemindersEnabled(Long userId) {
+        return preferenceRepository.findByUserId(userId)
+                .map(NotificationPreference::getTaskReminders)
+                .orElse(true); // Default to enabled
     }
 }

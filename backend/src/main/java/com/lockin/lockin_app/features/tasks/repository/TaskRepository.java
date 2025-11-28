@@ -163,4 +163,39 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findTasksToSyncToGoogle(
             @Param("userId") Long userId,
             @Param("maxDueDate") LocalDateTime maxDueDate);
+
+    /**
+     * Find incomplete tasks due today for a user.
+     */
+    @Query(
+            "SELECT t FROM Task t WHERE t.user.id = :userId "
+                    + "AND t.status <> 'DONE' "
+                    + "AND t.dueDate >= :startOfDay "
+                    + "AND t.dueDate < :endOfDay")
+    List<Task> findTasksDueToday(
+            @Param("userId") Long userId,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay);
+
+    /**
+     * Find incomplete overdue tasks for a user.
+     */
+    @Query(
+            "SELECT t FROM Task t WHERE t.user.id = :userId "
+                    + "AND t.status <> 'DONE' "
+                    + "AND t.dueDate < :now "
+                    + "AND t.dueDate IS NOT NULL")
+    List<Task> findOverdueTasks(
+            @Param("userId") Long userId,
+            @Param("now") LocalDateTime now);
+
+    /**
+     * Find all incomplete tasks with due dates for reminder scheduling.
+     */
+    @Query(
+            "SELECT DISTINCT t.user.id FROM Task t "
+                    + "WHERE t.status <> 'DONE' "
+                    + "AND t.dueDate IS NOT NULL "
+                    + "AND t.dueDate <= :maxDate")
+    List<Long> findUserIdsWithUpcomingDueDates(@Param("maxDate") LocalDateTime maxDate);
 }

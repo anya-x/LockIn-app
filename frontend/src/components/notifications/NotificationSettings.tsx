@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -11,21 +11,15 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import browserNotificationService from "../../services/browserNotificationService";
-
-export interface NotificationPreferences {
-  aiNotifications: boolean;
-  calendarNotifications: boolean;
-  taskReminders: boolean;
-  browserNotifications: boolean;
-}
-
-const STORAGE_KEY = "lockin_notification_preferences";
+import { notificationService } from "../../services/notificationService";
+import type { NotificationPreferences } from "../../services/notificationService";
 
 const defaultPreferences: NotificationPreferences = {
   aiNotifications: true,
@@ -35,38 +29,15 @@ const defaultPreferences: NotificationPreferences = {
 };
 
 /**
- * Load preferences from local storage.
- */
-export function loadNotificationPreferences(): NotificationPreferences {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return { ...defaultPreferences, ...JSON.parse(stored) };
-    }
-  } catch (e) {
-    console.error("Failed to load notification preferences:", e);
-  }
-  return defaultPreferences;
-}
-
-/**
- * Save preferences to local storage.
- */
-function saveNotificationPreferences(preferences: NotificationPreferences): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
-  } catch (e) {
-    console.error("Failed to save notification preferences:", e);
-  }
-}
-
-/**
  * Notification preferences settings component.
+ * Syncs with backend API.
  */
 const NotificationSettings: React.FC = () => {
   const theme = useTheme();
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -74,9 +45,48 @@ const NotificationSettings: React.FC = () => {
     severity: "success" | "error" | "info";
   }>({ open: false, message: "", severity: "success" });
 
+  // Load preferences from API on mount
   useEffect(() => {
-    setPreferences(loadNotificationPreferences());
+    const loadPreferences = async () => {
+      try {
+        const prefs = await notificationService.getPreferences();
+        setPreferences(prefs);
+      } catch (error) {
+        console.error("Failed to load preferences:", error);
+        setSnackbar({
+          open: true,
+          message: "Failed to load preferences",
+          severity: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPreferences();
     setBrowserPermission(browserNotificationService.getPermission());
+  }, []);
+
+  const savePreferences = useCallback(async (newPreferences: NotificationPreferences) => {
+    setSaving(true);
+    try {
+      const updated = await notificationService.updatePreferences(newPreferences);
+      setPreferences(updated);
+      setSnackbar({
+        open: true,
+        message: "Preferences saved",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Failed to save preferences:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to save preferences",
+        severity: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
   }, []);
 
   const handleChange = (key: keyof NotificationPreferences) => (
@@ -87,12 +97,7 @@ const NotificationSettings: React.FC = () => {
       [key]: event.target.checked,
     };
     setPreferences(newPreferences);
-    saveNotificationPreferences(newPreferences);
-    setSnackbar({
-      open: true,
-      message: "Preferences saved",
-      severity: "success",
-    });
+    savePreferences(newPreferences);
   };
 
   const handleCloseSnackbar = () => {
@@ -113,7 +118,7 @@ const NotificationSettings: React.FC = () => {
           browserNotifications: granted,
         };
         setPreferences(newPreferences);
-        saveNotificationPreferences(newPreferences);
+        await savePreferences(newPreferences);
 
         if (granted) {
           setSnackbar({
@@ -144,7 +149,7 @@ const NotificationSettings: React.FC = () => {
         browserNotifications: false,
       };
       setPreferences(newPreferences);
-      saveNotificationPreferences(newPreferences);
+      await savePreferences(newPreferences);
       setSnackbar({
         open: true,
         message: "Browser notifications disabled",
@@ -154,6 +159,25 @@ const NotificationSettings: React.FC = () => {
   };
 
   const isIOSSafari = browserNotificationService.isIOSSafari();
+
+  if (loading) {
+    return (
+      <Card sx={{ mt: 3 }}>
+        <CardContent>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+            <Skeleton variant="circular" width={28} height={28} />
+            <Box sx={{ flex: 1 }}>
+              <Skeleton width="60%" height={24} />
+              <Skeleton width="80%" height={16} />
+            </Box>
+          </Box>
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} height={48} sx={{ my: 1 }} />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card sx={{ mt: 3 }}>
@@ -170,6 +194,7 @@ const NotificationSettings: React.FC = () => {
               Choose which notifications you want to receive
             </Typography>
           </Box>
+          {saving && <CircularProgress size={20} sx={{ ml: "auto" }} />}
         </Box>
 
         {/* Browser Notifications */}
@@ -210,7 +235,7 @@ const NotificationSettings: React.FC = () => {
                       browserPermission === "granted"
                     }
                     onChange={handleBrowserNotificationToggle}
-                    disabled={isIOSSafari || browserPermission === "denied"}
+                    disabled={isIOSSafari || browserPermission === "denied" || saving}
                   />
                 }
                 label=""
@@ -246,6 +271,7 @@ const NotificationSettings: React.FC = () => {
                 <Switch
                   checked={preferences.aiNotifications}
                   onChange={handleChange("aiNotifications")}
+                  disabled={saving}
                 />
               }
               label=""
@@ -281,6 +307,7 @@ const NotificationSettings: React.FC = () => {
                 <Switch
                   checked={preferences.calendarNotifications}
                   onChange={handleChange("calendarNotifications")}
+                  disabled={saving}
                 />
               }
               label=""
@@ -313,6 +340,7 @@ const NotificationSettings: React.FC = () => {
                 <Switch
                   checked={preferences.taskReminders}
                   onChange={handleChange("taskReminders")}
+                  disabled={saving}
                 />
               }
               label=""
