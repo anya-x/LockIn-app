@@ -6,16 +6,22 @@ import {
   Autocomplete,
   TextField,
   Alert,
+  Chip,
+  IconButton,
+  Collapse,
+  Paper,
 } from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
   Stop as StopIcon,
-  Search as SearchIcon,
+  LinkOff as LinkOffIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
   Assignment as AssignmentIcon,
 } from "@mui/icons-material";
 
-import { ProfileSelector } from "../components/timer/ProfileSelector";
+import { CompactProfileSelector } from "../components/timer/CompactProfileSelector";
 import SessionHistory from "../components/timer/SessionHistory";
 import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
@@ -106,7 +112,7 @@ const PomodoroTimer: React.FC = () => {
 
     const updateElapsed = () => {
       const currentElapsedMs = timer.isRunning
-        ? Date.now() - timer.sessionStartedAt
+        ? Date.now() - timer.sessionStartedAt!
         : 0;
       const totalElapsedMs = (timer.pausedElapsedMs || 0) + currentElapsedMs;
       setTotalElapsedSeconds(Math.floor(totalElapsedMs / 1000));
@@ -126,17 +132,16 @@ const PomodoroTimer: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
-  const [dotCount, setDotCount] = useState(20);
   const [loading, setLoading] = useState(false);
   const [sessionNotes, setSessionNotes] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showOptions, setShowOptions] = useState(false);
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
     severity: "success" | "error" | "info";
   }>({ show: false, message: "", severity: "info" });
 
-  const timerContainerRef = useRef<HTMLDivElement>(null);
   const completionTriggeredRef = useRef(false);
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
@@ -170,24 +175,6 @@ const PomodoroTimer: React.FC = () => {
       }
     }
   }, [timer.plannedMinutes, timer.sessionType, timer.isRunning]);
-
-  useEffect(() => {
-    const calculateDots = () => {
-      if (timerContainerRef.current) {
-        const containerWidth = timerContainerRef.current.offsetWidth;
-        const dotWidth = 10;
-        const gapWidth = 6;
-        const dotsPerRow = Math.floor(containerWidth / (dotWidth + gapWidth));
-
-        const calculatedDots = Math.max(10, Math.min(40, dotsPerRow));
-        setDotCount(calculatedDots);
-      }
-    };
-
-    calculateDots();
-    window.addEventListener("resize", calculateDots);
-    return () => window.removeEventListener("resize", calculateDots);
-  }, []);
 
   useEffect(() => {
     fetchTasks();
@@ -254,17 +241,8 @@ const PomodoroTimer: React.FC = () => {
     }
   };
 
-  const handleSessionTypeChange = (
-    _event: React.MouseEvent<HTMLElement>,
-    newType: string | null
-  ) => {
-    if (newType) {
-      setSessionType(newType as "WORK" | "SHORT_BREAK" | "LONG_BREAK");
-    }
-  };
-
-  const handleTaskChange = (event: any, newValue: Task | null) => {
-    setSelectedTask(newValue);
+  const handleSessionTypeChange = (newType: string) => {
+    setSessionType(newType as "WORK" | "SHORT_BREAK" | "LONG_BREAK");
   };
 
   const formatTime = (): string => {
@@ -273,268 +251,97 @@ const PomodoroTimer: React.FC = () => {
     return `${mins}:${secs}`;
   };
 
+  const progress =
+    timer.plannedMinutes > 0
+      ? Math.min(100, (totalElapsedSeconds / (timer.plannedMinutes * 60)) * 100)
+      : 0;
+
   return (
-    <Box>
+    <Box sx={{ maxWidth: 480, mx: "auto", px: 2 }}>
       {alert.show && (
-        <Alert severity={alert.severity} sx={{ mb: 3 }}>
+        <Alert severity={alert.severity} sx={{ mb: 2 }}>
           {alert.message}
         </Alert>
       )}
 
-      <Box sx={{ maxWidth: 600, mx: "auto", mb: 4 }}>
-        <ProfileSelector
-          selectedProfile={selectedProfile}
-          onProfileChange={setProfile}
-          disabled={timer.isRunning}
-        />
-
-        <Autocomplete
-          options={tasks}
-          value={selectedTask}
-          onChange={handleTaskChange}
-          getOptionLabel={(option) => option.title}
-          disabled={timer.isRunning}
-          loading={loadingTasks}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Link to Task (Optional)"
-              placeholder="Search tasks..."
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  startAdornment: (
-                    <>
-                      <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
-                      {params.InputProps.startAdornment}
-                    </>
-                  ),
-                },
-              }}
-            />
-          )}
-          renderOption={(props, option) => (
-            <Box component="li" {...props} key={option.id}>
-              <Box display="flex" alignItems="center" gap={1} width="100%">
-                <AssignmentIcon
-                  fontSize="small"
-                  sx={{ color: "primary.main" }}
-                />
-                <Box flex={1}>
-                  <Typography variant="body2" fontWeight={500}>
-                    {option.title}
-                  </Typography>
-                  {option.category && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ fontSize: "0.7rem" }}
-                    >
-                      {option.category.name}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-            </Box>
-          )}
-          noOptionsText={
-            loadingTasks
-              ? "Loading tasks..."
-              : tasks.length === 0
-              ? "No tasks yet. Create one first!"
-              : "No matching tasks"
-          }
-          clearOnEscape
-          autoHighlight
-          openOnFocus
-        />
-
-        <Box sx={{ mt: 2 }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            label="Session Notes (Optional)"
-            placeholder="What are you working on? Any blockers or insights?"
-            value={sessionNotes}
-            onChange={(e) => setSessionNotes(e.target.value)}
-            helperText={
-              timer.isRunning && timer.sessionId
-                ? "Notes will be saved when session ends"
-                : "Add notes to track context and progress"
-            }
-          />
-          {timer.isRunning && timer.sessionId && (
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={sessionNotes.trim() === ""}
-              onClick={async () => {
-                try {
-                  await saveSessionNotes(sessionNotes);
-                  showAlert("Notes saved!", "success");
-                  triggerRefresh();
-                } catch (error) {
-                  showAlert("Failed to save notes", "error");
-                }
-              }}
-              sx={{ mt: 1 }}
-            >
-              Save Notes Now
-            </Button>
-          )}
-        </Box>
-
-        {tasks.length === 0 && !loadingTasks && !timer.isRunning && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ mt: 1, display: "block" }}
-          >
-            💡 Tip: Link sessions to tasks to track which work consumed your
-            focus time
-          </Typography>
-        )}
-
-        {tasks.length > 0 && !timer.isRunning && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ mt: 1, display: "block" }}
-          >
-            💡 {tasks.length} active tasks • Type to search
-          </Typography>
-        )}
-      </Box>
-
-      <Box
-        ref={timerContainerRef}
-        sx={{ maxWidth: 400, mx: "auto", mt: 6, px: 3 }}
-      >
+      {/* Timer Display - Hero Section */}
+      <Box sx={{ textAlign: "center", pt: 2, pb: 3 }}>
         <Typography
           variant="caption"
           sx={{
-            display: "block",
-            textAlign: "center",
             color: "text.secondary",
             textTransform: "uppercase",
             letterSpacing: 2,
-            fontSize: "0.75rem",
-            mb: 3,
+            fontSize: "0.7rem",
+            fontWeight: 600,
           }}
         >
           {timer.sessionType.replace("_", " ")}
         </Typography>
 
         <Typography
-          variant="h1"
           sx={{
-            fontSize: "7rem",
-            fontWeight: 300,
+            fontSize: { xs: "5rem", sm: "6rem" },
+            fontWeight: 200,
             fontVariantNumeric: "tabular-nums",
-            textAlign: "center",
             color: getTimerColor(),
-            mb: 4,
             lineHeight: 1,
+            my: 2,
             transition: "color 0.3s ease",
           }}
         >
           {formatTime()}
         </Typography>
 
+        {/* Progress Bar */}
         <Box
-          display="flex"
-          justifyContent="center"
-          gap={0.75}
-          mb={5}
           sx={{
-            flexWrap: "nowrap",
-            minHeight: 16,
+            height: 4,
+            bgcolor: "action.hover",
+            borderRadius: 2,
+            overflow: "hidden",
+            mx: "auto",
+            maxWidth: 280,
+            mb: 3,
           }}
         >
-          {Array.from({ length: dotCount }).map((_, i) => {
-            const totalDots = dotCount;
-            const totalSeconds = timer.plannedMinutes * 60;
-            const percentComplete = Math.max(
-              0,
-              Math.min(100, (totalElapsedSeconds / totalSeconds) * 100)
-            );
-
-            const dotsAffected = Math.floor(
-              (percentComplete / 100) * totalDots
-            );
-
-            let isFilled: boolean;
-
-            if (timer.sessionType === "WORK") {
-              isFilled = i < totalDots - dotsAffected;
-            } else {
-              isFilled = i < dotsAffected;
-            }
-
-            let dotColor: string;
-            if (isFilled) {
-              switch (timer.sessionType) {
-                case "WORK":
-                  dotColor = selectedProfile.color;
-                  break;
-                case "SHORT_BREAK":
-                  dotColor = "rgba(46, 125, 50, 0.5)";
-                  break;
-                case "LONG_BREAK":
-                  dotColor = "rgba(123, 31, 162, 0.5)";
-                  break;
-                default:
-                  dotColor = "#757575";
-              }
-            } else {
-              dotColor = "#e0e0e0";
-            }
-
-            return (
-              <Box
-                key={i}
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  backgroundColor: dotColor,
-                  transition: "background-color 0.3s ease",
-                }}
-              />
-            );
-          })}
+          <Box
+            sx={{
+              height: "100%",
+              width: `${timer.sessionType === "WORK" ? 100 - progress : progress}%`,
+              bgcolor: getTimerColor(),
+              borderRadius: 2,
+              transition: "width 1s linear",
+            }}
+          />
         </Box>
 
-        <Box display="flex" gap={1} mb={4}>
+        {/* Session Type Buttons */}
+        <Box display="flex" gap={1} justifyContent="center" mb={3}>
           {[
-            { type: "WORK", label: "Work" },
-            { type: "SHORT_BREAK", label: "Short" },
-            { type: "LONG_BREAK", label: "Long" },
+            { type: "WORK", label: "Focus" },
+            { type: "SHORT_BREAK", label: "Short Break" },
+            { type: "LONG_BREAK", label: "Long Break" },
           ].map(({ type, label }) => (
-            <Button
+            <Chip
               key={type}
-              onClick={(e) => handleSessionTypeChange(e, type)}
+              label={label}
+              onClick={() => !timer.isRunning && handleSessionTypeChange(type)}
+              variant={timer.sessionType === type ? "filled" : "outlined"}
+              color={timer.sessionType === type ? "primary" : "default"}
               disabled={timer.isRunning}
-              fullWidth
-              variant={timer.sessionType === type ? "contained" : "outlined"}
               sx={{
-                borderRadius: 3,
-                py: 1.5,
-                textTransform: "none",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                transition: "all 0.2s ease",
+                fontWeight: 600,
+                fontSize: "0.8rem",
+                py: 2,
+                px: 0.5,
               }}
-            >
-              {label}
-            </Button>
+            />
           ))}
         </Box>
 
-        <Box display="flex" gap={2}>
+        {/* Main Action Buttons */}
+        <Box display="flex" gap={2} justifyContent="center">
           {!timer.isRunning ? (
             <Button
               variant="contained"
@@ -542,18 +349,17 @@ const PomodoroTimer: React.FC = () => {
               disabled={
                 loading || (displayMinutes === 0 && displaySeconds === 0)
               }
-              fullWidth
               size="large"
               startIcon={<PlayArrowIcon />}
               sx={{
                 borderRadius: 3,
-                py: 2,
-                fontSize: "1.125rem",
-                textTransform: "none",
-                fontWeight: 500,
+                py: 1.5,
+                px: 5,
+                fontSize: "1rem",
+                fontWeight: 600,
               }}
             >
-              Start
+              {timer.sessionId ? "Resume" : "Start"}
             </Button>
           ) : (
             <>
@@ -561,15 +367,14 @@ const PomodoroTimer: React.FC = () => {
                 variant="contained"
                 onClick={pauseTimer}
                 color="warning"
-                fullWidth
                 size="large"
                 startIcon={<PauseIcon />}
                 sx={{
                   borderRadius: 3,
-                  py: 2,
-                  fontSize: "1.125rem",
-                  textTransform: "none",
-                  fontWeight: 500,
+                  py: 1.5,
+                  px: 4,
+                  fontSize: "1rem",
+                  fontWeight: 600,
                 }}
               >
                 Pause
@@ -577,15 +382,14 @@ const PomodoroTimer: React.FC = () => {
               <Button
                 variant="outlined"
                 onClick={handleStop}
-                fullWidth
                 size="large"
                 startIcon={<StopIcon />}
                 sx={{
                   borderRadius: 3,
-                  py: 2,
-                  fontSize: "1.125rem",
-                  textTransform: "none",
-                  fontWeight: 500,
+                  py: 1.5,
+                  px: 4,
+                  fontSize: "1rem",
+                  fontWeight: 600,
                 }}
               >
                 Stop
@@ -595,9 +399,153 @@ const PomodoroTimer: React.FC = () => {
         </Box>
       </Box>
 
-      <Box mt={4}>
-        <SessionHistory refresh={refreshTrigger} />
+      {/* Linked Task Display */}
+      {selectedTask && (
+        <Paper
+          sx={{
+            p: 2,
+            mb: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            bgcolor: "action.hover",
+          }}
+        >
+          <AssignmentIcon sx={{ color: "primary.main", fontSize: 20 }} />
+          <Box flex={1}>
+            <Typography variant="body2" fontWeight={600}>
+              {selectedTask.title}
+            </Typography>
+            {selectedTask.category && (
+              <Typography variant="caption" color="text.secondary">
+                {selectedTask.category.name}
+              </Typography>
+            )}
+          </Box>
+          {!timer.isRunning && (
+            <IconButton
+              size="small"
+              onClick={() => setSelectedTask(null)}
+              sx={{ color: "text.secondary" }}
+            >
+              <LinkOffIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Paper>
+      )}
+
+      {/* Expandable Options */}
+      <Box sx={{ mb: 3 }}>
+        <Button
+          fullWidth
+          onClick={() => setShowOptions(!showOptions)}
+          endIcon={showOptions ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          sx={{
+            justifyContent: "space-between",
+            color: "text.secondary",
+            textTransform: "none",
+            fontWeight: 500,
+            py: 1,
+          }}
+        >
+          {showOptions ? "Hide Options" : "Link Task, Notes & Cycle"}
+        </Button>
+
+        <Collapse in={showOptions}>
+          <Box sx={{ pt: 2 }}>
+            {/* Profile Selector */}
+            <Box sx={{ mb: 3 }}>
+              <CompactProfileSelector
+                selectedProfile={selectedProfile}
+                onProfileChange={setProfile}
+                disabled={timer.isRunning}
+              />
+            </Box>
+
+            {/* Task Selector */}
+            {!selectedTask && (
+              <Autocomplete
+                options={tasks}
+                value={selectedTask}
+                onChange={(_, newValue) => setSelectedTask(newValue)}
+                getOptionLabel={(option) => option.title}
+                disabled={timer.isRunning}
+                loading={loadingTasks}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                size="small"
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Link to Task"
+                    placeholder="Search tasks..."
+                    size="small"
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} key={option.id}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <AssignmentIcon
+                        fontSize="small"
+                        sx={{ color: "primary.main" }}
+                      />
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {option.title}
+                        </Typography>
+                        {option.category && (
+                          <Typography variant="caption" color="text.secondary">
+                            {option.category.name}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+                noOptionsText={
+                  loadingTasks
+                    ? "Loading..."
+                    : tasks.length === 0
+                    ? "No tasks available"
+                    : "No matching tasks"
+                }
+                sx={{ mb: 2 }}
+              />
+            )}
+
+            {/* Session Notes */}
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              size="small"
+              label="Session Notes"
+              placeholder="What are you working on?"
+              value={sessionNotes}
+              onChange={(e) => setSessionNotes(e.target.value)}
+            />
+            {timer.isRunning && timer.sessionId && sessionNotes.trim() && (
+              <Button
+                size="small"
+                variant="text"
+                onClick={async () => {
+                  try {
+                    await saveSessionNotes(sessionNotes);
+                    showAlert("Notes saved!", "success");
+                  } catch {
+                    showAlert("Failed to save notes", "error");
+                  }
+                }}
+                sx={{ mt: 1 }}
+              >
+                Save Notes
+              </Button>
+            )}
+          </Box>
+        </Collapse>
       </Box>
+
+      {/* Session History */}
+      <SessionHistory refresh={refreshTrigger} />
     </Box>
   );
 };
