@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import {
   Box,
   Button,
@@ -30,6 +30,113 @@ import SessionHistory from "../components/timer/SessionHistory";
 import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
 import { useTimer } from "../context/TimerContext";
+
+// Memoized notes section to prevent re-renders from timer updates
+interface NotesSectionProps {
+  showNotes: boolean;
+  setShowNotes: (show: boolean) => void;
+  onNotesChange: (notes: string) => void;
+  onSaveNotes: (notes: string) => Promise<void>;
+  isRunning: boolean;
+  hasSession: boolean;
+  initialNotes: string;
+}
+
+const NotesSection = memo(function NotesSection({
+  showNotes,
+  setShowNotes,
+  onNotesChange,
+  onSaveNotes,
+  isRunning,
+  hasSession,
+  initialNotes,
+}: NotesSectionProps) {
+  const [localNotes, setLocalNotes] = useState(initialNotes);
+  const [saving, setSaving] = useState(false);
+
+  // Sync with parent when notes are cleared (after stop)
+  useEffect(() => {
+    if (initialNotes === "" && localNotes !== "") {
+      setLocalNotes("");
+    }
+  }, [initialNotes]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalNotes(e.target.value);
+    onNotesChange(e.target.value);
+  };
+
+  const handleSave = async () => {
+    if (!localNotes.trim()) return;
+    setSaving(true);
+    try {
+      await onSaveNotes(localNotes);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Button
+        fullWidth
+        onClick={() => setShowNotes(!showNotes)}
+        startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
+        endIcon={showNotes ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        sx={{
+          justifyContent: "space-between",
+          color: "text.secondary",
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: "0.875rem",
+          py: 1,
+          px: 1.5,
+          bgcolor: "action.hover",
+          borderRadius: 1,
+          "&:hover": {
+            bgcolor: "action.selected",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          Session Notes
+          {localNotes.trim() && !showNotes && (
+            <Chip label="Has notes" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
+          )}
+        </Box>
+      </Button>
+      <Collapse in={showNotes}>
+        <Box sx={{ pt: 1.5 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            size="small"
+            placeholder="What are you working on?"
+            value={localNotes}
+            onChange={handleChange}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                bgcolor: "background.paper",
+              },
+            }}
+          />
+          {isRunning && hasSession && (
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleSave}
+              disabled={saving || !localNotes.trim()}
+              sx={{ mt: 1 }}
+            >
+              {saving ? "Saving..." : "Save Notes"}
+            </Button>
+          )}
+        </Box>
+      </Collapse>
+    </Box>
+  );
+});
 
 const PomodoroTimer: React.FC = () => {
   const theme = useTheme();
@@ -151,7 +258,6 @@ const PomodoroTimer: React.FC = () => {
   }>({ show: false, message: "", severity: "info" });
 
   const completionTriggeredRef = useRef(false);
-  const notesInputRef = useRef<HTMLInputElement>(null);
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
   const lastSessionTypeRef = useRef(timer.sessionType);
@@ -226,8 +332,7 @@ const PomodoroTimer: React.FC = () => {
     setLoading(true);
     try {
       if (!timer.sessionId) {
-        const notes = notesInputRef.current?.value || sessionNotes;
-        await startTimer(selectedTask?.id || null, notes);
+        await startTimer(selectedTask?.id || null, sessionNotes);
         showAlert("Session started!", "success");
       } else {
         pauseTimer();
@@ -242,12 +347,8 @@ const PomodoroTimer: React.FC = () => {
 
   const handleStop = async () => {
     try {
-      const notes = notesInputRef.current?.value || sessionNotes;
-      await stopTimer(notes);
+      await stopTimer(sessionNotes);
       setSessionNotes("");
-      if (notesInputRef.current) {
-        notesInputRef.current.value = "";
-      }
       showAlert("Session stopped and saved", "info");
       triggerRefresh();
     } catch (error) {
@@ -258,6 +359,11 @@ const PomodoroTimer: React.FC = () => {
   const handleSessionTypeChange = (newType: string) => {
     setSessionType(newType as "WORK" | "SHORT_BREAK" | "LONG_BREAK");
   };
+
+  const handleSaveNotes = useCallback(async (notes: string) => {
+    await saveSessionNotes(notes);
+    showAlert("Notes saved!", "success");
+  }, [saveSessionNotes]);
 
   const formatTime = (): string => {
     const mins = String(displayMinutes).padStart(2, "0");
@@ -532,74 +638,16 @@ const PomodoroTimer: React.FC = () => {
         )}
       </Box>
 
-      {/* Session Notes Section (Collapsible) */}
-      <Box sx={{ mb: 3 }}>
-        <Button
-          fullWidth
-          onClick={() => setShowNotes(!showNotes)}
-          startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
-          endIcon={showNotes ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          sx={{
-            justifyContent: "space-between",
-            color: "text.secondary",
-            textTransform: "none",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            py: 1,
-            px: 1.5,
-            bgcolor: "action.hover",
-            borderRadius: 1,
-            "&:hover": {
-              bgcolor: "action.selected",
-            },
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            Session Notes
-            {sessionNotes.trim() && !showNotes && (
-              <Chip label="Has notes" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
-            )}
-          </Box>
-        </Button>
-        <Collapse in={showNotes}>
-          <Box sx={{ pt: 1.5 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              size="small"
-              placeholder="What are you working on?"
-              defaultValue={sessionNotes}
-              inputRef={notesInputRef}
-              onBlur={(e) => setSessionNotes(e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: "background.paper",
-                },
-              }}
-            />
-            {timer.isRunning && timer.sessionId && (
-              <Button
-                size="small"
-                variant="text"
-                onClick={async () => {
-                  const notes = notesInputRef.current?.value || "";
-                  if (!notes.trim()) return;
-                  try {
-                    await saveSessionNotes(notes);
-                    showAlert("Notes saved!", "success");
-                  } catch {
-                    showAlert("Failed to save notes", "error");
-                  }
-                }}
-                sx={{ mt: 1 }}
-              >
-                Save Notes
-              </Button>
-            )}
-          </Box>
-        </Collapse>
-      </Box>
+      {/* Session Notes Section (Collapsible) - Memoized to prevent re-renders */}
+      <NotesSection
+        showNotes={showNotes}
+        setShowNotes={setShowNotes}
+        onNotesChange={setSessionNotes}
+        onSaveNotes={handleSaveNotes}
+        isRunning={timer.isRunning}
+        hasSession={!!timer.sessionId}
+        initialNotes={sessionNotes}
+      />
 
       {/* Focus Profile Section (no header - self explanatory) */}
       <Box sx={{ flex: 1 }}>
