@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -13,7 +13,13 @@ import {
   useTheme,
   alpha,
   Stack,
+  IconButton,
+  Fade,
 } from "@mui/material";
+import {
+  KeyboardArrowUp as ScrollUpIcon,
+  KeyboardArrowDown as ScrollDownIcon,
+} from "@mui/icons-material";
 import type { Task } from "../types/task";
 import {
   DndContext,
@@ -147,6 +153,35 @@ const Matrix: React.FC = () => {
     position,
   }) => {
     const { setNodeRef, isOver } = useDroppable({ id });
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [canScrollUp, setCanScrollUp] = useState(false);
+    const [canScrollDown, setCanScrollDown] = useState(false);
+
+    const checkScrollability = () => {
+      const container = scrollContainerRef.current;
+      if (container) {
+        setCanScrollUp(container.scrollTop > 0);
+        setCanScrollDown(
+          container.scrollTop < container.scrollHeight - container.clientHeight - 5
+        );
+      }
+    };
+
+    const handleScroll = (direction: "up" | "down") => {
+      const container = scrollContainerRef.current;
+      if (container) {
+        const scrollAmount = 120;
+        container.scrollBy({
+          top: direction === "up" ? -scrollAmount : scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    };
+
+    // Check scrollability after render
+    React.useEffect(() => {
+      checkScrollability();
+    }, [tasks]);
 
     // Subtle internal borders to show 2x2 structure
     const getBorderStyles = () => {
@@ -165,12 +200,18 @@ const Matrix: React.FC = () => {
       }
     };
 
+    const TASK_CONTAINER_HEIGHT = 220;
+
     return (
       <Box
         ref={setNodeRef}
         sx={{
           p: 2.5,
-          minHeight: { xs: 180, md: 280 },
+          height: { xs: "auto", md: 340 },
+          minHeight: { xs: 200, md: 340 },
+          maxHeight: { xs: 400, md: 340 },
+          display: "flex",
+          flexDirection: "column",
           backgroundColor: isOver
             ? alpha(borderColor, 0.08)
             : "transparent",
@@ -184,6 +225,7 @@ const Matrix: React.FC = () => {
           justifyContent="space-between"
           alignItems="flex-start"
           mb={2}
+          flexShrink={0}
         >
           <Box>
             <Typography
@@ -219,28 +261,110 @@ const Matrix: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Tasks */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {tasks.length === 0 ? (
-            <Box
+        {/* Scrollable Tasks Container */}
+        <Box sx={{ position: "relative", flex: 1, minHeight: 0 }}>
+          {/* Scroll Up Button */}
+          <Fade in={canScrollUp}>
+            <IconButton
+              size="small"
+              onClick={() => handleScroll("up")}
               sx={{
-                py: 3,
-                textAlign: "center",
-                color: "text.disabled",
-                borderRadius: 2,
-                border: `1px dashed ${alpha(borderColor, 0.2)}`,
-                backgroundColor: alpha(borderColor, 0.02),
+                position: "absolute",
+                top: -4,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 10,
+                bgcolor: theme.palette.background.paper,
+                boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
+                border: `1px solid ${theme.palette.divider}`,
+                width: 28,
+                height: 28,
+                "&:hover": {
+                  bgcolor: theme.palette.background.paper,
+                  boxShadow: `0 4px 12px ${alpha(borderColor, 0.2)}`,
+                },
               }}
             >
-              <Typography variant="body2">
-                Drag tasks here
-              </Typography>
-            </Box>
-          ) : (
-            tasks.map((task) => (
-              <DraggableTask key={task.id} task={task} quadrantColor={borderColor} />
-            ))
-          )}
+              <ScrollUpIcon sx={{ fontSize: 18, color: borderColor }} />
+            </IconButton>
+          </Fade>
+
+          {/* Tasks List */}
+          <Box
+            ref={scrollContainerRef}
+            onScroll={checkScrollability}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              height: { xs: "auto", md: TASK_CONTAINER_HEIGHT },
+              maxHeight: { xs: 280, md: TASK_CONTAINER_HEIGHT },
+              overflowY: "auto",
+              overflowX: "hidden",
+              pr: 0.5,
+              // Custom scrollbar
+              "&::-webkit-scrollbar": {
+                width: 6,
+              },
+              "&::-webkit-scrollbar-track": {
+                bgcolor: "transparent",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: alpha(borderColor, 0.2),
+                borderRadius: 3,
+                "&:hover": {
+                  bgcolor: alpha(borderColor, 0.4),
+                },
+              },
+            }}
+          >
+            {tasks.length === 0 ? (
+              <Box
+                sx={{
+                  py: 3,
+                  textAlign: "center",
+                  color: "text.disabled",
+                  borderRadius: 2,
+                  border: `1px dashed ${alpha(borderColor, 0.2)}`,
+                  backgroundColor: alpha(borderColor, 0.02),
+                }}
+              >
+                <Typography variant="body2">
+                  Drag tasks here
+                </Typography>
+              </Box>
+            ) : (
+              tasks.map((task) => (
+                <DraggableTask key={task.id} task={task} quadrantColor={borderColor} />
+              ))
+            )}
+          </Box>
+
+          {/* Scroll Down Button */}
+          <Fade in={canScrollDown}>
+            <IconButton
+              size="small"
+              onClick={() => handleScroll("down")}
+              sx={{
+                position: "absolute",
+                bottom: -4,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 10,
+                bgcolor: theme.palette.background.paper,
+                boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
+                border: `1px solid ${theme.palette.divider}`,
+                width: 28,
+                height: 28,
+                "&:hover": {
+                  bgcolor: theme.palette.background.paper,
+                  boxShadow: `0 4px 12px ${alpha(borderColor, 0.2)}`,
+                },
+              }}
+            >
+              <ScrollDownIcon sx={{ fontSize: 18, color: borderColor }} />
+            </IconButton>
+          </Fade>
         </Box>
       </Box>
     );
