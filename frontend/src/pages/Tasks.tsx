@@ -39,7 +39,6 @@ import StatPills from "../components/shared/StatPills";
 import type { FilterState, Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/ai/AITaskBreakdown";
-import CompactBriefing from "../components/ai/CompactBriefing";
 import EmptyState from "../components/shared/EmptyState";
 import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
 
@@ -520,7 +519,7 @@ const Tasks: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Stat Pills + AI Briefing Row */}
+      {/* Stat Pills */}
       <Box
         sx={{
           display: "flex",
@@ -532,11 +531,6 @@ const Tasks: React.FC = () => {
         <Box sx={{ flex: { xs: "1", md: "0 0 auto" } }}>
           <StatPills stats={stats} loading={statsLoading} />
         </Box>
-      </Box>
-
-      {/* AI Briefing */}
-      <Box mb={3}>
-        <CompactBriefing />
       </Box>
 
       {/* Filters */}

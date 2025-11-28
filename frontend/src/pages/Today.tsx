@@ -34,6 +34,7 @@ import { analyticsService } from "../services/analyticsService";
 import { getStatusColor } from "../utils/colorMaps";
 import type { Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
+import CompactBriefing from "../components/ai/CompactBriefing";
 
 const Today: React.FC = () => {
   const theme = useTheme();
@@ -271,6 +272,11 @@ const Today: React.FC = () => {
             </>
           )}
         </Paper>
+      </Box>
+
+      {/* AI Daily Briefing */}
+      <Box sx={{ mb: 3 }}>
+        <CompactBriefing />
       </Box>
 
       {/* Active Timer Banner */}
