@@ -42,259 +42,259 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
     palette: {
       light: {
         primary: {
-          main: "#667BC6",
-          light: "#9FA8DA",
-          dark: "#4A5FA8",
+          main: "#6366F1",
+          light: "#818CF8",
+          dark: "#4F46E5",
           contrastText: "#FFFFFF",
         },
         secondary: {
-          main: "#7986CB",
-          light: "#AAB6FE",
-          dark: "#5C6BC0",
+          main: "#8B5CF6",
+          light: "#A78BFA",
+          dark: "#7C3AED",
           contrastText: "#FFFFFF",
         },
         success: {
-          main: "#7CB342",
-          light: "#AED581",
-          dark: "#558B2F",
+          main: "#10B981",
+          light: "#34D399",
+          dark: "#059669",
           contrastText: "#FFFFFF",
         },
         warning: {
-          main: "#FFA726",
-          light: "#FFB74D",
-          dark: "#F57C00",
+          main: "#F59E0B",
+          light: "#FBBF24",
+          dark: "#D97706",
           contrastText: "#FFFFFF",
         },
         error: {
-          main: "#E57373",
-          light: "#EF9A9A",
-          dark: "#D32F2F",
+          main: "#EF4444",
+          light: "#F87171",
+          dark: "#DC2626",
           contrastText: "#FFFFFF",
         },
         info: {
-          main: "#64B5F6",
-          light: "#90CAF9",
-          dark: "#1976D2",
+          main: "#3B82F6",
+          light: "#60A5FA",
+          dark: "#2563EB",
           contrastText: "#FFFFFF",
         },
-        background: { default: "#F5F7FF", paper: "#FFFFFF" },
-        text: { primary: "#1A237E", secondary: "#5C6BC0" },
-        divider: "rgba(26, 35, 126, 0.12)",
+        background: { default: "#F8FAFC", paper: "#FFFFFF" },
+        text: { primary: "#0F172A", secondary: "#64748B" },
+        divider: "rgba(15, 23, 42, 0.08)",
       },
       dark: {
         primary: {
-          main: "#9FA8DA",
-          light: "#C5CAE9",
-          dark: "#7986CB",
-          contrastText: "#0D1117",
+          main: "#818CF8",
+          light: "#A5B4FC",
+          dark: "#6366F1",
+          contrastText: "#0F172A",
         },
         secondary: {
-          main: "#AAB6FE",
-          light: "#C5CAE9",
-          dark: "#9FA8DA",
-          contrastText: "#0D1117",
+          main: "#A78BFA",
+          light: "#C4B5FD",
+          dark: "#8B5CF6",
+          contrastText: "#0F172A",
         },
         success: {
-          main: "#81C784",
-          light: "#A5D6A7",
-          dark: "#66BB6A",
-          contrastText: "#0D1117",
+          main: "#34D399",
+          light: "#6EE7B7",
+          dark: "#10B981",
+          contrastText: "#0F172A",
         },
         warning: {
-          main: "#FFB74D",
-          light: "#FFCC80",
-          dark: "#FFA726",
-          contrastText: "#0D1117",
+          main: "#FBBF24",
+          light: "#FCD34D",
+          dark: "#F59E0B",
+          contrastText: "#0F172A",
         },
         error: {
-          main: "#E57373",
-          light: "#EF9A9A",
-          dark: "#EF5350",
-          contrastText: "#0D1117",
+          main: "#F87171",
+          light: "#FCA5A5",
+          dark: "#EF4444",
+          contrastText: "#0F172A",
         },
         info: {
-          main: "#64B5F6",
-          light: "#90CAF9",
-          dark: "#42A5F5",
-          contrastText: "#0D1117",
+          main: "#60A5FA",
+          light: "#93C5FD",
+          dark: "#3B82F6",
+          contrastText: "#0F172A",
         },
-        background: { default: "#0D1117", paper: "#161B22" },
-        text: { primary: "#E6EDF3", secondary: "#AAB6FE" },
-        divider: "rgba(230, 237, 243, 0.12)",
+        background: { default: "#0F172A", paper: "#1E293B" },
+        text: { primary: "#F1F5F9", secondary: "#94A3B8" },
+        divider: "rgba(241, 245, 249, 0.08)",
       },
     },
   },
   pink: {
-    name: "Pink Mauve",
+    name: "Rose",
     palette: {
       light: {
         primary: {
-          main: "#997A8D",
-          light: "#C4A7B7",
-          dark: "#7A5F71",
+          main: "#EC4899",
+          light: "#F472B6",
+          dark: "#DB2777",
           contrastText: "#FFFFFF",
         },
         secondary: {
-          main: "#B89CAC",
-          light: "#D9C4CF",
-          dark: "#9A7E8E",
+          main: "#A855F7",
+          light: "#C084FC",
+          dark: "#9333EA",
           contrastText: "#FFFFFF",
         },
         success: {
-          main: "#81A77A",
-          light: "#A8C9A3",
-          dark: "#6A8F63",
+          main: "#10B981",
+          light: "#34D399",
+          dark: "#059669",
           contrastText: "#FFFFFF",
         },
         warning: {
-          main: "#E8B468",
-          light: "#F3D1A0",
-          dark: "#D49A3C",
+          main: "#F59E0B",
+          light: "#FBBF24",
+          dark: "#D97706",
           contrastText: "#FFFFFF",
         },
         error: {
-          main: "#D89B9B",
-          light: "#EBC4C4",
-          dark: "#C47676",
+          main: "#EF4444",
+          light: "#F87171",
+          dark: "#DC2626",
           contrastText: "#FFFFFF",
         },
         info: {
-          main: "#8AAFC9",
-          light: "#B5D0E0",
-          dark: "#6A91AD",
+          main: "#3B82F6",
+          light: "#60A5FA",
+          dark: "#2563EB",
           contrastText: "#FFFFFF",
         },
-        background: { default: "#FDF8FB", paper: "#FFFFFF" },
-        text: { primary: "#4A2C3D", secondary: "#7A5F71" },
-        divider: "rgba(74, 44, 61, 0.12)",
+        background: { default: "#FDF2F8", paper: "#FFFFFF" },
+        text: { primary: "#1E1B1E", secondary: "#6B7280" },
+        divider: "rgba(30, 27, 30, 0.08)",
       },
       dark: {
         primary: {
-          main: "#C4A7B7",
-          light: "#D9C4CF",
-          dark: "#997A8D",
-          contrastText: "#1A0E15",
+          main: "#F472B6",
+          light: "#F9A8D4",
+          dark: "#EC4899",
+          contrastText: "#1E1B1E",
         },
         secondary: {
-          main: "#D9C4CF",
-          light: "#EDDFE6",
-          dark: "#B89CAC",
-          contrastText: "#1A0E15",
+          main: "#C084FC",
+          light: "#D8B4FE",
+          dark: "#A855F7",
+          contrastText: "#1E1B1E",
         },
         success: {
-          main: "#A8C9A3",
-          light: "#C4DFC0",
-          dark: "#8FB58A",
-          contrastText: "#1A0E15",
+          main: "#34D399",
+          light: "#6EE7B7",
+          dark: "#10B981",
+          contrastText: "#1E1B1E",
         },
         warning: {
-          main: "#F3D1A0",
-          light: "#F8E4C4",
-          dark: "#E8B468",
-          contrastText: "#1A0E15",
+          main: "#FBBF24",
+          light: "#FCD34D",
+          dark: "#F59E0B",
+          contrastText: "#1E1B1E",
         },
         error: {
-          main: "#EBC4C4",
-          light: "#F5DEDE",
-          dark: "#D89B9B",
-          contrastText: "#1A0E15",
+          main: "#F87171",
+          light: "#FCA5A5",
+          dark: "#EF4444",
+          contrastText: "#1E1B1E",
         },
         info: {
-          main: "#B5D0E0",
-          light: "#D4E6F0",
-          dark: "#8AAFC9",
-          contrastText: "#1A0E15",
+          main: "#60A5FA",
+          light: "#93C5FD",
+          dark: "#3B82F6",
+          contrastText: "#1E1B1E",
         },
-        background: { default: "#1A0E15", paper: "#2E1A28" },
-        text: { primary: "#F8E8F1", secondary: "#D9C4CF" },
-        divider: "rgba(248, 232, 241, 0.12)",
+        background: { default: "#1C1618", paper: "#2D2426" },
+        text: { primary: "#FAF5F7", secondary: "#A8A0A4" },
+        divider: "rgba(250, 245, 247, 0.08)",
       },
     },
   },
   sage: {
-    name: "Sage Green",
+    name: "Sage",
     palette: {
       light: {
         primary: {
-          main: "#9CAF88",
-          light: "#C5D5B5",
-          dark: "#7A8F6F",
+          main: "#22C55E",
+          light: "#4ADE80",
+          dark: "#16A34A",
           contrastText: "#FFFFFF",
         },
         secondary: {
-          main: "#B8C9A8",
-          light: "#D4E3C8",
-          dark: "#9AB187",
+          main: "#14B8A6",
+          light: "#2DD4BF",
+          dark: "#0D9488",
           contrastText: "#FFFFFF",
         },
         success: {
-          main: "#88B878",
-          light: "#B5D4A8",
-          dark: "#6A9B5A",
+          main: "#10B981",
+          light: "#34D399",
+          dark: "#059669",
           contrastText: "#FFFFFF",
         },
         warning: {
-          main: "#E8C468",
-          light: "#F3DFA0",
-          dark: "#D4AA3C",
+          main: "#F59E0B",
+          light: "#FBBF24",
+          dark: "#D97706",
           contrastText: "#FFFFFF",
         },
         error: {
-          main: "#D89B9B",
-          light: "#EBC4C4",
-          dark: "#C47676",
+          main: "#EF4444",
+          light: "#F87171",
+          dark: "#DC2626",
           contrastText: "#FFFFFF",
         },
         info: {
-          main: "#8AAFC9",
-          light: "#B5D0E0",
-          dark: "#6A91AD",
+          main: "#3B82F6",
+          light: "#60A5FA",
+          dark: "#2563EB",
           contrastText: "#FFFFFF",
         },
-        background: { default: "#F8FAF6", paper: "#FFFFFF" },
-        text: { primary: "#2D3A2E", secondary: "#5A6C5B" },
-        divider: "rgba(90, 108, 91, 0.12)",
+        background: { default: "#F0FDF4", paper: "#FFFFFF" },
+        text: { primary: "#14532D", secondary: "#6B7280" },
+        divider: "rgba(20, 83, 45, 0.08)",
       },
       dark: {
         primary: {
-          main: "#B8C9A8",
-          light: "#D4E3C8",
-          dark: "#9CAF88",
-          contrastText: "#1A261A",
+          main: "#4ADE80",
+          light: "#86EFAC",
+          dark: "#22C55E",
+          contrastText: "#14532D",
         },
         secondary: {
-          main: "#C5D5B5",
-          light: "#E0EAD5",
-          dark: "#B8C9A8",
-          contrastText: "#1A261A",
+          main: "#2DD4BF",
+          light: "#5EEAD4",
+          dark: "#14B8A6",
+          contrastText: "#14532D",
         },
         success: {
-          main: "#B5D4A8",
-          light: "#D4E8CA",
-          dark: "#9BC08C",
-          contrastText: "#1A261A",
+          main: "#34D399",
+          light: "#6EE7B7",
+          dark: "#10B981",
+          contrastText: "#14532D",
         },
         warning: {
-          main: "#F3DFA0",
-          light: "#F8ECC4",
-          dark: "#E8C468",
-          contrastText: "#1A261A",
+          main: "#FBBF24",
+          light: "#FCD34D",
+          dark: "#F59E0B",
+          contrastText: "#14532D",
         },
         error: {
-          main: "#EBC4C4",
-          light: "#F5DEDE",
-          dark: "#D89B9B",
-          contrastText: "#1A261A",
+          main: "#F87171",
+          light: "#FCA5A5",
+          dark: "#EF4444",
+          contrastText: "#14532D",
         },
         info: {
-          main: "#B5D0E0",
-          light: "#D4E6F0",
-          dark: "#8AAFC9",
-          contrastText: "#1A261A",
+          main: "#60A5FA",
+          light: "#93C5FD",
+          dark: "#3B82F6",
+          contrastText: "#14532D",
         },
-        background: { default: "#141A14", paper: "#1E261E" },
-        text: { primary: "#E8F0E8", secondary: "#C5D5B5" },
-        divider: "rgba(232, 240, 232, 0.12)",
+        background: { default: "#0C1A0F", paper: "#14261A" },
+        text: { primary: "#ECFDF5", secondary: "#A7F3D0" },
+        divider: "rgba(236, 253, 245, 0.08)",
       },
     },
   },
@@ -339,19 +339,33 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
           root: {
             borderRadius: 10,
             padding: "10px 20px",
-            fontSize: "0.9375rem",
-            fontWeight: 500,
+            fontSize: "0.875rem",
+            fontWeight: 600,
             textTransform: "none",
+            transition: "all 0.2s ease",
           },
           contained: {
             "&:hover": {
               transform: "translateY(-1px)",
+              boxShadow: isDark
+                ? "0 4px 12px rgba(0,0,0,0.3)"
+                : "0 4px 12px rgba(99, 102, 241, 0.25)",
             },
           },
           outlined: {
             borderWidth: "1.5px",
             "&:hover": {
               borderWidth: "1.5px",
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(99, 102, 241, 0.04)",
+            },
+          },
+          text: {
+            "&:hover": {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(99, 102, 241, 0.08)",
             },
           },
         },
@@ -361,11 +375,18 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
         styleOverrides: {
           root: {
             borderRadius: 16,
-            border: "none",
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(0,0,0,0.06)",
             boxShadow: isDark
-              ? "0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)"
-              : "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)",
-            transition: "box-shadow 0.2s ease, transform 0.2s ease",
+              ? "0 1px 3px rgba(0,0,0,0.2)"
+              : "0 1px 3px rgba(0,0,0,0.04)",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              boxShadow: isDark
+                ? "0 4px 12px rgba(0,0,0,0.3)"
+                : "0 4px 12px rgba(0,0,0,0.08)",
+            },
           },
         },
       },
@@ -379,6 +400,9 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
           filled: {
             border: "none",
           },
+          outlined: {
+            borderWidth: "1.5px",
+          },
         },
       },
       MuiTextField: {
@@ -386,12 +410,17 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
           root: {
             "& .MuiOutlinedInput-root": {
               borderRadius: 10,
-              backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
+              backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFFFF",
+              transition: "all 0.2s ease",
               "& fieldset": {
                 borderWidth: "1.5px",
+                borderColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.12)",
               },
               "&:hover fieldset": {
                 borderWidth: "1.5px",
+                borderColor: paletteConfig.primary.main,
               },
               "&.Mui-focused fieldset": {
                 borderWidth: "2px",
@@ -412,45 +441,60 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
         styleOverrides: {
           root: {
             backgroundImage: "none",
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.06)"
+              : "1px solid rgba(0,0,0,0.04)",
             boxShadow: isDark
-              ? "0 1px 3px rgba(0,0,0,0.3)"
-              : "0 1px 3px rgba(0,0,0,0.04)",
+              ? "0 1px 3px rgba(0,0,0,0.2)"
+              : "0 1px 3px rgba(0,0,0,0.03)",
           },
         },
       },
       MuiAppBar: {
         defaultProps: { elevation: 0 },
+        styleOverrides: {
+          root: {
+            borderBottom: isDark
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(0,0,0,0.06)",
+          },
+        },
       },
       MuiTab: {
         styleOverrides: {
           root: {
             textTransform: "none",
             fontWeight: 500,
-            fontSize: "0.9375rem",
+            fontSize: "0.875rem",
+            minHeight: 48,
+            transition: "all 0.2s ease",
           },
         },
       },
       MuiLinearProgress: {
         styleOverrides: {
           root: {
-            borderRadius: 10,
-            height: 10,
+            borderRadius: 6,
+            height: 8,
             backgroundColor: isDark
-              ? "rgba(255,255,255,0.1)"
+              ? "rgba(255,255,255,0.08)"
               : "rgba(0,0,0,0.06)",
           },
           bar: {
-            borderRadius: 10,
+            borderRadius: 6,
           },
         },
       },
       MuiDialog: {
         styleOverrides: {
           paper: {
-            borderRadius: 16,
+            borderRadius: 20,
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.1)"
+              : "none",
             boxShadow: isDark
-              ? "0 12px 24px rgba(0,0,0,0.5)"
-              : "0 12px 24px rgba(0,0,0,0.12)",
+              ? "0 24px 48px rgba(0,0,0,0.5)"
+              : "0 24px 48px rgba(0,0,0,0.15)",
           },
         },
       },
@@ -458,6 +502,88 @@ export function createAppTheme(color: ThemeColor, mode: ThemeMode): Theme {
         styleOverrides: {
           paper: {
             backgroundImage: "none",
+            borderRight: isDark
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(0,0,0,0.06)",
+          },
+        },
+      },
+      MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 10,
+            margin: "2px 8px",
+            transition: "all 0.2s ease",
+            "&.Mui-selected": {
+              backgroundColor: isDark
+                ? "rgba(129, 140, 248, 0.15)"
+                : "rgba(99, 102, 241, 0.1)",
+              "&:hover": {
+                backgroundColor: isDark
+                  ? "rgba(129, 140, 248, 0.2)"
+                  : "rgba(99, 102, 241, 0.15)",
+              },
+            },
+            "&:hover": {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.04)",
+            },
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            borderRadius: 8,
+            fontSize: "0.75rem",
+            fontWeight: 500,
+            padding: "8px 12px",
+            backgroundColor: isDark
+              ? "rgba(30, 41, 59, 0.95)"
+              : "rgba(15, 23, 42, 0.9)",
+          },
+        },
+      },
+      MuiSwitch: {
+        styleOverrides: {
+          root: {
+            padding: 8,
+          },
+          track: {
+            borderRadius: 12,
+            backgroundColor: isDark
+              ? "rgba(255,255,255,0.2)"
+              : "rgba(0,0,0,0.25)",
+          },
+          thumb: {
+            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: {
+            transition: "all 0.2s ease",
+            "&:hover": {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.04)",
+            },
+          },
+        },
+      },
+      MuiFab: {
+        styleOverrides: {
+          root: {
+            boxShadow: isDark
+              ? "0 4px 12px rgba(0,0,0,0.4)"
+              : "0 4px 12px rgba(99, 102, 241, 0.3)",
+            "&:hover": {
+              boxShadow: isDark
+                ? "0 6px 16px rgba(0,0,0,0.5)"
+                : "0 6px 16px rgba(99, 102, 241, 0.4)",
+            },
           },
         },
       },
