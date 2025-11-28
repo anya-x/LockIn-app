@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useImperativeHandle, forwardRef } from "react";
+import { useBlocker } from "react-router-dom";
 import {
   Box,
   Button,
@@ -13,6 +14,11 @@ import {
   useTheme,
   alpha,
   useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
@@ -41,14 +47,12 @@ interface NotesSectionProps {
 interface NotesSectionHandle {
   getNotes: () => string;
   clearNotes: () => void;
+  hasUnsavedNotes: () => boolean;
 }
 
 const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
   function NotesSection({ onSaveNotes, isRunning, hasSession }, ref) {
-    const [localNotes, setLocalNotes] = useState(() => {
-      // Initialize from localStorage
-      return localStorage.getItem("timer-session-notes") || "";
-    });
+    const [localNotes, setLocalNotes] = useState("");
     const [showNotes, setShowNotes] = useState(() => {
       // Initialize from localStorage
       const stored = localStorage.getItem("timer-notes-expanded");
@@ -56,23 +60,30 @@ const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
     });
     const [saving, setSaving] = useState(false);
 
-    // Persist notes to localStorage
-    useEffect(() => {
-      localStorage.setItem("timer-session-notes", localNotes);
-    }, [localNotes]);
-
     // Persist showNotes to localStorage
     useEffect(() => {
       localStorage.setItem("timer-notes-expanded", String(showNotes));
     }, [showNotes]);
 
+    // Warn before leaving with unsaved notes
+    useEffect(() => {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        if (localNotes.trim()) {
+          e.preventDefault();
+          e.returnValue = "You have unsaved notes. Are you sure you want to leave?";
+          return e.returnValue;
+        }
+      };
+
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [localNotes]);
+
     // Expose methods to parent via ref
     useImperativeHandle(ref, () => ({
       getNotes: () => localNotes,
-      clearNotes: () => {
-        setLocalNotes("");
-        localStorage.removeItem("timer-session-notes");
-      },
+      clearNotes: () => setLocalNotes(""),
+      hasUnsavedNotes: () => !!localNotes.trim(),
     }), [localNotes]);
 
     const handleSave = async () => {
@@ -267,6 +278,13 @@ const PomodoroTimer: React.FC = () => {
 
   const completionTriggeredRef = useRef(false);
   const notesSectionRef = useRef<NotesSectionHandle>(null);
+
+  // Block navigation when there are unsaved notes
+  const blocker = useBlocker(
+    useCallback(() => {
+      return notesSectionRef.current?.hasUnsavedNotes() ?? false;
+    }, [])
+  );
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
   const lastSessionTypeRef = useRef(timer.sessionType);
@@ -726,6 +744,30 @@ const PomodoroTimer: React.FC = () => {
           </Box>
         </Collapse>
       </Box>
+
+      {/* Unsaved Notes Warning Dialog */}
+      <Dialog
+        open={blocker.state === "blocked"}
+        onClose={() => blocker.reset?.()}
+      >
+        <DialogTitle>Unsaved Notes</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You have unsaved session notes. If you leave now, your notes will be lost.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => blocker.reset?.()} color="primary">
+            Stay
+          </Button>
+          <Button
+            onClick={() => blocker.proceed?.()}
+            color="error"
+          >
+            Leave Anyway
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
