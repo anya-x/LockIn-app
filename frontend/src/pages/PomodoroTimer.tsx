@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo, useImperativeHandle, forwardRef } from "react";
 import {
   Box,
   Button,
@@ -31,112 +31,102 @@ import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
 import { useTimer } from "../context/TimerContext";
 
-// Memoized notes section to prevent re-renders from timer updates
+// Memoized notes section - manages its own state to prevent lag
 interface NotesSectionProps {
-  showNotes: boolean;
-  setShowNotes: (show: boolean) => void;
-  onNotesChange: (notes: string) => void;
   onSaveNotes: (notes: string) => Promise<void>;
   isRunning: boolean;
   hasSession: boolean;
-  initialNotes: string;
 }
 
-const NotesSection = memo(function NotesSection({
-  showNotes,
-  setShowNotes,
-  onNotesChange,
-  onSaveNotes,
-  isRunning,
-  hasSession,
-  initialNotes,
-}: NotesSectionProps) {
-  const [localNotes, setLocalNotes] = useState(initialNotes);
-  const [saving, setSaving] = useState(false);
+interface NotesSectionHandle {
+  getNotes: () => string;
+  clearNotes: () => void;
+}
 
-  // Sync with parent when notes are cleared (after stop)
-  useEffect(() => {
-    if (initialNotes === "" && localNotes !== "") {
-      setLocalNotes("");
-    }
-  }, [initialNotes]);
+const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
+  function NotesSection({ onSaveNotes, isRunning, hasSession }, ref) {
+    const [localNotes, setLocalNotes] = useState("");
+    const [showNotes, setShowNotes] = useState(false);
+    const [saving, setSaving] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalNotes(e.target.value);
-    onNotesChange(e.target.value);
-  };
+    // Expose methods to parent via ref
+    useImperativeHandle(ref, () => ({
+      getNotes: () => localNotes,
+      clearNotes: () => setLocalNotes(""),
+    }), [localNotes]);
 
-  const handleSave = async () => {
-    if (!localNotes.trim()) return;
-    setSaving(true);
-    try {
-      await onSaveNotes(localNotes);
-    } finally {
-      setSaving(false);
-    }
-  };
+    const handleSave = async () => {
+      if (!localNotes.trim()) return;
+      setSaving(true);
+      try {
+        await onSaveNotes(localNotes);
+      } finally {
+        setSaving(false);
+      }
+    };
 
-  return (
-    <Box sx={{ mb: 3 }}>
-      <Button
-        fullWidth
-        onClick={() => setShowNotes(!showNotes)}
-        startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
-        endIcon={showNotes ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        sx={{
-          justifyContent: "space-between",
-          color: "text.secondary",
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: "0.875rem",
-          py: 1,
-          px: 1.5,
-          bgcolor: "action.hover",
-          borderRadius: 1,
-          "&:hover": {
-            bgcolor: "action.selected",
-          },
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          Session Notes
-          {localNotes.trim() && !showNotes && (
-            <Chip label="Has notes" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
-          )}
-        </Box>
-      </Button>
-      <Collapse in={showNotes}>
-        <Box sx={{ pt: 1.5 }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            size="small"
-            placeholder="What are you working on?"
-            value={localNotes}
-            onChange={handleChange}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                bgcolor: "background.paper",
-              },
-            }}
-          />
-          {isRunning && hasSession && (
-            <Button
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Button
+          fullWidth
+          onClick={() => setShowNotes(!showNotes)}
+          startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
+          endIcon={showNotes ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          sx={{
+            justifyContent: "space-between",
+            color: "text.secondary",
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            py: 1,
+            px: 1.5,
+            bgcolor: "action.hover",
+            borderRadius: 1,
+            "&:hover": {
+              bgcolor: "action.selected",
+            },
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            Session Notes
+            {localNotes.trim() && !showNotes && (
+              <Chip label="Has notes" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
+            )}
+          </Box>
+        </Button>
+        <Collapse in={showNotes}>
+          <Box sx={{ pt: 1.5 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
               size="small"
-              variant="text"
-              onClick={handleSave}
-              disabled={saving || !localNotes.trim()}
-              sx={{ mt: 1 }}
-            >
-              {saving ? "Saving..." : "Save Notes"}
-            </Button>
-          )}
-        </Box>
-      </Collapse>
-    </Box>
-  );
-});
+              placeholder="What are you working on?"
+              value={localNotes}
+              onChange={(e) => setLocalNotes(e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "background.paper",
+                },
+              }}
+            />
+            {isRunning && hasSession && (
+              <Button
+                size="small"
+                variant="text"
+                onClick={handleSave}
+                disabled={saving || !localNotes.trim()}
+                sx={{ mt: 1 }}
+              >
+                {saving ? "Saving..." : "Save Notes"}
+              </Button>
+            )}
+          </Box>
+        </Collapse>
+      </Box>
+    );
+  }
+));
 
 const PomodoroTimer: React.FC = () => {
   const theme = useTheme();
@@ -247,10 +237,8 @@ const PomodoroTimer: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sessionNotes, setSessionNotes] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
@@ -258,6 +246,7 @@ const PomodoroTimer: React.FC = () => {
   }>({ show: false, message: "", severity: "info" });
 
   const completionTriggeredRef = useRef(false);
+  const notesSectionRef = useRef<NotesSectionHandle>(null);
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
   const lastSessionTypeRef = useRef(timer.sessionType);
@@ -332,7 +321,8 @@ const PomodoroTimer: React.FC = () => {
     setLoading(true);
     try {
       if (!timer.sessionId) {
-        await startTimer(selectedTask?.id || null, sessionNotes);
+        const notes = notesSectionRef.current?.getNotes() || "";
+        await startTimer(selectedTask?.id || null, notes);
         showAlert("Session started!", "success");
       } else {
         pauseTimer();
@@ -347,8 +337,9 @@ const PomodoroTimer: React.FC = () => {
 
   const handleStop = async () => {
     try {
-      await stopTimer(sessionNotes);
-      setSessionNotes("");
+      const notes = notesSectionRef.current?.getNotes() || "";
+      await stopTimer(notes);
+      notesSectionRef.current?.clearNotes();
       showAlert("Session stopped and saved", "info");
       triggerRefresh();
     } catch (error) {
@@ -640,13 +631,10 @@ const PomodoroTimer: React.FC = () => {
 
       {/* Session Notes Section (Collapsible) - Memoized to prevent re-renders */}
       <NotesSection
-        showNotes={showNotes}
-        setShowNotes={setShowNotes}
-        onNotesChange={setSessionNotes}
+        ref={notesSectionRef}
         onSaveNotes={handleSaveNotes}
         isRunning={timer.isRunning}
         hasSession={!!timer.sessionId}
-        initialNotes={sessionNotes}
       />
 
       {/* Focus Profile Section (no header - self explanatory) */}
