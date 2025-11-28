@@ -27,6 +27,7 @@ import {
   Search as SearchIcon,
   AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
+import { useSearchParams } from "react-router-dom";
 import { debounce } from "lodash";
 import { taskService, type TaskStatistics } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
@@ -41,6 +42,7 @@ import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
 
 const Tasks: React.FC = () => {
   const theme = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,9 +71,11 @@ const Tasks: React.FC = () => {
   });
   const [statsLoading, setStatsLoading] = useState(false);
 
+  // Initialize filters from URL params
+  const categoryParam = searchParams.get("category");
   const [filters, setFilters] = useState<FilterState>({
     status: "all",
-    category: "all",
+    category: categoryParam || "all",
     urgent: "all",
     important: "all",
   });
@@ -87,6 +91,14 @@ const Tasks: React.FC = () => {
     );
   };
 
+  // Handle URL param changes
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (categoryFromUrl && categoryFromUrl !== filters.category) {
+      setFilters((prev) => ({ ...prev, category: categoryFromUrl }));
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (hasActiveFilters()) {
       fetchFilteredTasks(currentPage);
@@ -95,7 +107,7 @@ const Tasks: React.FC = () => {
     }
     fetchCategories();
     fetchStatistics();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, filters.category]);
 
   const fetchStatistics = async () => {
     try {
@@ -569,20 +581,6 @@ const Tasks: React.FC = () => {
                   },
                 }}
               />
-
-              {/* Urgent Indicator Dot */}
-              {task.isUrgent && task.isImportant && task.status !== "COMPLETED" && (
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    bgcolor: "#EF4444",
-                    flexShrink: 0,
-                    boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.2)",
-                  }}
-                />
-              )}
 
               {/* Task Content */}
               <Box sx={{ flex: 1, minWidth: 0 }}>

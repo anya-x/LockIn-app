@@ -1,5 +1,5 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Typography,
@@ -27,13 +27,16 @@ import { taskService } from "../services/taskService";
 import { sessionService } from "../services/sessionService";
 import { analyticsService } from "../services/analyticsService";
 import { getStatusColor } from "../utils/colorMaps";
-import type { Task } from "../types/task";
+import type { Task, TaskRequest } from "../types/task";
+import TaskFormModal from "../components/tasks/TaskFormModal";
 
 const Today: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { timer, selectedProfile } = useTimer();
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
 
   // Fetch today's stats
   const { data: todayStats, isLoading: statsLoading } = useQuery({
@@ -93,8 +96,24 @@ const Today: React.FC = () => {
         isImportant: task.isImportant,
         categoryId: task.category?.id,
       });
+      // Refetch priority tasks
+      queryClient.invalidateQueries({ queryKey: ["priority-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-statistics"] });
     } catch (err) {
       console.error("Failed to complete task:", err);
+    }
+  };
+
+  const handleSaveTask = async (taskData: TaskRequest) => {
+    try {
+      await taskService.createTask(taskData);
+      // Refetch data
+      queryClient.invalidateQueries({ queryKey: ["priority-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-statistics"] });
+      setTaskModalOpen(false);
+    } catch (err) {
+      console.error("Failed to create task:", err);
+      throw err;
     }
   };
 
@@ -279,7 +298,7 @@ const Today: React.FC = () => {
           variant="outlined"
           size="large"
           startIcon={<AddIcon />}
-          onClick={() => navigate("/tasks")}
+          onClick={() => setTaskModalOpen(true)}
           sx={{ flex: { xs: 1, sm: "0 0 auto" } }}
         >
           Add Task
@@ -437,6 +456,13 @@ const Today: React.FC = () => {
           />
         </Paper>
       )}
+
+      {/* Task Creation Modal */}
+      <TaskFormModal
+        open={taskModalOpen}
+        onClose={() => setTaskModalOpen(false)}
+        onSave={handleSaveTask}
+      />
     </Box>
   );
 };
