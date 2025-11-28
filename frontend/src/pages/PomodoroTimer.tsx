@@ -42,16 +42,19 @@ interface NotesSectionProps {
   onSaveNotes: (notes: string) => Promise<void>;
   isRunning: boolean;
   hasSession: boolean;
+  hasSavedNotes: boolean;
+  onNotesSaved: () => void;
 }
 
 interface NotesSectionHandle {
   getNotes: () => string;
   clearNotes: () => void;
   hasUnsavedNotes: () => boolean;
+  saveNotes: () => Promise<void>;
 }
 
 const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
-  function NotesSection({ onSaveNotes, isRunning, hasSession }, ref) {
+  function NotesSection({ onSaveNotes, isRunning, hasSession, hasSavedNotes, onNotesSaved }, ref) {
     const [localNotes, setLocalNotes] = useState("");
     const [showNotes, setShowNotes] = useState(() => {
       // Initialize from localStorage
@@ -79,22 +82,24 @@ const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
       return () => window.removeEventListener("beforeunload", handleBeforeUnload);
     }, [localNotes]);
 
-    // Expose methods to parent via ref
-    useImperativeHandle(ref, () => ({
-      getNotes: () => localNotes,
-      clearNotes: () => setLocalNotes(""),
-      hasUnsavedNotes: () => !!localNotes.trim(),
-    }), [localNotes]);
-
     const handleSave = async () => {
       if (!localNotes.trim()) return;
       setSaving(true);
       try {
         await onSaveNotes(localNotes);
+        onNotesSaved();
       } finally {
         setSaving(false);
       }
     };
+
+    // Expose methods to parent via ref
+    useImperativeHandle(ref, () => ({
+      getNotes: () => localNotes,
+      clearNotes: () => setLocalNotes(""),
+      hasUnsavedNotes: () => !!localNotes.trim(),
+      saveNotes: handleSave,
+    }), [localNotes, handleSave]);
 
     return (
       <Box sx={{ mb: 3 }}>
@@ -120,8 +125,16 @@ const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             Session Notes
-            {localNotes.trim() && !showNotes && (
-              <Chip label="Has notes" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
+            {hasSavedNotes && !showNotes && (
+              <Chip
+                label="Saved"
+                size="small"
+                color="success"
+                sx={{ height: 20, fontSize: "0.7rem" }}
+              />
+            )}
+            {localNotes.trim() && !showNotes && !hasSavedNotes && (
+              <Chip label="Draft" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
             )}
           </Box>
         </Button>
@@ -141,16 +154,36 @@ const NotesSection = memo(forwardRef<NotesSectionHandle, NotesSectionProps>(
                 },
               }}
             />
-            {isRunning && hasSession && (
-              <Button
-                size="small"
-                variant="text"
-                onClick={handleSave}
-                disabled={saving || !localNotes.trim()}
-                sx={{ mt: 1 }}
+            {/* Helper text about replace behavior */}
+            {hasSavedNotes && localNotes.trim() && (
+              <Typography
+                variant="caption"
+                color="warning.main"
+                sx={{ display: "block", mt: 0.5 }}
               >
-                {saving ? "Saving..." : "Save Notes"}
-              </Button>
+                Saving will replace your previously saved notes
+              </Typography>
+            )}
+            {isRunning && hasSession && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={handleSave}
+                  disabled={saving || !localNotes.trim()}
+                >
+                  {saving ? "Saving..." : "Save Notes"}
+                </Button>
+                {hasSavedNotes && (
+                  <Chip
+                    label="Notes saved for this session"
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    sx={{ height: 22, fontSize: "0.7rem" }}
+                  />
+                )}
+              </Box>
             )}
           </Box>
         </Collapse>
@@ -279,6 +312,8 @@ const PomodoroTimer: React.FC = () => {
   const completionTriggeredRef = useRef(false);
   const notesSectionRef = useRef<NotesSectionHandle>(null);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [hasSavedNotes, setHasSavedNotes] = useState(false);
+  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -309,6 +344,21 @@ const PomodoroTimer: React.FC = () => {
     if (pendingNavigation) {
       navigate(pendingNavigation);
       setPendingNavigation(null);
+    }
+  };
+
+  const handleSaveAndLeave = async () => {
+    if (pendingNavigation && notesSectionRef.current) {
+      setSavingBeforeLeave(true);
+      try {
+        await notesSectionRef.current.saveNotes();
+        navigate(pendingNavigation);
+        setPendingNavigation(null);
+      } catch (error) {
+        showAlert("Failed to save notes", "error");
+      } finally {
+        setSavingBeforeLeave(false);
+      }
     }
   };
 
@@ -391,6 +441,12 @@ const PomodoroTimer: React.FC = () => {
       if (!timer.sessionId) {
         const notes = notesSectionRef.current?.getNotes() || "";
         await startTimer(selectedTask?.id || null, notes);
+        // If there were notes on start, mark as saved
+        if (notes.trim()) {
+          setHasSavedNotes(true);
+        } else {
+          setHasSavedNotes(false); // Reset for new session
+        }
         showAlert("Session started!", "success");
       } else {
         pauseTimer();
@@ -408,6 +464,7 @@ const PomodoroTimer: React.FC = () => {
       const notes = notesSectionRef.current?.getNotes() || "";
       await stopTimer(notes);
       notesSectionRef.current?.clearNotes();
+      setHasSavedNotes(false); // Reset saved notes indicator
       showAlert("Session stopped and saved", "info");
       triggerRefresh();
     } catch (error) {
@@ -731,6 +788,8 @@ const PomodoroTimer: React.FC = () => {
               onSaveNotes={handleSaveNotes}
               isRunning={timer.isRunning}
               hasSession={!!timer.sessionId}
+              hasSavedNotes={hasSavedNotes}
+              onNotesSaved={() => setHasSavedNotes(true)}
             />
 
             {/* Focus Profile Section (no header - self explanatory) */}
@@ -784,14 +843,28 @@ const PomodoroTimer: React.FC = () => {
         <DialogContent>
           <DialogContentText>
             You have unsaved session notes. If you leave now, your notes will be lost.
+            {hasSavedNotes && (
+              <Box component="span" sx={{ display: "block", mt: 1, fontStyle: "italic" }}>
+                Note: Saving will replace your previously saved notes.
+              </Box>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelLeave} color="primary">
             Stay
           </Button>
+          {timer.sessionId && (
+            <Button
+              onClick={handleSaveAndLeave}
+              color="success"
+              disabled={savingBeforeLeave}
+            >
+              {savingBeforeLeave ? "Saving..." : "Save & Leave"}
+            </Button>
+          )}
           <Button onClick={handleConfirmLeave} color="error">
-            Leave Anyway
+            Leave Without Saving
           </Button>
         </DialogActions>
       </Dialog>
