@@ -1,6 +1,7 @@
 import { Client } from "@stomp/stompjs";
 import type { IMessage, StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { getAuthToken } from "./api";
 
 export type NotificationHandler = (notification: unknown) => void;
 export type ConnectionStatusHandler = (connected: boolean) => void;
@@ -45,8 +46,8 @@ class WebSocketService {
     const wsUrl =
       import.meta.env.VITE_WS_URL || "http://localhost:8080/ws";
 
-    // Get JWT token from localStorage for authentication
-    const token = localStorage.getItem("token");
+    // Get JWT token for authentication
+    const token = getAuthToken();
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
