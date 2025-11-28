@@ -266,14 +266,16 @@ const PomodoroTimer: React.FC = () => {
 
   // Timer Panel Component
   const TimerPanel = () => (
-    <Box
+    <Paper
       sx={{
-        textAlign: "center",
+        p: 3,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        height: "100%",
-        py: { xs: 3, md: 0 },
+        alignItems: "center",
+        textAlign: "center",
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Typography
@@ -310,7 +312,7 @@ const PomodoroTimer: React.FC = () => {
           bgcolor: "action.hover",
           borderRadius: 2,
           overflow: "hidden",
-          mx: "auto",
+          width: "100%",
           maxWidth: 280,
           mb: 3,
         }}
@@ -349,7 +351,7 @@ const PomodoroTimer: React.FC = () => {
       </Box>
 
       {/* Main Action Buttons */}
-      <Box display="flex" gap={2} justifyContent="center">
+      <Box display="flex" gap={2} justifyContent="center" mb={selectedTask ? 2 : 0}>
         {!timer.isRunning ? (
           <Button
             variant="contained"
@@ -405,7 +407,25 @@ const PomodoroTimer: React.FC = () => {
           </>
         )}
       </Box>
-    </Box>
+
+      {/* Linked Task Indicator */}
+      {selectedTask && (
+        <Chip
+          icon={<AssignmentIcon sx={{ fontSize: 16 }} />}
+          label={selectedTask.title}
+          size="small"
+          variant="outlined"
+          sx={{
+            maxWidth: 280,
+            "& .MuiChip-label": {
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            },
+          }}
+        />
+      )}
+    </Paper>
   );
 
   // Controls Panel Component
@@ -414,7 +434,8 @@ const PomodoroTimer: React.FC = () => {
       sx={{
         p: 3,
         height: "100%",
-        bgcolor: alpha(theme.palette.primary.main, 0.02),
+        display: "flex",
+        flexDirection: "column",
         border: `1px solid ${theme.palette.divider}`,
       }}
     >
@@ -514,7 +535,7 @@ const PomodoroTimer: React.FC = () => {
         <TextField
           fullWidth
           multiline
-          rows={3}
+          rows={2}
           size="small"
           placeholder="What are you working on?"
           value={sessionNotes}
@@ -545,7 +566,7 @@ const PomodoroTimer: React.FC = () => {
       </Box>
 
       {/* Focus Profile Section */}
-      <Box>
+      <Box sx={{ flex: 1 }}>
         <Box display="flex" alignItems="center" gap={1} mb={1.5}>
           <CycleIcon sx={{ fontSize: 18, color: "text.secondary" }} />
           <Typography variant="subtitle2" fontWeight={600}>
@@ -576,13 +597,14 @@ const PomodoroTimer: React.FC = () => {
           flexDirection: { xs: "column", md: "row" },
           gap: 3,
           mb: 3,
+          alignItems: "stretch",
         }}
       >
         {/* Left: Timer */}
         <Box
           sx={{
-            flex: { xs: "1 1 auto", md: "1 1 50%" },
-            minHeight: { md: 480 },
+            flex: { xs: "1 1 auto", md: "1 1 55%" },
+            minHeight: { md: 420 },
           }}
         >
           <TimerPanel />
@@ -591,7 +613,8 @@ const PomodoroTimer: React.FC = () => {
         {/* Right: Controls (always visible) */}
         <Box
           sx={{
-            flex: { xs: "1 1 auto", md: "1 1 50%" },
+            flex: { xs: "1 1 auto", md: "1 1 45%" },
+            minHeight: { md: 420 },
           }}
         >
           <ControlsPanel />
