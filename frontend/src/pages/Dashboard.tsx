@@ -36,6 +36,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTimer } from "../context/TimerContext";
+import { NavigationGuardProvider, useNavigationGuard } from "../context/NavigationGuardContext";
 import PomodoroTimer from "./PomodoroTimer";
 import Categories from "./Categories";
 import Matrix from "./Matrix";
@@ -163,13 +164,14 @@ const SidebarTimerIndicator: React.FC<{
 
 SidebarTimerIndicator.displayName = "SidebarTimerIndicator";
 
-const Dashboard: React.FC = () => {
+const DashboardContent: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { logout, user } = useAuth();
+  const { requestNavigation } = useNavigationGuard();
 
   const { timer, selectedProfile } = useTimer();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -241,17 +243,22 @@ const Dashboard: React.FC = () => {
         | "badges"
         | "settings"
     ) => {
-      navigate(view === "today" ? "/" : `/${view}`);
-      if (isMobile) {
-        setMobileOpen(false);
-      }
+      const targetPath = view === "today" ? "/" : `/${view}`;
+      requestNavigation(targetPath, () => {
+        navigate(targetPath);
+        if (isMobile) {
+          setMobileOpen(false);
+        }
+      });
     },
-    [isMobile, navigate]
+    [isMobile, navigate, requestNavigation]
   );
 
   const handleTimerNavigate = useCallback(() => {
-    navigate("/timer");
-  }, [navigate]);
+    requestNavigation("/timer", () => {
+      navigate("/timer");
+    });
+  }, [navigate, requestNavigation]);
 
   const navigationGroups = [
     {
@@ -618,6 +625,15 @@ const Dashboard: React.FC = () => {
         </Alert>
       </Snackbar>
     </Box>
+  );
+};
+
+// Wrap DashboardContent with NavigationGuardProvider
+const Dashboard: React.FC = () => {
+  return (
+    <NavigationGuardProvider>
+      <DashboardContent />
+    </NavigationGuardProvider>
   );
 };
 

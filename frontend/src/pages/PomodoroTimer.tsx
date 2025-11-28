@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useImperativeHandle, forwardRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -14,11 +13,6 @@ import {
   useTheme,
   alpha,
   useMediaQuery,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
 } from "@mui/material";
 import {
   PlayArrow as PlayArrowIcon,
@@ -36,6 +30,7 @@ import SessionHistory from "../components/timer/SessionHistory";
 import type { Task } from "../types/task";
 import { taskService } from "../services/taskService";
 import { useTimer } from "../context/TimerContext";
+import { useNavigationGuard } from "../context/NavigationGuardContext";
 
 // Memoized notes section - manages its own state to prevent lag
 interface NotesSectionProps {
@@ -311,60 +306,37 @@ const PomodoroTimer: React.FC = () => {
 
   const completionTriggeredRef = useRef(false);
   const notesSectionRef = useRef<NotesSectionHandle>(null);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [hasSavedNotes, setHasSavedNotes] = useState(false);
-  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { registerGuard, unregisterGuard, setGuardMessage } = useNavigationGuard();
 
-  // Intercept navigation when there are unsaved notes
+  // Register navigation guard for unsaved notes
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest("a");
+    const checkUnsavedNotes = () => {
+      return notesSectionRef.current?.hasUnsavedNotes() ?? false;
+    };
 
-      if (anchor && anchor.href && !anchor.href.startsWith("javascript:")) {
-        const url = new URL(anchor.href);
-        // Only intercept internal navigation
-        if (url.origin === window.location.origin && url.pathname !== location.pathname) {
-          if (notesSectionRef.current?.hasUnsavedNotes()) {
-            e.preventDefault();
-            e.stopPropagation();
-            setPendingNavigation(url.pathname);
-          }
-        }
+    const saveNotes = async () => {
+      if (notesSectionRef.current) {
+        await notesSectionRef.current.saveNotes();
       }
     };
 
-    document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
-  }, [location.pathname]);
-
-  const handleConfirmLeave = () => {
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-      setPendingNavigation(null);
+    // Only register guard if there's an active session (can save notes)
+    if (timer.sessionId) {
+      registerGuard("timer-notes", checkUnsavedNotes, saveNotes);
     }
-  };
 
-  const handleSaveAndLeave = async () => {
-    if (pendingNavigation && notesSectionRef.current) {
-      setSavingBeforeLeave(true);
-      try {
-        await notesSectionRef.current.saveNotes();
-        navigate(pendingNavigation);
-        setPendingNavigation(null);
-      } catch (error) {
-        showAlert("Failed to save notes", "error");
-      } finally {
-        setSavingBeforeLeave(false);
-      }
-    }
-  };
+    return () => {
+      unregisterGuard("timer-notes");
+    };
+  }, [timer.sessionId, registerGuard, unregisterGuard]);
 
-  const handleCancelLeave = () => {
-    setPendingNavigation(null);
-  };
+  // Update the guard message based on whether there are already saved notes
+  useEffect(() => {
+    const message = "You have unsaved session notes. If you leave now, your notes will be lost.";
+    const replaceWarning = hasSavedNotes ? "Note: Saving will replace your previously saved notes." : undefined;
+    setGuardMessage(message, replaceWarning);
+  }, [hasSavedNotes, setGuardMessage]);
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
   const lastSessionTypeRef = useRef(timer.sessionType);
@@ -833,41 +805,6 @@ const PomodoroTimer: React.FC = () => {
           </Box>
         </Collapse>
       </Box>
-
-      {/* Unsaved Notes Warning Dialog */}
-      <Dialog
-        open={!!pendingNavigation}
-        onClose={handleCancelLeave}
-      >
-        <DialogTitle>Unsaved Notes</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            You have unsaved session notes. If you leave now, your notes will be lost.
-            {hasSavedNotes && (
-              <Box component="span" sx={{ display: "block", mt: 1, fontStyle: "italic" }}>
-                Note: Saving will replace your previously saved notes.
-              </Box>
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelLeave} color="primary">
-            Stay
-          </Button>
-          {timer.sessionId && (
-            <Button
-              onClick={handleSaveAndLeave}
-              color="success"
-              disabled={savingBeforeLeave}
-            >
-              {savingBeforeLeave ? "Saving..." : "Save & Leave"}
-            </Button>
-          )}
-          <Button onClick={handleConfirmLeave} color="error">
-            Leave Without Saving
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
