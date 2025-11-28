@@ -23,7 +23,6 @@ import {
   ExpandLess as ExpandLessIcon,
   Assignment as AssignmentIcon,
   Notes as NotesIcon,
-  Loop as CycleIcon,
 } from "@mui/icons-material";
 
 import { CompactProfileSelector } from "../components/timer/CompactProfileSelector";
@@ -144,6 +143,7 @@ const PomodoroTimer: React.FC = () => {
   const [sessionNotes, setSessionNotes] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [alert, setAlert] = useState<{
     show: boolean;
     message: string;
@@ -275,7 +275,8 @@ const PomodoroTimer: React.FC = () => {
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-        border: `1px solid ${theme.palette.divider}`,
+        bgcolor: alpha(theme.palette.primary.main, 0.08),
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
       }}
     >
       <Typography
@@ -524,55 +525,74 @@ const PomodoroTimer: React.FC = () => {
         )}
       </Box>
 
-      {/* Session Notes Section */}
+      {/* Session Notes Section (Collapsible) */}
       <Box sx={{ mb: 3 }}>
-        <Box display="flex" alignItems="center" gap={1} mb={1.5}>
-          <NotesIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-          <Typography variant="subtitle2" fontWeight={600}>
-            Session Notes
-          </Typography>
-        </Box>
-        <TextField
+        <Button
           fullWidth
-          multiline
-          rows={2}
-          size="small"
-          placeholder="What are you working on?"
-          value={sessionNotes}
-          onChange={(e) => setSessionNotes(e.target.value)}
+          onClick={() => setShowNotes(!showNotes)}
+          startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
+          endIcon={showNotes ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           sx={{
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "background.paper",
+            justifyContent: "space-between",
+            color: "text.secondary",
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            py: 1,
+            px: 1.5,
+            bgcolor: "action.hover",
+            borderRadius: 1,
+            "&:hover": {
+              bgcolor: "action.selected",
             },
           }}
-        />
-        {timer.isRunning && timer.sessionId && sessionNotes.trim() && (
-          <Button
-            size="small"
-            variant="text"
-            onClick={async () => {
-              try {
-                await saveSessionNotes(sessionNotes);
-                showAlert("Notes saved!", "success");
-              } catch {
-                showAlert("Failed to save notes", "error");
-              }
-            }}
-            sx={{ mt: 1 }}
-          >
-            Save Notes
-          </Button>
-        )}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            Session Notes
+            {sessionNotes.trim() && !showNotes && (
+              <Chip label="Has notes" size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
+            )}
+          </Box>
+        </Button>
+        <Collapse in={showNotes}>
+          <Box sx={{ pt: 1.5 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              size="small"
+              placeholder="What are you working on?"
+              value={sessionNotes}
+              onChange={(e) => setSessionNotes(e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "background.paper",
+                },
+              }}
+            />
+            {timer.isRunning && timer.sessionId && sessionNotes.trim() && (
+              <Button
+                size="small"
+                variant="text"
+                onClick={async () => {
+                  try {
+                    await saveSessionNotes(sessionNotes);
+                    showAlert("Notes saved!", "success");
+                  } catch {
+                    showAlert("Failed to save notes", "error");
+                  }
+                }}
+                sx={{ mt: 1 }}
+              >
+                Save Notes
+              </Button>
+            )}
+          </Box>
+        </Collapse>
       </Box>
 
-      {/* Focus Profile Section */}
+      {/* Focus Profile Section (no header - self explanatory) */}
       <Box sx={{ flex: 1 }}>
-        <Box display="flex" alignItems="center" gap={1} mb={1.5}>
-          <CycleIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-          <Typography variant="subtitle2" fontWeight={600}>
-            Focus Profile
-          </Typography>
-        </Box>
         <CompactProfileSelector
           selectedProfile={selectedProfile}
           onProfileChange={setProfile}
