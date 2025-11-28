@@ -151,6 +151,7 @@ const PomodoroTimer: React.FC = () => {
   }>({ show: false, message: "", severity: "info" });
 
   const completionTriggeredRef = useRef(false);
+  const notesInputRef = useRef<HTMLInputElement>(null);
 
   const lastPlannedMinutesRef = useRef(timer.plannedMinutes);
   const lastSessionTypeRef = useRef(timer.sessionType);
@@ -225,7 +226,8 @@ const PomodoroTimer: React.FC = () => {
     setLoading(true);
     try {
       if (!timer.sessionId) {
-        await startTimer(selectedTask?.id || null, sessionNotes);
+        const notes = notesInputRef.current?.value || sessionNotes;
+        await startTimer(selectedTask?.id || null, notes);
         showAlert("Session started!", "success");
       } else {
         pauseTimer();
@@ -240,8 +242,12 @@ const PomodoroTimer: React.FC = () => {
 
   const handleStop = async () => {
     try {
-      await stopTimer(sessionNotes);
+      const notes = notesInputRef.current?.value || sessionNotes;
+      await stopTimer(notes);
       setSessionNotes("");
+      if (notesInputRef.current) {
+        notesInputRef.current.value = "";
+      }
       showAlert("Session stopped and saved", "info");
       triggerRefresh();
     } catch (error) {
@@ -275,8 +281,9 @@ const PomodoroTimer: React.FC = () => {
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-        bgcolor: alpha(theme.palette.primary.main, 0.08),
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        bgcolor: alpha(selectedProfile.color, 0.1),
+        border: `1px solid ${alpha(selectedProfile.color, 0.25)}`,
+        transition: "background-color 0.3s ease, border-color 0.3s ease",
       }}
     >
       <Typography
@@ -562,21 +569,24 @@ const PomodoroTimer: React.FC = () => {
               rows={2}
               size="small"
               placeholder="What are you working on?"
-              value={sessionNotes}
-              onChange={(e) => setSessionNotes(e.target.value)}
+              defaultValue={sessionNotes}
+              inputRef={notesInputRef}
+              onBlur={(e) => setSessionNotes(e.target.value)}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   bgcolor: "background.paper",
                 },
               }}
             />
-            {timer.isRunning && timer.sessionId && sessionNotes.trim() && (
+            {timer.isRunning && timer.sessionId && (
               <Button
                 size="small"
                 variant="text"
                 onClick={async () => {
+                  const notes = notesInputRef.current?.value || "";
+                  if (!notes.trim()) return;
                   try {
-                    await saveSessionNotes(sessionNotes);
+                    await saveSessionNotes(notes);
                     showAlert("Notes saved!", "success");
                   } catch {
                     showAlert("Failed to save notes", "error");
