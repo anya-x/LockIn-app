@@ -24,6 +24,7 @@ import {
   ListItemIcon,
   ListItemText,
   FormControl,
+  FormControlLabel,
   Select,
   Divider,
 } from "@mui/material";
@@ -119,7 +120,7 @@ const Tasks: React.FC = () => {
     urgent: "all",
     important: "all",
     priority: "all",
-    hideCompleted: false,
+    hideCompleted: true,
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -875,6 +876,25 @@ const Tasks: React.FC = () => {
             ))}
           </Select>
         </FormControl>
+
+        <Divider orientation="vertical" flexItem />
+
+        {/* Hide Completed Toggle */}
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={filters.hideCompleted}
+              onChange={(e) => handleFilterChange("hideCompleted", e.target.checked)}
+            />
+          }
+          label={
+            <Typography variant="body2" color="text.secondary">
+              Hide completed
+            </Typography>
+          }
+          sx={{ mr: 0, ml: 0 }}
+        />
 
         <Box sx={{ flex: 1 }} />
 
