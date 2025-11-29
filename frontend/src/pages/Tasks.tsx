@@ -53,7 +53,7 @@ import type { FilterState, Task, TaskRequest, SortField, SortDirection } from ".
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/ai/AITaskBreakdown";
 import EmptyState from "../components/shared/EmptyState";
-import { getStatusColor, getPriorityColor, getPriorityLevel, STATUS_COLORS, PRIORITY_COLORS } from "../utils/colorMaps";
+import { getStatusColor, getStatusChipColor, getPriorityColor, getPriorityLevel, STATUS_COLORS, PRIORITY_COLORS } from "../utils/colorMaps";
 
 // Status options for filter dropdown - colors are applied dynamically based on theme
 const STATUS_OPTIONS = [
@@ -1153,7 +1153,7 @@ const Tasks: React.FC = () => {
                   <Box display="flex" gap={0.75} flexWrap="wrap" alignItems="center">
                     <Chip
                       label={task.status.replace("_", " ")}
-                      color={getStatusColor(task.status)}
+                      color={getStatusChipColor(task.status)}
                       size="small"
                       sx={{ fontSize: "0.7rem", height: 22 }}
                     />
