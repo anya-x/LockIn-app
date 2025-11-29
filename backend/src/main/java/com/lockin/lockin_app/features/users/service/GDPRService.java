@@ -133,7 +133,7 @@ public class GDPRService {
                         .map(badge -> BadgeData.builder()
                                 .id(badge.getId())
                                 .badgeType(badge.getBadgeType().name())
-                                .name(badge.getBadgeType().getDisplayName())
+                                .name(badge.getBadgeType().getName())
                                 .description(badge.getBadgeType().getDescription())
                                 .earnedAt(formatDateTime(badge.getEarnedAt()))
                                 .build())
