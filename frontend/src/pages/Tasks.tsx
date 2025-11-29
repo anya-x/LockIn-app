@@ -45,8 +45,10 @@ import {
   MoreVert as MoreVertIcon,
   FilterList as FilterIcon,
 } from "@mui/icons-material";
+import { useSearchParams } from "react-router-dom";
 import { debounce } from "lodash";
 import { taskService, type TaskStatistics } from "../services/taskService";
+import { categoryService, type Category } from "../services/categoryService";
 import type { FilterState, Task, TaskRequest, SortField, SortDirection } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/ai/AITaskBreakdown";
@@ -73,6 +75,7 @@ const PRIORITY_OPTIONS = [
 
 const Tasks: React.FC = () => {
   const theme = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -109,14 +112,18 @@ const Tasks: React.FC = () => {
   });
   const [statsLoading, setStatsLoading] = useState(false);
 
+  // Initialize filters from URL params
+  const categoryParam = searchParams.get("category");
   const [filters, setFilters] = useState<FilterState>({
     status: "all",
-    category: "all",
+    category: categoryParam || "all",
     urgent: "all",
     important: "all",
     priority: "all",
     hideCompleted: true,
   });
+
+  const [categories, setCategories] = useState<Category[]>([]);
 
   /**
    * Check if any filters are active (excluding hideCompleted which is applied client-side)
@@ -131,14 +138,23 @@ const Tasks: React.FC = () => {
     );
   };
 
+  // Handle URL param changes
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (categoryFromUrl && categoryFromUrl !== filters.category) {
+      setFilters((prev) => ({ ...prev, category: categoryFromUrl }));
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (hasActiveFilters()) {
       fetchFilteredTasks(currentPage);
     } else {
       fetchTasks();
     }
+    fetchCategories();
     fetchStatistics();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, filters.category]);
 
   const fetchStatistics = async () => {
     try {
@@ -183,6 +199,15 @@ const Tasks: React.FC = () => {
       console.error("Error filtering tasks:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (err: any) {
+      console.error("Failed to load categories:", err);
     }
   };
 
@@ -762,6 +787,38 @@ const Tasks: React.FC = () => {
                     }}
                   />
                   {opt.label}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Category Filter */}
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <Select
+            value={filters.category}
+            onChange={(e: SelectChangeEvent) => handleFilterChange("category", e.target.value)}
+            displayEmpty
+            renderValue={(value) => {
+              if (value === "all") return "All Categories";
+              const cat = categories.find((c) => c.id?.toString() === value);
+              return cat ? `${cat.icon} ${cat.name}` : "All Categories";
+            }}
+          >
+            <MenuItem value="all">All Categories</MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id!.toString()}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: cat.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  {cat.icon} {cat.name}
                 </Box>
               </MenuItem>
             ))}
