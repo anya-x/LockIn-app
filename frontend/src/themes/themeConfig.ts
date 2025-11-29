@@ -129,15 +129,15 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
     palette: {
       light: {
         primary: {
-          main: "#EC4899",
-          light: "#F472B6",
-          dark: "#DB2777",
+          main: "#B8838F",       // Dusty rose - warm, muted, professional
+          light: "#D4A5A4",      // Lighter dusty rose
+          dark: "#9E6B77",       // Deeper dusty rose
           contrastText: "#FFFFFF",
         },
         secondary: {
-          main: "#A855F7",
-          light: "#C084FC",
-          dark: "#9333EA",
+          main: "#9B7BA8",       // Muted lavender to complement
+          light: "#B9A3C4",
+          dark: "#7D5F8A",
           contrastText: "#FFFFFF",
         },
         success: {
@@ -164,50 +164,50 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
           dark: "#2563EB",
           contrastText: "#FFFFFF",
         },
-        background: { default: "#FDF2F8", paper: "#FFFFFF" },
-        text: { primary: "#1E1B1E", secondary: "#6B7280" },
-        divider: "rgba(30, 27, 30, 0.08)",
+        background: { default: "#F8FAFC", paper: "#FFFFFF" },  // Neutral slate, not pink-tinted
+        text: { primary: "#0F172A", secondary: "#64748B" },
+        divider: "rgba(15, 23, 42, 0.08)",
       },
       dark: {
         primary: {
-          main: "#F472B6",
-          light: "#F9A8D4",
-          dark: "#EC4899",
-          contrastText: "#1E1B1E",
+          main: "#D4A5A4",       // Softer dusty rose for dark mode
+          light: "#E5C4C3",
+          dark: "#B8838F",
+          contrastText: "#0F172A",
         },
         secondary: {
-          main: "#C084FC",
-          light: "#D8B4FE",
-          dark: "#A855F7",
-          contrastText: "#1E1B1E",
+          main: "#B9A3C4",       // Soft lavender for dark mode
+          light: "#D1C4DA",
+          dark: "#9B7BA8",
+          contrastText: "#0F172A",
         },
         success: {
           main: "#34D399",
           light: "#6EE7B7",
           dark: "#10B981",
-          contrastText: "#1E1B1E",
+          contrastText: "#0F172A",
         },
         warning: {
           main: "#FBBF24",
           light: "#FCD34D",
           dark: "#F59E0B",
-          contrastText: "#1E1B1E",
+          contrastText: "#0F172A",
         },
         error: {
           main: "#F87171",
           light: "#FCA5A5",
           dark: "#EF4444",
-          contrastText: "#1E1B1E",
+          contrastText: "#0F172A",
         },
         info: {
           main: "#60A5FA",
           light: "#93C5FD",
           dark: "#3B82F6",
-          contrastText: "#1E1B1E",
+          contrastText: "#0F172A",
         },
-        background: { default: "#1C1618", paper: "#2D2426" },
-        text: { primary: "#FAF5F7", secondary: "#A8A0A4" },
-        divider: "rgba(250, 245, 247, 0.08)",
+        background: { default: "#0F172A", paper: "#1E293B" },  // Neutral slate, not brown-tinted
+        text: { primary: "#F1F5F9", secondary: "#94A3B8" },
+        divider: "rgba(241, 245, 249, 0.08)",
       },
     },
   },
@@ -216,15 +216,15 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
     palette: {
       light: {
         primary: {
-          main: "#22C55E",
-          light: "#4ADE80",
-          dark: "#16A34A",
+          main: "#5F8575",       // True sage - gray-green, calm, natural
+          light: "#8BAB8B",      // Lighter sage
+          dark: "#4A6B5C",       // Deeper sage
           contrastText: "#FFFFFF",
         },
         secondary: {
-          main: "#14B8A6",
-          light: "#2DD4BF",
-          dark: "#0D9488",
+          main: "#6B8A8A",       // Muted teal to complement sage
+          light: "#8FAAAA",
+          dark: "#526E6E",
           contrastText: "#FFFFFF",
         },
         success: {
@@ -251,50 +251,50 @@ const themeConfigs: Record<ThemeColor, ThemeConfig> = {
           dark: "#2563EB",
           contrastText: "#FFFFFF",
         },
-        background: { default: "#F0FDF4", paper: "#FFFFFF" },
-        text: { primary: "#14532D", secondary: "#6B7280" },
-        divider: "rgba(20, 83, 45, 0.08)",
+        background: { default: "#F8FAFC", paper: "#FFFFFF" },  // Neutral slate, not green-tinted
+        text: { primary: "#0F172A", secondary: "#64748B" },
+        divider: "rgba(15, 23, 42, 0.08)",
       },
       dark: {
         primary: {
-          main: "#4ADE80",
-          light: "#86EFAC",
-          dark: "#22C55E",
-          contrastText: "#14532D",
+          main: "#8BAB8B",       // Lighter sage for dark mode visibility
+          light: "#A8C4A8",
+          dark: "#5F8575",
+          contrastText: "#0F172A",
         },
         secondary: {
-          main: "#2DD4BF",
-          light: "#5EEAD4",
-          dark: "#14B8A6",
-          contrastText: "#14532D",
+          main: "#8FAAAA",       // Soft teal for dark mode
+          light: "#ABC4C4",
+          dark: "#6B8A8A",
+          contrastText: "#0F172A",
         },
         success: {
           main: "#34D399",
           light: "#6EE7B7",
           dark: "#10B981",
-          contrastText: "#14532D",
+          contrastText: "#0F172A",
         },
         warning: {
           main: "#FBBF24",
           light: "#FCD34D",
           dark: "#F59E0B",
-          contrastText: "#14532D",
+          contrastText: "#0F172A",
         },
         error: {
           main: "#F87171",
           light: "#FCA5A5",
           dark: "#EF4444",
-          contrastText: "#14532D",
+          contrastText: "#0F172A",
         },
         info: {
           main: "#60A5FA",
           light: "#93C5FD",
           dark: "#3B82F6",
-          contrastText: "#14532D",
+          contrastText: "#0F172A",
         },
-        background: { default: "#0C1A0F", paper: "#14261A" },
-        text: { primary: "#ECFDF5", secondary: "#A7F3D0" },
-        divider: "rgba(236, 253, 245, 0.08)",
+        background: { default: "#0F172A", paper: "#1E293B" },  // Neutral slate, not green-tinted
+        text: { primary: "#F1F5F9", secondary: "#94A3B8" },
+        divider: "rgba(241, 245, 249, 0.08)",
       },
     },
   },
