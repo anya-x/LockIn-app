@@ -6,6 +6,7 @@ import {
   Chip,
   IconButton,
   CircularProgress,
+  Checkbox,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -54,6 +55,8 @@ const Tasks: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [aiBreakdownOpen, setAiBreakdownOpen] = useState(false);
   const [taskForBreakdown, setTaskForBreakdown] = useState<Task | undefined>(
     undefined
@@ -388,6 +391,86 @@ const Tasks: React.FC = () => {
     setTaskToDelete(null);
   };
 
+  // Bulk selection handlers
+  const handleToggleTaskSelection = (taskId: number) => {
+    setSelectedTaskIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const visibleTaskIds = processedTasks.map((t) => t.id);
+    setSelectedTaskIds(new Set(visibleTaskIds));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedTaskIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      // Delete all selected tasks
+      const deletePromises = Array.from(selectedTaskIds).map((id) =>
+        taskService.deleteTask(id)
+      );
+      await Promise.all(deletePromises);
+
+      // Clear selection and refresh
+      setSelectedTaskIds(new Set());
+      setBulkDeleteDialogOpen(false);
+
+      if (hasActiveFilters()) {
+        fetchFilteredTasks(currentPage);
+      } else {
+        fetchTasks();
+      }
+      fetchStatistics();
+    } catch (err) {
+      console.error("Failed to delete tasks:", err);
+      alert("Failed to delete some tasks. Please try again.");
+    }
+  };
+
+  const handleBulkMarkComplete = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      const updatePromises = Array.from(selectedTaskIds).map((id) => {
+        const task = tasks.find((t) => t.id === id);
+        if (!task) return Promise.resolve();
+        return taskService.updateTask(id, {
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate,
+          status: "COMPLETED",
+          isUrgent: task.isUrgent,
+          isImportant: task.isImportant,
+          categoryId: task.category?.id,
+        });
+      });
+      await Promise.all(updatePromises);
+
+      setSelectedTaskIds(new Set());
+      if (hasActiveFilters()) {
+        fetchFilteredTasks(currentPage);
+      } else {
+        fetchTasks();
+      }
+      fetchStatistics();
+    } catch (err) {
+      console.error("Failed to update tasks:", err);
+      alert("Failed to update some tasks. Please try again.");
+    }
+  };
+
   const handleAIBreakdownClick = (task: Task) => {
     setTaskForBreakdown(task);
     setAiBreakdownOpen(true);
@@ -614,6 +697,59 @@ const Tasks: React.FC = () => {
         onFilterChange={handleFilterChange}
       />
 
+      {/* Bulk Action Bar */}
+      {selectedTaskIds.size > 0 && (
+        <Paper
+          sx={{
+            p: 1.5,
+            mb: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            bgcolor: alpha(theme.palette.primary.main, 0.08),
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          }}
+        >
+          <Checkbox
+            checked={selectedTaskIds.size === processedTasks.length && processedTasks.length > 0}
+            indeterminate={selectedTaskIds.size > 0 && selectedTaskIds.size < processedTasks.length}
+            onChange={(e) => (e.target.checked ? handleSelectAll() : handleDeselectAll())}
+            size="small"
+          />
+          <Typography variant="body2" fontWeight={500}>
+            {selectedTaskIds.size} selected
+          </Typography>
+
+          <Box sx={{ flex: 1 }} />
+
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleBulkMarkComplete}
+            sx={{ textTransform: "none" }}
+          >
+            Mark Complete
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            onClick={() => setBulkDeleteDialogOpen(true)}
+            sx={{ textTransform: "none" }}
+          >
+            Delete
+          </Button>
+          <Button
+            size="small"
+            variant="text"
+            onClick={handleDeselectAll}
+            sx={{ textTransform: "none", color: "text.secondary" }}
+          >
+            Clear
+          </Button>
+        </Paper>
+      )}
+
       {/* Pagination Info */}
       {!searchTerm && (
         <Box
@@ -669,6 +805,12 @@ const Tasks: React.FC = () => {
                 gap: 2,
                 transition: "all 0.2s ease",
                 opacity: task.status === "COMPLETED" ? 0.7 : 1,
+                bgcolor: selectedTaskIds.has(task.id)
+                  ? alpha(theme.palette.primary.main, 0.04)
+                  : undefined,
+                border: selectedTaskIds.has(task.id)
+                  ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                  : `1px solid transparent`,
                 "&:hover": {
                   boxShadow: `0 4px 12px ${alpha(
                     theme.palette.primary.main,
@@ -677,6 +819,14 @@ const Tasks: React.FC = () => {
                 },
               }}
             >
+              {/* Selection Checkbox */}
+              <Checkbox
+                checked={selectedTaskIds.has(task.id)}
+                onChange={() => handleToggleTaskSelection(task.id)}
+                size="small"
+                sx={{ p: 0.5, mt: -0.25 }}
+              />
+
               {/* Status Toggle - cycles through TODO → IN_PROGRESS → COMPLETED */}
               <Tooltip
                 title={
@@ -866,6 +1016,27 @@ const Tasks: React.FC = () => {
             variant="contained"
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Delete Dialog */}
+      <Dialog
+        open={bulkDeleteDialogOpen}
+        onClose={() => setBulkDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete {selectedTaskIds.size} Tasks?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete {selectedTaskIds.size} selected task
+            {selectedTaskIds.size === 1 ? "" : "s"}? This action cannot be
+            undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleBulkDelete} color="error" variant="contained">
+            Delete {selectedTaskIds.size} Task{selectedTaskIds.size === 1 ? "" : "s"}
           </Button>
         </DialogActions>
       </Dialog>
