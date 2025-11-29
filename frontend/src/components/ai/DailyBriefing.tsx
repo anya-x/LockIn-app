@@ -43,6 +43,8 @@ export const DailyBriefing: React.FC = () => {
     },
     staleTime: 24 * 60 * 60 * 1000,
     retry: false,
+    // Only run query when AI features are enabled to prevent unnecessary API calls
+    enabled: aiEnabled,
   });
 
   const handleRefresh = () => {
