@@ -1,0 +1,2 @@
+-- Baseline migration - schema managed by JPA/Hibernate
+-- This file intentionally empty as initial schema is created by spring.jpa.hibernate.ddl-auto=update
