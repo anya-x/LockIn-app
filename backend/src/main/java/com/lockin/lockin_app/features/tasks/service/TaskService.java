@@ -226,23 +226,28 @@ public class TaskService {
 
         EisenhowerMatrixDTO matrix = new EisenhowerMatrixDTO();
 
+        // Exclude completed tasks from matrix - they shouldn't appear in planning view
         matrix.setDoFirst(
-                taskRepository.findByQuadrant(userId, true, true).stream()
+                taskRepository.findByQuadrantExcludingStatus(userId, true, true, TaskStatus.COMPLETED)
+                              .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
 
         matrix.setSchedule(
-                taskRepository.findByQuadrant(userId, false, true).stream()
+                taskRepository.findByQuadrantExcludingStatus(userId, false, true, TaskStatus.COMPLETED)
+                              .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
 
         matrix.setDelegate(
-                taskRepository.findByQuadrant(userId, true, false).stream()
+                taskRepository.findByQuadrantExcludingStatus(userId, true, false, TaskStatus.COMPLETED)
+                              .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
 
         matrix.setEliminate(
-                taskRepository.findByQuadrant(userId, false, false).stream()
+                taskRepository.findByQuadrantExcludingStatus(userId, false, false, TaskStatus.COMPLETED)
+                              .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
         return matrix;

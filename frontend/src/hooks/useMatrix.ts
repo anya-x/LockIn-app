@@ -9,32 +9,18 @@ interface MatrixData {
   eliminate: Task[];
 }
 
+// 2 minutes stale time - matrix should refresh when revisiting after task changes
+const MATRIX_STALE_TIME = 2 * 60 * 1000;
 
 export function useMatrix() {
   return useQuery({
     queryKey: ["matrix"],
     queryFn: async () => {
+      // Backend now excludes completed tasks server-side
       const response = await api.get<MatrixData>("/tasks/matrix");
-      const data = response.data;
-      const filteredMatrix: MatrixData = {
-        doFirst: data.doFirst.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-        schedule: data.schedule.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-        delegate: data.delegate.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-        eliminate: data.eliminate.filter(
-          (task: Task) => task.status !== "COMPLETED"
-        ),
-      };
-
-      return filteredMatrix;
+      return response.data;
     },
-    staleTime: Infinity,
-    refetchOnMount: false,
+    staleTime: MATRIX_STALE_TIME,
   });
 }
 
