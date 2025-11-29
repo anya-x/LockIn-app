@@ -116,6 +116,22 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("isImportant") Boolean isImportant,
             Pageable pageable);
 
+    @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND t.status NOT IN :excludedStatuses "
+                    + "AND (:status IS NULL OR t.status = :status) "
+                    + "AND (:categoryId IS NULL OR t.category.id = :categoryId) "
+                    + "AND (:isUrgent IS NULL OR t.isUrgent = :isUrgent) "
+                    + "AND (:isImportant IS NULL OR t.isImportant = :isImportant)")
+    Page<Task> findByFiltersPaginatedExcludingStatuses(
+            @Param("userId") Long userId,
+            @Param("status") TaskStatus status,
+            @Param("categoryId") Long categoryId,
+            @Param("isUrgent") Boolean isUrgent,
+            @Param("isImportant") Boolean isImportant,
+            @Param("excludedStatuses") List<TaskStatus> excludedStatuses,
+            Pageable pageable);
+
     List<Task> findByUserIdAndStatusNotOrderByCreatedAtDesc(Long userId, TaskStatus taskStatus);
 
     @Modifying

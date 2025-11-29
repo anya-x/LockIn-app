@@ -363,11 +363,20 @@ public class TaskService {
             Long categoryId,
             Boolean isUrgent,
             Boolean isImportant,
+            Boolean excludeCompleted,
             Pageable pageable) {
 
-        Page<Task> taskPage =
-                taskRepository.findByFiltersPaginated(
-                        userId, status, categoryId, isUrgent, isImportant, pageable);
+        Page<Task> taskPage;
+
+        // When excludeCompleted is true, exclude both COMPLETED and ARCHIVED statuses
+        if (Boolean.TRUE.equals(excludeCompleted)) {
+            List<TaskStatus> excludedStatuses = List.of(TaskStatus.COMPLETED, TaskStatus.ARCHIVED);
+            taskPage = taskRepository.findByFiltersPaginatedExcludingStatuses(
+                    userId, status, categoryId, isUrgent, isImportant, excludedStatuses, pageable);
+        } else {
+            taskPage = taskRepository.findByFiltersPaginated(
+                    userId, status, categoryId, isUrgent, isImportant, pageable);
+        }
 
         return taskPage.map(TaskResponseDTO::fromEntity);
     }

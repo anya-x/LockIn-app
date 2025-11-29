@@ -124,6 +124,11 @@ export const taskService = {
       params.isImportant = filters.important === "true";
     }
 
+    // Pass hideCompleted to backend for accurate pagination counts
+    if (filters.hideCompleted) {
+      params.excludeCompleted = true;
+    }
+
     const response = await api.get<PaginatedResponse<Task>>("/tasks/filter", {
       params,
     });

@@ -208,6 +208,7 @@ public class TaskController extends BaseController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Boolean isUrgent,
             @RequestParam(required = false) Boolean isImportant,
+            @RequestParam(required = false) Boolean excludeCompleted,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -225,7 +226,7 @@ public class TaskController extends BaseController {
 
         Page<TaskResponseDTO> tasks =
                 taskService.getTasksWithFiltersPaginated(
-                        userId, taskStatus, categoryId, isUrgent, isImportant, pageable);
+                        userId, taskStatus, categoryId, isUrgent, isImportant, excludeCompleted, pageable);
 
         return ResponseEntity.ok(tasks);
     }

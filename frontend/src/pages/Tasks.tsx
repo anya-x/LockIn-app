@@ -623,12 +623,10 @@ const Tasks: React.FC = () => {
   };
 
   /**
-   * Apply client-side sorting and filtering
+   * Apply client-side sorting (filtering now handled by backend)
    */
   const processedTasks = React.useMemo(() => {
-    let result = filters.hideCompleted
-      ? tasks.filter((task) => task.status !== "COMPLETED")
-      : [...tasks];
+    const result = [...tasks];
 
     result.sort((a, b) => {
       let comparison = 0;
@@ -662,7 +660,7 @@ const Tasks: React.FC = () => {
     });
 
     return result;
-  }, [tasks, sortField, sortDirection, filters.hideCompleted]);
+  }, [tasks, sortField, sortDirection]);
 
   const getPageRange = () => {
     const start = currentPage * pageSize + 1;
