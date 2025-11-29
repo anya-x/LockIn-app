@@ -53,14 +53,14 @@ public class User {
     @Column(name = "last_activity_date")
     private LocalDate lastActivityDate;
 
-    // Notification preferences
-    @Column(name = "notify_ai_features", nullable = false)
+    // Notification preferences (nullable to allow Hibernate auto-update for existing rows)
+    @Column(name = "notify_ai_features")
     private Boolean notifyAiFeatures = true;
 
-    @Column(name = "notify_calendar_sync", nullable = false)
+    @Column(name = "notify_calendar_sync")
     private Boolean notifyCalendarSync = true;
 
-    @Column(name = "notify_task_reminders", nullable = false)
+    @Column(name = "notify_task_reminders")
     private Boolean notifyTaskReminders = true;
 
     private LocalDateTime createdAt;
