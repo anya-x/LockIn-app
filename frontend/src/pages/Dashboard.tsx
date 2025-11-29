@@ -301,9 +301,9 @@ const DashboardContent: React.FC = () => {
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      <Box sx={{ p: 3, pb: 2 }}>
+      <Box sx={{ p: 2, pb: 1 }}>
         <Typography
-          variant="h5"
+          variant="h6"
           sx={{
             fontWeight: 700,
             background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
@@ -316,18 +316,19 @@ const DashboardContent: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, overflow: "auto", px: 2 }}>
+      <Box sx={{ flex: 1, overflow: "auto", px: 1.5 }}>
         {navigationGroups.map((group) => (
-          <Box key={group.section} sx={{ mb: 3 }}>
+          <Box key={group.section} sx={{ mb: 1.5 }}>
             <Typography
               variant="caption"
               sx={{
-                px: 1.5,
-                py: 1,
+                px: 1,
+                py: 0.5,
                 display: "block",
                 color: alpha(theme.palette.text.secondary, 0.6),
                 fontWeight: 600,
                 letterSpacing: "0.05em",
+                fontSize: "0.65rem",
               }}
             >
               {group.section}
@@ -336,13 +337,13 @@ const DashboardContent: React.FC = () => {
               {group.items.map((item) => {
                 const isActive = currentView === item.view;
                 return (
-                  <ListItem key={item.view} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItem key={item.view} disablePadding sx={{ mb: 0.25 }}>
                     <ListItemButton
                       onClick={() => handleMenuItemClick(item.view as any)}
                       sx={{
-                        borderRadius: 2,
-                        py: 1.25,
-                        px: 1.5,
+                        borderRadius: 1.5,
+                        py: 0.75,
+                        px: 1.25,
                         backgroundColor: isActive
                           ? alpha(theme.palette.primary.main, 0.08)
                           : "transparent",
@@ -358,18 +359,18 @@ const DashboardContent: React.FC = () => {
                     >
                       <ListItemIcon
                         sx={{
-                          minWidth: 36,
+                          minWidth: 32,
                           color: isActive
                             ? theme.palette.primary.main
                             : alpha(theme.palette.text.secondary, 0.6),
                         }}
                       >
-                        {item.icon}
+                        {React.cloneElement(item.icon, { fontSize: "small" })}
                       </ListItemIcon>
                       <ListItemText
                         primary={item.label}
                         primaryTypographyProps={{
-                          fontSize: "0.9375rem",
+                          fontSize: "0.875rem",
                           fontWeight: isActive ? 600 : 500,
                         }}
                       />
@@ -391,7 +392,7 @@ const DashboardContent: React.FC = () => {
 
       <Box
         sx={{
-          p: 2,
+          p: 1.5,
           borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         }}
       >
@@ -399,17 +400,17 @@ const DashboardContent: React.FC = () => {
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1.5,
-            p: 1.5,
-            borderRadius: 2,
+            gap: 1,
+            p: 1,
+            borderRadius: 1.5,
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
-            mb: 1,
+            mb: 0.75,
           }}
         >
           <Box
             sx={{
-              width: 36,
-              height: 36,
+              width: 28,
+              height: 28,
               borderRadius: "50%",
               backgroundColor: theme.palette.primary.main,
               display: "flex",
@@ -417,7 +418,7 @@ const DashboardContent: React.FC = () => {
               justifyContent: "center",
               color: "white",
               fontWeight: 600,
-              fontSize: "0.875rem",
+              fontSize: "0.75rem",
             }}
           >
             {user?.firstName?.charAt(0) || user?.email?.charAt(0) || "U"}
@@ -425,13 +426,14 @@ const DashboardContent: React.FC = () => {
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+              sx={{ fontWeight: 600, color: theme.palette.text.primary, fontSize: "0.8rem", lineHeight: 1.2 }}
             >
               {user?.firstName || user?.email || "User"}
             </Typography>
             <Typography
               variant="caption"
-              sx={{ color: alpha(theme.palette.text.secondary, 0.7) }}
+              sx={{ color: alpha(theme.palette.text.secondary, 0.7), fontSize: "0.7rem", lineHeight: 1 }}
+              noWrap
             >
               {user?.email || "user@lockin.app"}
             </Typography>
@@ -441,9 +443,9 @@ const DashboardContent: React.FC = () => {
         <ListItemButton
           onClick={logout}
           sx={{
-            borderRadius: 2,
-            py: 1,
-            px: 1.5,
+            borderRadius: 1.5,
+            py: 0.5,
+            px: 1,
             color: theme.palette.text.secondary,
             "&:hover": {
               backgroundColor: alpha("#EF4444", 0.08),
@@ -454,15 +456,15 @@ const DashboardContent: React.FC = () => {
         >
           <ListItemIcon
             sx={{
-              minWidth: 36,
+              minWidth: 32,
               color: alpha(theme.palette.text.secondary, 0.6),
             }}
           >
-            <LogoutIcon fontSize="small" />
+            <LogoutIcon sx={{ fontSize: "1rem" }} />
           </ListItemIcon>
           <ListItemText
             primary="Logout"
-            primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: 500 }}
+            primaryTypographyProps={{ fontSize: "0.8rem", fontWeight: 500 }}
           />
         </ListItemButton>
       </Box>
