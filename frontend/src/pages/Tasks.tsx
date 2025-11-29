@@ -126,7 +126,7 @@ const Tasks: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   /**
-   * Check if any filters are active (excluding hideCompleted which is applied client-side)
+   * Check if any filters are active (including hideCompleted for backend filtering)
    */
   const hasActiveFilters = () => {
     return (
@@ -134,7 +134,8 @@ const Tasks: React.FC = () => {
       filters.category !== "all" ||
       filters.urgent !== "all" ||
       filters.important !== "all" ||
-      filters.priority !== "all"
+      filters.priority !== "all" ||
+      filters.hideCompleted
     );
   };
 
@@ -154,7 +155,7 @@ const Tasks: React.FC = () => {
     }
     fetchCategories();
     fetchStatistics();
-  }, [currentPage, pageSize, filters.category]);
+  }, [currentPage, pageSize, filters.status, filters.category, filters.hideCompleted, filters.urgent, filters.important]);
 
   const fetchStatistics = async () => {
     try {
@@ -287,7 +288,8 @@ const Tasks: React.FC = () => {
       newFilters.status !== "all" ||
       newFilters.category !== "all" ||
       newFilters.urgent !== "all" ||
-      newFilters.important !== "all";
+      newFilters.important !== "all" ||
+      newFilters.hideCompleted;
 
     if (!hasFilters) {
       fetchTasks();
