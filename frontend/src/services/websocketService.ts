@@ -26,6 +26,13 @@ class WebSocketService {
       return;
     }
 
+    // Get JWT token for authentication
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("WebSocket connection requires authentication token");
+      return;
+    }
+
     this.userEmail = userEmail;
     this.notificationHandler = onNotification;
     this.connectionStatusHandler = onConnectionStatus || null;
@@ -38,6 +45,10 @@ class WebSocketService {
       reconnectDelay: 0,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
+      // Pass JWT token in STOMP headers for backend authentication
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
       debug: (msg) => {
         if (import.meta.env.DEV) {
           console.debug("STOMP:", msg);
