@@ -53,6 +53,16 @@ public class User {
     @Column(name = "last_activity_date")
     private LocalDate lastActivityDate;
 
+    // Notification preferences
+    @Column(name = "notify_ai_features", nullable = false)
+    private Boolean notifyAiFeatures = true;
+
+    @Column(name = "notify_calendar_sync", nullable = false)
+    private Boolean notifyCalendarSync = true;
+
+    @Column(name = "notify_task_reminders", nullable = false)
+    private Boolean notifyTaskReminders = true;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

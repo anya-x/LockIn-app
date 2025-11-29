@@ -1,6 +1,7 @@
 package com.lockin.lockin_app.features.users.service;
 
 import com.lockin.lockin_app.features.users.entity.User;
+import com.lockin.lockin_app.features.users.dto.NotificationPreferencesDTO;
 import com.lockin.lockin_app.exception.ResourceNotFoundException;
 import com.lockin.lockin_app.features.users.repository.UserRepository;
 
@@ -46,5 +47,35 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationPreferencesDTO getNotificationPreferences(Long userId) {
+        log.debug("Getting notification preferences for user: {}", userId);
+
+        User user = getUserById(userId);
+        return NotificationPreferencesDTO.fromUser(user);
+    }
+
+    @Transactional
+    public NotificationPreferencesDTO updateNotificationPreferences(
+            Long userId,
+            NotificationPreferencesDTO preferences) {
+        log.info("Updating notification preferences for user: {}", userId);
+
+        User user = getUserById(userId);
+
+        if (preferences.getAiNotifications() != null) {
+            user.setNotifyAiFeatures(preferences.getAiNotifications());
+        }
+        if (preferences.getCalendarNotifications() != null) {
+            user.setNotifyCalendarSync(preferences.getCalendarNotifications());
+        }
+        if (preferences.getTaskReminders() != null) {
+            user.setNotifyTaskReminders(preferences.getTaskReminders());
+        }
+
+        user = userRepository.save(user);
+        return NotificationPreferencesDTO.fromUser(user);
     }
 }
