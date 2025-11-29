@@ -1,12 +1,14 @@
 import type { Category } from "../services/categoryService";
 
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
+
 export interface Task {
   id: number;
   title: string;
   description?: string;
   isUrgent: boolean;
   isImportant: boolean;
-  status: "TODO" | "IN_PROGRESS" | "COMPLETED";
+  status: TaskStatus;
   dueDate?: string;
   createdAt: string;
   updatedAt: string;
@@ -19,7 +21,7 @@ export interface TaskRequest {
   description?: string;
   isUrgent?: boolean;
   isImportant?: boolean;
-  status?: "TODO" | "IN_PROGRESS" | "COMPLETED";
+  status?: TaskStatus;
   dueDate?: string;
   categoryId?: number | null;
 }

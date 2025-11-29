@@ -32,6 +32,8 @@ import {
   CheckBox as CheckedIcon,
   ArrowUpward as AscIcon,
   ArrowDownward as DescIcon,
+  Archive as ArchiveIcon,
+  Unarchive as UnarchiveIcon,
 } from "@mui/icons-material";
 import { useSearchParams } from "react-router-dom";
 import { debounce } from "lodash";
@@ -307,8 +309,11 @@ const Tasks: React.FC = () => {
     }
   };
 
-  // Cycle through: TODO → IN_PROGRESS → COMPLETED → TODO
+  // Cycle through: TODO → IN_PROGRESS → COMPLETED → TODO (skips ARCHIVED)
   const handleStatusCycle = async (task: Task) => {
+    // Don't cycle archived tasks
+    if (task.status === "ARCHIVED") return;
+
     try {
       let newStatus: "TODO" | "IN_PROGRESS" | "COMPLETED";
       switch (task.status) {
@@ -341,12 +346,33 @@ const Tasks: React.FC = () => {
     }
   };
 
+  const handleArchiveTask = async (task: Task) => {
+    try {
+      const newStatus = task.status === "ARCHIVED" ? "COMPLETED" : "ARCHIVED";
+      const updated = await taskService.updateTask(task.id, {
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate,
+        status: newStatus,
+        isUrgent: task.isUrgent,
+        isImportant: task.isImportant,
+        categoryId: task.category?.id,
+      });
+      setTasks(tasks.map((t) => (t.id === updated.id ? updated : t)));
+      fetchStatistics();
+    } catch (err) {
+      console.error("Failed to archive/unarchive task:", err);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "IN_PROGRESS":
         return <InProgressIcon sx={{ fontSize: 22 }} />;
       case "COMPLETED":
         return <CheckedIcon sx={{ fontSize: 22 }} />;
+      case "ARCHIVED":
+        return <ArchiveIcon sx={{ fontSize: 22 }} />;
       default:
         return <UncheckedIcon sx={{ fontSize: 22 }} />;
     }
@@ -358,6 +384,8 @@ const Tasks: React.FC = () => {
         return "warning.main";
       case "COMPLETED":
         return "success.main";
+      case "ARCHIVED":
+        return "text.disabled";
       default:
         return "action.active";
     }
@@ -471,6 +499,38 @@ const Tasks: React.FC = () => {
     }
   };
 
+  const handleBulkArchive = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      const updatePromises = Array.from(selectedTaskIds).map((id) => {
+        const task = tasks.find((t) => t.id === id);
+        if (!task) return Promise.resolve();
+        return taskService.updateTask(id, {
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate,
+          status: "ARCHIVED",
+          isUrgent: task.isUrgent,
+          isImportant: task.isImportant,
+          categoryId: task.category?.id,
+        });
+      });
+      await Promise.all(updatePromises);
+
+      setSelectedTaskIds(new Set());
+      if (hasActiveFilters()) {
+        fetchFilteredTasks(currentPage);
+      } else {
+        fetchTasks();
+      }
+      fetchStatistics();
+    } catch (err) {
+      console.error("Failed to archive tasks:", err);
+      alert("Failed to archive some tasks. Please try again.");
+    }
+  };
+
   const handleAIBreakdownClick = (task: Task) => {
     setTaskForBreakdown(task);
     setAiBreakdownOpen(true);
@@ -549,8 +609,8 @@ const Tasks: React.FC = () => {
           break;
 
         case "status":
-          const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
-          comparison = statusOrder[a.status] - statusOrder[b.status];
+          const statusOrder: Record<string, number> = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3, ARCHIVED: 4 };
+          comparison = (statusOrder[a.status] || 5) - (statusOrder[b.status] || 5);
           break;
 
         case "title":
@@ -729,6 +789,15 @@ const Tasks: React.FC = () => {
             sx={{ textTransform: "none" }}
           >
             Mark Complete
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleBulkArchive}
+            startIcon={<ArchiveIcon sx={{ fontSize: 16 }} />}
+            sx={{ textTransform: "none" }}
+          >
+            Archive
           </Button>
           <Button
             size="small"
@@ -946,17 +1015,19 @@ const Tasks: React.FC = () => {
 
               {/* Actions */}
               <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
-                <IconButton
-                  onClick={() => handleAIBreakdownClick(task)}
-                  size="small"
-                  sx={{
-                    color: "#9333EA",
-                    "&:hover": { bgcolor: alpha("#9333EA", 0.1) },
-                  }}
-                  title="AI Breakdown"
-                >
-                  <AutoAwesomeIcon fontSize="small" />
-                </IconButton>
+                {task.status !== "ARCHIVED" && (
+                  <IconButton
+                    onClick={() => handleAIBreakdownClick(task)}
+                    size="small"
+                    sx={{
+                      color: "#9333EA",
+                      "&:hover": { bgcolor: alpha("#9333EA", 0.1) },
+                    }}
+                    title="AI Breakdown"
+                  >
+                    <AutoAwesomeIcon fontSize="small" />
+                  </IconButton>
+                )}
                 <IconButton
                   onClick={() => handleOpenModal(task)}
                   size="small"
@@ -969,6 +1040,22 @@ const Tasks: React.FC = () => {
                 >
                   <EditIcon fontSize="small" />
                 </IconButton>
+                <Tooltip title={task.status === "ARCHIVED" ? "Unarchive" : "Archive"}>
+                  <IconButton
+                    onClick={() => handleArchiveTask(task)}
+                    size="small"
+                    sx={{
+                      color: task.status === "ARCHIVED" ? "#10B981" : "text.secondary",
+                      "&:hover": { bgcolor: alpha(task.status === "ARCHIVED" ? "#10B981" : "#6B7280", 0.1) },
+                    }}
+                  >
+                    {task.status === "ARCHIVED" ? (
+                      <UnarchiveIcon fontSize="small" />
+                    ) : (
+                      <ArchiveIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
                 <IconButton
                   onClick={() => handleDeleteClick(task.id!)}
                   size="small"

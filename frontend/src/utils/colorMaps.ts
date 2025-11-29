@@ -8,6 +8,8 @@ export const getStatusColor = (
       return "primary";
     case "COMPLETED":
       return "success";
+    case "ARCHIVED":
+      return "info";
     default:
       return "default";
   }
