@@ -226,27 +226,29 @@ public class TaskService {
 
         EisenhowerMatrixDTO matrix = new EisenhowerMatrixDTO();
 
-        // Exclude completed tasks from matrix - they shouldn't appear in planning view
+        // Exclude completed and archived tasks from matrix - they shouldn't appear in planning view
+        List<TaskStatus> excludedStatuses = List.of(TaskStatus.COMPLETED, TaskStatus.ARCHIVED);
+
         matrix.setDoFirst(
-                taskRepository.findByQuadrantExcludingStatus(userId, true, true, TaskStatus.COMPLETED)
+                taskRepository.findByQuadrantExcludingStatuses(userId, true, true, excludedStatuses)
                               .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
 
         matrix.setSchedule(
-                taskRepository.findByQuadrantExcludingStatus(userId, false, true, TaskStatus.COMPLETED)
+                taskRepository.findByQuadrantExcludingStatuses(userId, false, true, excludedStatuses)
                               .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
 
         matrix.setDelegate(
-                taskRepository.findByQuadrantExcludingStatus(userId, true, false, TaskStatus.COMPLETED)
+                taskRepository.findByQuadrantExcludingStatuses(userId, true, false, excludedStatuses)
                               .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
 
         matrix.setEliminate(
-                taskRepository.findByQuadrantExcludingStatus(userId, false, false, TaskStatus.COMPLETED)
+                taskRepository.findByQuadrantExcludingStatuses(userId, false, false, excludedStatuses)
                               .stream()
                               .map(TaskResponseDTO::fromEntity)
                               .collect(Collectors.toList()));
@@ -374,9 +376,11 @@ public class TaskService {
     public List<TaskResponseDTO> getIncompleteTasks(Long userId) {
         log.debug("Fetching all incomplete tasks for user: {}", userId);
 
+        // Exclude both completed and archived tasks from incomplete list
+        List<TaskStatus> excludedStatuses = List.of(TaskStatus.COMPLETED, TaskStatus.ARCHIVED);
         List<Task> tasks =
-                taskRepository.findByUserIdAndStatusNotOrderByCreatedAtDescWithCategory(
-                        userId, TaskStatus.COMPLETED);
+                taskRepository.findByUserIdAndStatusNotInOrderByCreatedAtDescWithCategory(
+                        userId, excludedStatuses);
 
         log.info("Found {} incomplete tasks for user {}", tasks.size(), userId);
 

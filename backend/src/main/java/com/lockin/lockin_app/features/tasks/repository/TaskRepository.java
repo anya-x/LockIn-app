@@ -46,6 +46,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("userId") Long userId, @Param("status") TaskStatus status);
 
     @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId AND t.status NOT IN :statuses ORDER BY t.createdAt DESC")
+    List<Task> findByUserIdAndStatusNotInOrderByCreatedAtDescWithCategory(
+            @Param("userId") Long userId, @Param("statuses") List<TaskStatus> statuses);
+
+    @Query(
             "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
                     + "AND t.isUrgent = :isUrgent AND t.isImportant = :isImportant "
                     + "ORDER BY t.dueDate ASC")
@@ -64,6 +69,17 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("isUrgent") Boolean isUrgent,
             @Param("isImportant") Boolean isImportant,
             @Param("excludedStatus") TaskStatus excludedStatus);
+
+    @Query(
+            "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
+                    + "AND t.status NOT IN :excludedStatuses "
+                    + "AND t.isUrgent = :isUrgent AND t.isImportant = :isImportant "
+                    + "ORDER BY t.dueDate ASC")
+    List<Task> findByQuadrantExcludingStatuses(
+            @Param("userId") Long userId,
+            @Param("isUrgent") Boolean isUrgent,
+            @Param("isImportant") Boolean isImportant,
+            @Param("excludedStatuses") List<TaskStatus> excludedStatuses);
 
     @Query(
             "SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.user.id = :userId "
