@@ -12,7 +12,7 @@ import {
   Tabs,
   Tab,
   Alert,
-  CircularProgress,
+  Skeleton,
   useTheme,
   alpha,
 } from "@mui/material";
@@ -184,17 +184,57 @@ const Goals: React.FC = () => {
       )}
 
       {loading && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            py: 8,
-          }}
-        >
-          <CircularProgress />
-          <Typography sx={{ ml: 2 }}>Loading goals...</Typography>
-        </Box>
+        <Grid container spacing={3}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6 }}>
+              <Card sx={{ height: "100%" }}>
+                <CardContent>
+                  {/* Header skeleton */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <Skeleton variant="text" width="60%" height={28} sx={{ mb: 0.5 }} />
+                      <Skeleton variant="rounded" width={70} height={24} />
+                    </Box>
+                    <Skeleton variant="circular" width={32} height={32} />
+                  </Box>
+
+                  {/* Description skeleton */}
+                  <Skeleton variant="text" width="100%" sx={{ mb: 0.5 }} />
+                  <Skeleton variant="text" width="80%" sx={{ mb: 2 }} />
+
+                  {/* Progress bar skeleton */}
+                  <Box sx={{ mb: 2 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Skeleton variant="text" width={60} />
+                      <Skeleton variant="text" width={30} />
+                    </Box>
+                    <Skeleton variant="rounded" height={10} sx={{ borderRadius: 2 }} />
+                  </Box>
+
+                  {/* Stats skeleton */}
+                  <Grid container spacing={2} sx={{ mb: 2 }}>
+                    {[1, 2, 3].map((j) => (
+                      <Grid key={j} size={{ xs: 4 }}>
+                        <Skeleton variant="text" width="70%" height={16} />
+                        <Skeleton variant="text" width="50%" height={20} />
+                      </Grid>
+                    ))}
+                  </Grid>
+
+                  {/* Date skeleton */}
+                  <Skeleton variant="text" width="50%" height={16} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
 
       {!loading && displayedGoals.length === 0 && (
