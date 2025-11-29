@@ -20,28 +20,9 @@ import {
 import { Add as AddIcon } from "@mui/icons-material";
 import type { Category } from "../../services/categoryService";
 import { useCategories, useCreateCategory } from "../../hooks/useCategories";
+import { CATEGORY_PALETTE } from "../../utils/colorMaps";
 
-// Preset color palette (same as Categories page)
-const COLOR_PALETTE = [
-  "#EF4444", // Red
-  "#F97316", // Orange
-  "#F59E0B", // Amber
-  "#EAB308", // Yellow
-  "#84CC16", // Lime
-  "#22C55E", // Green
-  "#14B8A6", // Teal
-  "#06B6D4", // Cyan
-  "#3B82F6", // Blue
-  "#6366F1", // Indigo
-  "#8B5CF6", // Violet
-  "#A855F7", // Purple
-  "#D946EF", // Fuchsia
-  "#EC4899", // Pink
-  "#64748B", // Slate
-  "#78716C", // Stone
-];
-
-// Common emoji categories (same as Categories page)
+// Common emoji categories
 const EMOJI_OPTIONS = [
   "📁", "📂", "📋", "📝", "✏️", "📌", "🎯", "⭐",
   "💼", "🏠", "🏃", "💪", "🧘", "🎨", "🎵", "📚",
@@ -273,7 +254,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
               borderRadius: 2,
             }}
           >
-            {COLOR_PALETTE.map((color) => (
+            {CATEGORY_PALETTE.map((color) => (
               <Box
                 key={color}
                 onClick={() => setNewCategory({ ...newCategory, color })}

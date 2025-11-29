@@ -53,24 +53,24 @@ import type { FilterState, Task, TaskRequest, SortField, SortDirection } from ".
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/ai/AITaskBreakdown";
 import EmptyState from "../components/shared/EmptyState";
-import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
+import { getStatusColor, getPriorityColor, getPriorityLevel, STATUS_COLORS, PRIORITY_COLORS } from "../utils/colorMaps";
 
-// Status options for filter dropdown with colors
+// Status options for filter dropdown - colors are applied dynamically based on theme
 const STATUS_OPTIONS = [
-  { value: "all", label: "All Status", color: "#64748b" },
-  { value: "TODO", label: "To Do", color: "#64748b" },
-  { value: "IN_PROGRESS", label: "In Progress", color: "#F59E0B" },
-  { value: "COMPLETED", label: "Completed", color: "#10B981" },
-  { value: "ARCHIVED", label: "Archived", color: "#9CA3AF" },
+  { value: "all", label: "All Status" },
+  { value: "TODO", label: "To Do" },
+  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "ARCHIVED", label: "Archived" },
 ] as const;
 
-// Priority options based on Eisenhower Matrix with colors
+// Priority options based on Eisenhower Matrix - colors are applied dynamically based on theme
 const PRIORITY_OPTIONS = [
-  { value: "all", label: "All Priority", color: "#64748b" },
-  { value: "do-first", label: "Do First", hint: "Urgent & Important", color: "#EF4444" },
-  { value: "schedule", label: "Schedule", hint: "Important", color: "#3B82F6" },
-  { value: "delegate", label: "Delegate", hint: "Urgent", color: "#F59E0B" },
-  { value: "eliminate", label: "Consider", hint: "Neither", color: "#64748b" },
+  { value: "all", label: "All Priority" },
+  { value: "do-first", label: "Do First", hint: "Urgent & Important" },
+  { value: "schedule", label: "Schedule", hint: "Important" },
+  { value: "delegate", label: "Delegate", hint: "Urgent" },
+  { value: "eliminate", label: "Consider", hint: "Neither" },
 ] as const;
 
 const Tasks: React.FC = () => {
@@ -758,6 +758,8 @@ const Tasks: React.FC = () => {
             displayEmpty
             renderValue={(value) => {
               const opt = STATUS_OPTIONS.find((o) => o.value === value);
+              const colorKey = value === "all" ? "TODO" : value;
+              const color = getStatusColor(colorKey, theme.palette.mode).main;
               return (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box
@@ -765,7 +767,7 @@ const Tasks: React.FC = () => {
                       width: 8,
                       height: 8,
                       borderRadius: "50%",
-                      bgcolor: opt?.color || "#64748b",
+                      bgcolor: color,
                       flexShrink: 0,
                     }}
                   />
@@ -774,22 +776,26 @@ const Tasks: React.FC = () => {
               );
             }}
           >
-            {STATUS_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      bgcolor: opt.color,
-                      flexShrink: 0,
-                    }}
-                  />
-                  {opt.label}
-                </Box>
-              </MenuItem>
-            ))}
+            {STATUS_OPTIONS.map((opt) => {
+              const colorKey = opt.value === "all" ? "TODO" : opt.value;
+              const color = getStatusColor(colorKey, theme.palette.mode).main;
+              return (
+                <MenuItem key={opt.value} value={opt.value}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    {opt.label}
+                  </Box>
+                </MenuItem>
+              );
+            })}
           </Select>
         </FormControl>
 
@@ -835,6 +841,7 @@ const Tasks: React.FC = () => {
             displayEmpty
             renderValue={(value) => {
               const opt = PRIORITY_OPTIONS.find((o) => o.value === value);
+              const color = getPriorityColor(value, theme.palette.mode);
               return (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box
@@ -842,7 +849,7 @@ const Tasks: React.FC = () => {
                       width: 8,
                       height: 8,
                       borderRadius: "50%",
-                      bgcolor: opt?.color || "#64748b",
+                      bgcolor: color,
                       flexShrink: 0,
                     }}
                   />
@@ -851,29 +858,32 @@ const Tasks: React.FC = () => {
               );
             }}
           >
-            {PRIORITY_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      bgcolor: opt.color,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Box>
-                    <Typography variant="body2">{opt.label}</Typography>
-                    {"hint" in opt && opt.hint && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
-                        {opt.hint}
-                      </Typography>
-                    )}
+            {PRIORITY_OPTIONS.map((opt) => {
+              const color = getPriorityColor(opt.value, theme.palette.mode);
+              return (
+                <MenuItem key={opt.value} value={opt.value}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Box>
+                      <Typography variant="body2">{opt.label}</Typography>
+                      {"hint" in opt && opt.hint && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
+                          {opt.hint}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
-                </Box>
-              </MenuItem>
-            ))}
+                </MenuItem>
+              );
+            })}
           </Select>
         </FormControl>
 

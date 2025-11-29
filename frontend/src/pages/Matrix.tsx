@@ -41,6 +41,7 @@ import { useMatrix, useUpdateTaskQuadrant } from "../hooks/useMatrix";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskService } from "../services/taskService";
 import TaskFormModal from "../components/tasks/TaskFormModal";
+import { getQuadrantColor } from "../utils/colorMaps";
 
 const Matrix: React.FC = () => {
   const theme = useTheme();
@@ -619,13 +620,14 @@ const Matrix: React.FC = () => {
     return <Typography>Error loading matrix</Typography>;
   }
 
+  const themeMode = theme.palette.mode;
   const quadrants = [
     {
       id: "doFirst",
       title: "Do First",
       subtitle: "Urgent & Important",
       tasks: matrix.doFirst,
-      borderColor: "#EF4444",
+      borderColor: getQuadrantColor("doFirst", themeMode).border,
       position: "top-left" as const,
     },
     {
@@ -633,7 +635,7 @@ const Matrix: React.FC = () => {
       title: "Schedule",
       subtitle: "Important, Not Urgent",
       tasks: matrix.schedule,
-      borderColor: "#3B82F6",
+      borderColor: getQuadrantColor("schedule", themeMode).border,
       position: "top-right" as const,
     },
     {
@@ -641,7 +643,7 @@ const Matrix: React.FC = () => {
       title: "Delegate",
       subtitle: "Urgent, Not Important",
       tasks: matrix.delegate,
-      borderColor: "#F59E0B",
+      borderColor: getQuadrantColor("delegate", themeMode).border,
       position: "bottom-left" as const,
     },
     {
@@ -649,7 +651,7 @@ const Matrix: React.FC = () => {
       title: "Eliminate",
       subtitle: "Neither Urgent nor Important",
       tasks: matrix.eliminate,
-      borderColor: "#8B5CF6",
+      borderColor: getQuadrantColor("eliminate", themeMode).border,
       position: "bottom-right" as const,
     },
   ];
