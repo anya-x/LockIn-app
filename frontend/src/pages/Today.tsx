@@ -31,7 +31,7 @@ import { useTimer } from "../context/TimerContext";
 import { taskService } from "../services/taskService";
 import { sessionService } from "../services/sessionService";
 import { analyticsService } from "../services/analyticsService";
-import { getStatusColor } from "../utils/colorMaps";
+import { getStatusChipColor } from "../utils/colorMaps";
 import type { Task, TaskRequest } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import CompactBriefing from "../components/ai/CompactBriefing";
@@ -466,7 +466,7 @@ const Today: React.FC = () => {
                     <Chip
                       label={task.status.replace("_", " ")}
                       size="small"
-                      color={getStatusColor(task.status)}
+                      color={getStatusChipColor(task.status)}
                       sx={{ height: 20, fontSize: "0.7rem" }}
                     />
                   </Box>
