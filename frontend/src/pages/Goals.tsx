@@ -19,12 +19,14 @@ import {
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   CalendarToday as CalendarIcon,
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
 import type { GoalFormData } from "../components/goals/GoalsDialog";
 import GoalsDialog from "../components/goals/GoalsDialog";
-import { useGoals, useCreateGoal, useDeleteGoal } from "../hooks/useGoals";
+import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from "../hooks/useGoals";
+import type { Goal } from "../services/goalService";
 import { useTimer } from "../context/TimerContext";
 import { useQueryClient } from "@tanstack/react-query";
 import PageHeader from "../components/shared/PageHeader";
@@ -38,6 +40,7 @@ const Goals: React.FC = () => {
     error: queryError,
   } = useGoals();
   const createGoalMutation = useCreateGoal();
+  const updateGoalMutation = useUpdateGoal();
   const deleteGoalMutation = useDeleteGoal();
 
   const { timer } = useTimer();
@@ -47,7 +50,8 @@ const Goals: React.FC = () => {
   const [tabValue, setTabValue] = useState<"all" | "active" | "completed">(
     "active"
   );
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     if (timer.completionCounter > 0) {
@@ -64,15 +68,34 @@ const Goals: React.FC = () => {
     return allGoals;
   }, [tabValue, allGoals]);
 
-  const handleCreateGoal = async (goalData: GoalFormData) => {
+  const handleOpenCreateDialog = () => {
+    setEditingGoal(null);
+    setDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (goal: Goal) => {
+    setEditingGoal(goal);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingGoal(null);
+  };
+
+  const handleSubmitGoal = async (goalData: GoalFormData) => {
     try {
-      await createGoalMutation.mutateAsync(goalData);
-      setCreateDialogOpen(false);
+      if (editingGoal) {
+        await updateGoalMutation.mutateAsync({ id: editingGoal.id, data: goalData });
+      } else {
+        await createGoalMutation.mutateAsync(goalData);
+      }
+      handleCloseDialog();
     } catch (err: any) {
-      console.error("Failed to create goal:", err);
+      console.error(`Failed to ${editingGoal ? "update" : "create"} goal:`, err);
       setError(
         err.response?.data?.message ||
-          "Failed to create goal. Please try again."
+          `Failed to ${editingGoal ? "update" : "create"} goal. Please try again.`
       );
     }
   };
@@ -130,7 +153,7 @@ const Goals: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
+            onClick={handleOpenCreateDialog}
           >
             Create Goal
           </Button>
@@ -180,7 +203,7 @@ const Goals: React.FC = () => {
           description="Create your first goal to start tracking your progress!"
           action={{
             label: "Create Your First Goal",
-            onClick: () => setCreateDialogOpen(true),
+            onClick: handleOpenCreateDialog,
             icon: <AddIcon />,
           }}
         />
@@ -244,17 +267,30 @@ const Goals: React.FC = () => {
                         )}
                       </Box>
                     </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteGoal(goal.id)}
-                      aria-label="delete goal"
-                      sx={{
-                        color: "#EF4444",
-                        "&:hover": { backgroundColor: alpha("#EF4444", 0.1) },
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenEditDialog(goal)}
+                        aria-label="edit goal"
+                        sx={{
+                          color: theme.palette.primary.main,
+                          "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.1) },
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteGoal(goal.id)}
+                        aria-label="delete goal"
+                        sx={{
+                          color: "#EF4444",
+                          "&:hover": { backgroundColor: alpha("#EF4444", 0.1) },
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
                   </Box>
 
                   {goal.description && (
@@ -381,9 +417,10 @@ const Goals: React.FC = () => {
       )}
 
       <GoalsDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onSubmit={handleCreateGoal}
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onSubmit={handleSubmitGoal}
+        goal={editingGoal}
       />
     </Box>
   );

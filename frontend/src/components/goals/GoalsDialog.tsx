@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -14,12 +14,7 @@ import {
   Alert,
   Typography,
 } from "@mui/material";
-
-interface CreateGoalDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (goalData: GoalFormData) => Promise<void>;
-}
+import type { Goal } from "../../services/goalService";
 
 export interface GoalFormData {
   title: string;
@@ -32,21 +27,59 @@ export interface GoalFormData {
   targetFocusMinutes?: number;
 }
 
-const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
+interface GoalsDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (goalData: GoalFormData) => Promise<void>;
+  goal?: Goal | null; // If provided, dialog is in edit mode
+}
+
+const defaultFormData: GoalFormData = {
+  title: "",
+  description: "",
+  type: "WEEKLY",
+  startDate: "",
+  endDate: "",
+  targetTasks: undefined,
+  targetPomodoros: undefined,
+  targetFocusMinutes: undefined,
+};
+
+/**
+ * Formats a date string to YYYY-MM-DD format for input[type="date"]
+ */
+const formatDateForInput = (dateStr: string): string => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toISOString().split("T")[0];
+};
+
+const GoalsDialog: React.FC<GoalsDialogProps> = ({
   open,
   onClose,
   onSubmit,
+  goal,
 }) => {
-  const [formData, setFormData] = useState<GoalFormData>({
-    title: "",
-    description: "",
-    type: "WEEKLY",
-    startDate: "",
-    endDate: "",
-    targetTasks: undefined,
-    targetPomodoros: undefined,
-    targetFocusMinutes: undefined,
-  });
+  const isEditMode = !!goal;
+  const [formData, setFormData] = useState<GoalFormData>(defaultFormData);
+
+  // Populate form when editing an existing goal
+  useEffect(() => {
+    if (goal) {
+      setFormData({
+        title: goal.title,
+        description: goal.description || "",
+        type: goal.type,
+        startDate: formatDateForInput(goal.startDate),
+        endDate: formatDateForInput(goal.endDate),
+        targetTasks: goal.targetTasks,
+        targetPomodoros: goal.targetPomodoros,
+        targetFocusMinutes: goal.targetFocusMinutes,
+      });
+    } else {
+      setFormData(defaultFormData);
+    }
+  }, [goal]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string>("");
@@ -104,10 +137,10 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
       await onSubmit(formData);
       handleClose();
     } catch (error: any) {
-      console.error("Failed to create goal:", error);
+      console.error(`Failed to ${isEditMode ? "update" : "create"} goal:`, error);
       setSubmitError(
         error.response?.data?.message ||
-          "Failed to create goal. Please try again."
+          `Failed to ${isEditMode ? "update" : "create"} goal. Please try again.`
       );
     } finally {
       setIsSubmitting(false);
@@ -115,16 +148,7 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
   };
 
   const handleClose = () => {
-    setFormData({
-      title: "",
-      description: "",
-      type: "WEEKLY",
-      startDate: "",
-      endDate: "",
-      targetTasks: undefined,
-      targetPomodoros: undefined,
-      targetFocusMinutes: undefined,
-    });
+    setFormData(defaultFormData);
     setErrors({});
     setSubmitError("");
     onClose();
@@ -143,7 +167,7 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Create New Goal</DialogTitle>
+      <DialogTitle>{isEditMode ? "Edit Goal" : "Create New Goal"}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
           {submitError && (
@@ -299,7 +323,9 @@ const GoalsDialog: React.FC<CreateGoalDialogProps> = ({
           variant="contained"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Creating..." : "Create Goal"}
+          {isSubmitting
+            ? isEditMode ? "Saving..." : "Creating..."
+            : isEditMode ? "Save Changes" : "Create Goal"}
         </Button>
       </DialogActions>
     </Dialog>
