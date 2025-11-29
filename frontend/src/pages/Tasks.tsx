@@ -309,11 +309,9 @@ const Tasks: React.FC = () => {
     }
   };
 
-  // Cycle through: TODO → IN_PROGRESS → COMPLETED → TODO (skips ARCHIVED)
+  // Cycle through: TODO → IN_PROGRESS → COMPLETED → TODO
+  // For ARCHIVED tasks, clicking unarchives them back to TODO
   const handleStatusCycle = async (task: Task) => {
-    // Don't cycle archived tasks
-    if (task.status === "ARCHIVED") return;
-
     try {
       let newStatus: "TODO" | "IN_PROGRESS" | "COMPLETED";
       switch (task.status) {
@@ -324,6 +322,7 @@ const Tasks: React.FC = () => {
           newStatus = "COMPLETED";
           break;
         case "COMPLETED":
+        case "ARCHIVED":
           newStatus = "TODO";
           break;
         default:
@@ -903,6 +902,8 @@ const Tasks: React.FC = () => {
                     ? "Click to start"
                     : task.status === "IN_PROGRESS"
                     ? "Click to complete"
+                    : task.status === "ARCHIVED"
+                    ? "Click to restore"
                     : "Click to reopen"
                 }
                 placement="top"
