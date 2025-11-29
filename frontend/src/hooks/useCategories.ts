@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoryService, type Category } from "../services/categoryService";
 
+// 5 minutes stale time - allows caching while ensuring freshness across navigation
+const CATEGORIES_STALE_TIME = 5 * 60 * 1000;
+
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: categoryService.getCategories,
-    staleTime: Infinity,
+    staleTime: CATEGORIES_STALE_TIME,
   });
 }
 
@@ -15,10 +18,12 @@ export function useCreateCategory() {
   return useMutation({
     mutationFn: categoryService.createCategory,
     onSuccess: (newCategory) => {
+      // Optimistically add to cache for immediate UI update
       queryClient.setQueryData(["categories"], (old: Category[] = []) => {
         return [...old, newCategory];
       });
-      // queryClient.invalidateQueries({ queryKey: ['categories'] });
+      // Invalidate to refetch with accurate taskCount from server
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }
