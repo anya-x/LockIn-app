@@ -29,4 +29,14 @@ export interface FilterState {
   category: string;
   urgent: "all" | "true" | "false";
   important: "all" | "true" | "false";
+  priority: "all" | "do-first" | "schedule" | "delegate" | "eliminate";
+  hideCompleted: boolean;
+}
+
+export type SortField = "date" | "priority" | "status" | "title" | "created";
+export type SortDirection = "asc" | "desc";
+
+export interface SortState {
+  field: SortField;
+  direction: SortDirection;
 }

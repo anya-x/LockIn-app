@@ -29,6 +29,8 @@ import {
   CheckBoxOutlineBlank as UncheckedIcon,
   IndeterminateCheckBox as InProgressIcon,
   CheckBox as CheckedIcon,
+  ArrowUpward as AscIcon,
+  ArrowDownward as DescIcon,
 } from "@mui/icons-material";
 import { useSearchParams } from "react-router-dom";
 import { debounce } from "lodash";
@@ -36,7 +38,7 @@ import { taskService, type TaskStatistics } from "../services/taskService";
 import { categoryService, type Category } from "../services/categoryService";
 import TaskFilters from "../components/tasks/TaskFilters";
 import StatPills from "../components/shared/StatPills";
-import type { FilterState, Task, TaskRequest } from "../types/task";
+import type { FilterState, Task, TaskRequest, SortField, SortDirection } from "../types/task";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import AITaskBreakdown from "../components/ai/AITaskBreakdown";
 import EmptyState from "../components/shared/EmptyState";
@@ -56,7 +58,8 @@ const Tasks: React.FC = () => {
   const [taskForBreakdown, setTaskForBreakdown] = useState<Task | undefined>(
     undefined
   );
-  const [sortBy, setSortBy] = useState<"date" | "priority" | "status">("date");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
@@ -80,16 +83,23 @@ const Tasks: React.FC = () => {
     category: categoryParam || "all",
     urgent: "all",
     important: "all",
+    priority: "all",
+    hideCompleted: false,
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
 
+  /**
+   * Check if any filters are active (excluding hideCompleted which is applied client-side)
+   * Used to determine if we need to call the filter API endpoint
+   */
   const hasActiveFilters = () => {
     return (
       filters.status !== "all" ||
       filters.category !== "all" ||
       filters.urgent !== "all" ||
-      filters.important !== "all"
+      filters.important !== "all" ||
+      filters.priority !== "all"
     );
   };
 
@@ -415,27 +425,69 @@ const Tasks: React.FC = () => {
 
   const { start, end } = getPageRange();
 
-  const sortedTasks = [...tasks].sort((a, b) => {
-    switch (sortBy) {
-      case "date":
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-
-      case "priority":
-        return (
-          getPriorityLevel(b.isUrgent, b.isImportant) -
-          getPriorityLevel(a.isUrgent, a.isImportant)
-        );
-
-      case "status":
-        const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
-        return statusOrder[a.status] - statusOrder[b.status];
-
-      default:
-        return 0;
+  /**
+   * Toggle sort direction when clicking on current sort field
+   * or set to ascending when switching to a new field
+   */
+  const handleSortChange = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
     }
-  });
+  };
+
+  /**
+   * Apply client-side sorting and filtering
+   * Server handles pagination and main filters, client handles sort direction and hideCompleted
+   */
+  const processedTasks = React.useMemo(() => {
+    // First apply hideCompleted filter
+    let result = filters.hideCompleted
+      ? tasks.filter((task) => task.status !== "COMPLETED")
+      : [...tasks];
+
+    // Then apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case "date":
+          if (!a.dueDate && !b.dueDate) comparison = 0;
+          else if (!a.dueDate) comparison = 1;
+          else if (!b.dueDate) comparison = -1;
+          else comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          break;
+
+        case "priority":
+          comparison = getPriorityLevel(b.isUrgent, b.isImportant) -
+                       getPriorityLevel(a.isUrgent, a.isImportant);
+          break;
+
+        case "status":
+          const statusOrder = { TODO: 1, IN_PROGRESS: 2, COMPLETED: 3 };
+          comparison = statusOrder[a.status] - statusOrder[b.status];
+          break;
+
+        case "title":
+          comparison = a.title.localeCompare(b.title);
+          break;
+
+        case "created":
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+
+        default:
+          comparison = 0;
+      }
+
+      // Apply sort direction
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [tasks, sortField, sortDirection, filters.hideCompleted]);
 
   if (loading && tasks.length === 0) {
     return (
@@ -495,19 +547,41 @@ const Tasks: React.FC = () => {
             size="small"
             sx={{ width: 180 }}
           />
-          <TextField
-            select
-            size="small"
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as "date" | "priority" | "status")
-            }
-            sx={{ width: 120 }}
-          >
-            <MenuItem value="date">Due Date</MenuItem>
-            <MenuItem value="priority">Priority</MenuItem>
-            <MenuItem value="status">Status</MenuItem>
-          </TextField>
+
+          {/* Sort Controls */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <TextField
+              select
+              size="small"
+              value={sortField}
+              onChange={(e) => handleSortChange(e.target.value as SortField)}
+              sx={{ width: 120 }}
+            >
+              <MenuItem value="date">Due Date</MenuItem>
+              <MenuItem value="priority">Priority</MenuItem>
+              <MenuItem value="status">Status</MenuItem>
+              <MenuItem value="title">Title</MenuItem>
+              <MenuItem value="created">Created</MenuItem>
+            </TextField>
+            <Tooltip title={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}>
+              <IconButton
+                size="small"
+                onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+                sx={{
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  p: 0.75,
+                }}
+              >
+                {sortDirection === "asc" ? (
+                  <AscIcon sx={{ fontSize: 18 }} />
+                ) : (
+                  <DescIcon sx={{ fontSize: 18 }} />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -570,7 +644,7 @@ const Tasks: React.FC = () => {
       )}
 
       {/* Task List */}
-      {sortedTasks.length === 0 ? (
+      {processedTasks.length === 0 ? (
         <EmptyState
           title={
             searchTerm || hasActiveFilters()
@@ -585,7 +659,7 @@ const Tasks: React.FC = () => {
         />
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          {sortedTasks.map((task) => (
+          {processedTasks.map((task) => (
             <Paper
               key={task.id}
               sx={{
