@@ -4,10 +4,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Skeleton,
   Chip,
   useTheme,
@@ -41,7 +37,6 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
-import { useCategories } from "../hooks/useCategories";
 import { useMatrix, useUpdateTaskQuadrant } from "../hooks/useMatrix";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskService } from "../services/taskService";
@@ -51,14 +46,9 @@ const Matrix: React.FC = () => {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const { data: matrix, isLoading: loading } = useMatrix();
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useCategories();
   const updateQuadrantMutation = useUpdateTaskQuadrant();
 
   const [activeId, setActiveId] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<number | "all">(
-    "all"
-  );
 
   // Edit/Delete state
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -178,19 +168,6 @@ const Matrix: React.FC = () => {
     ];
 
     return allTasks.find((task) => task.id === activeId);
-  };
-
-  const filterByCategory = (tasks: Task[]): Task[] => {
-    if (selectedCategory === "all") {
-      return tasks;
-    }
-
-    const categoryId =
-      typeof selectedCategory === "number"
-        ? selectedCategory
-        : parseInt(selectedCategory);
-
-    return tasks.filter((task) => task.category?.id === categoryId);
   };
 
   interface DroppableQuadrantProps {
@@ -647,7 +624,7 @@ const Matrix: React.FC = () => {
       id: "doFirst",
       title: "Do First",
       subtitle: "Urgent & Important",
-      tasks: filterByCategory(matrix.doFirst),
+      tasks: matrix.doFirst,
       borderColor: "#EF4444",
       position: "top-left" as const,
     },
@@ -655,7 +632,7 @@ const Matrix: React.FC = () => {
       id: "schedule",
       title: "Schedule",
       subtitle: "Important, Not Urgent",
-      tasks: filterByCategory(matrix.schedule),
+      tasks: matrix.schedule,
       borderColor: "#3B82F6",
       position: "top-right" as const,
     },
@@ -663,7 +640,7 @@ const Matrix: React.FC = () => {
       id: "delegate",
       title: "Delegate",
       subtitle: "Urgent, Not Important",
-      tasks: filterByCategory(matrix.delegate),
+      tasks: matrix.delegate,
       borderColor: "#F59E0B",
       position: "bottom-left" as const,
     },
@@ -671,7 +648,7 @@ const Matrix: React.FC = () => {
       id: "eliminate",
       title: "Eliminate",
       subtitle: "Neither Urgent nor Important",
-      tasks: filterByCategory(matrix.eliminate),
+      tasks: matrix.eliminate,
       borderColor: "#8B5CF6",
       position: "bottom-right" as const,
     },
@@ -687,48 +664,14 @@ const Matrix: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <Box>
-        {/* Simplified Header */}
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={3}
-          flexWrap="wrap"
-          gap={2}
-        >
-          <Box>
-            <Typography variant="h5" fontWeight={700}>
-              Eisenhower Matrix
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {totalTasks} incomplete {totalTasks === 1 ? "task" : "tasks"}
-            </Typography>
-          </Box>
-
-          <FormControl sx={{ minWidth: 180 }} size="small">
-            <InputLabel id="category-filter-label">Category</InputLabel>
-            <Select
-              labelId="category-filter-label"
-              value={selectedCategory}
-              label="Category"
-              onChange={(e) => {
-                const value = e.target.value;
-                setSelectedCategory(value === "all" ? "all" : Number(value));
-              }}
-              disabled={categoriesLoading}
-            >
-              <MenuItem value="all">All Categories</MenuItem>
-              {categoriesLoading ? (
-                <MenuItem disabled>Loading...</MenuItem>
-              ) : (
-                categories.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
+        {/* Header */}
+        <Box mb={3}>
+          <Typography variant="h5" fontWeight={700}>
+            Eisenhower Matrix
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {totalTasks} incomplete {totalTasks === 1 ? "task" : "tasks"}
+          </Typography>
         </Box>
 
         {/* Matrix Grid - wrapped in Paper for unified appearance */}
