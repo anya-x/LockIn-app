@@ -15,12 +15,20 @@ import {
   Stack,
   IconButton,
   Fade,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import {
   KeyboardArrowUp as ScrollUpIcon,
   KeyboardArrowDown as ScrollDownIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
-import type { Task } from "../types/task";
+import type { Task, TaskRequest } from "../types/task";
 import {
   DndContext,
   DragOverlay,
@@ -35,9 +43,13 @@ import { CSS } from "@dnd-kit/utilities";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { useCategories } from "../hooks/useCategories";
 import { useMatrix, useUpdateTaskQuadrant } from "../hooks/useMatrix";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { taskService } from "../services/taskService";
+import TaskFormModal from "../components/tasks/TaskFormModal";
 
 const Matrix: React.FC = () => {
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const { data: matrix, isLoading: loading } = useMatrix();
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories();
@@ -47,6 +59,52 @@ const Matrix: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<number | "all">(
     "all"
   );
+
+  // Edit/Delete state
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
+  // Mutations for task operations
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: TaskRequest }) =>
+      taskService.updateTask(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matrix"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id: number) => taskService.deleteTask(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matrix"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  // Task action handlers
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
+
+  const handleSaveTask = async (taskData: TaskRequest) => {
+    if (!editingTask) return;
+    await updateTaskMutation.mutateAsync({ id: editingTask.id, data: taskData });
+    setEditingTask(null);
+  };
+
+  const handleDeleteClick = (task: Task) => {
+    setTaskToDelete(task);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+    await deleteTaskMutation.mutateAsync(taskToDelete.id);
+    setDeleteDialogOpen(false);
+    setTaskToDelete(null);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -335,7 +393,13 @@ const Matrix: React.FC = () => {
               </Box>
             ) : (
               tasks.map((task) => (
-                <DraggableTask key={task.id} task={task} quadrantColor={borderColor} />
+                <DraggableTask
+                  key={task.id}
+                  task={task}
+                  quadrantColor={borderColor}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteClick}
+                />
               ))
             )}
           </Box>
@@ -373,9 +437,17 @@ const Matrix: React.FC = () => {
   interface DraggableTaskProps {
     task: Task;
     quadrantColor: string;
+    onEdit: (task: Task) => void;
+    onDelete: (task: Task) => void;
   }
 
-  const DraggableTask: React.FC<DraggableTaskProps> = ({ task, quadrantColor }) => {
+  const DraggableTask: React.FC<DraggableTaskProps> = ({
+    task,
+    quadrantColor,
+    onEdit,
+    onDelete,
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
     const { attributes, listeners, setNodeRef, transform, isDragging } =
       useDraggable({
         id: task.id!,
@@ -386,16 +458,26 @@ const Matrix: React.FC = () => {
       opacity: isDragging ? 0.5 : 1,
     };
 
+    // Prevent drag when clicking action buttons
+    const handleActionClick = (
+      e: React.MouseEvent,
+      action: () => void
+    ) => {
+      e.stopPropagation();
+      e.preventDefault();
+      action();
+    };
+
     return (
       <Paper
         ref={setNodeRef}
         style={style}
-        {...listeners}
-        {...attributes}
         elevation={0}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         sx={{
           p: 1.5,
-          cursor: isDragging ? "grabbing" : "grab",
+          position: "relative",
           backgroundColor: theme.palette.background.paper,
           borderLeft: `3px solid ${quadrantColor}`,
           borderRadius: 1.5,
@@ -409,47 +491,96 @@ const Matrix: React.FC = () => {
           },
         }}
       >
-        <Typography
-          variant="body2"
-          fontWeight={600}
-          sx={{
-            mb: (task.dueDate || task.category) ? 0.75 : 0,
-            lineHeight: 1.4,
-          }}
+        {/* Draggable area - only the content, not the action buttons */}
+        <Box
+          {...listeners}
+          {...attributes}
+          sx={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
-          {task.title}
-        </Typography>
+          <Typography
+            variant="body2"
+            fontWeight={600}
+            sx={{
+              mb: (task.dueDate || task.category) ? 0.75 : 0,
+              lineHeight: 1.4,
+              pr: isHovered ? 6 : 0,
+            }}
+          >
+            {task.title}
+          </Typography>
 
-        {(task.dueDate || task.category) && (
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            {task.category && (
-              <Chip
-                label={`${task.category.icon || ""} ${task.category.name}`}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: "0.7rem",
-                  bgcolor: alpha(task.category.color, 0.1),
-                  color: task.category.color,
-                  fontWeight: 500,
-                  "& .MuiChip-label": { px: 1 },
-                }}
-              />
-            )}
-            {task.dueDate && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: "0.7rem" }}
-              >
-                Due {new Date(task.dueDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </Typography>
-            )}
-          </Stack>
-        )}
+          {(task.dueDate || task.category) && (
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              {task.category && (
+                <Chip
+                  label={`${task.category.icon || ""} ${task.category.name}`}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.7rem",
+                    bgcolor: alpha(task.category.color, 0.1),
+                    color: task.category.color,
+                    fontWeight: 500,
+                    "& .MuiChip-label": { px: 1 },
+                  }}
+                />
+              )}
+              {task.dueDate && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.7rem" }}
+                >
+                  Due {new Date(task.dueDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </Typography>
+              )}
+            </Stack>
+          )}
+        </Box>
+
+        {/* Hover action buttons */}
+        <Fade in={isHovered && !isDragging}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              display: "flex",
+              gap: 0.25,
+              bgcolor: theme.palette.background.paper,
+              borderRadius: 1,
+              boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.1)}`,
+            }}
+          >
+            <IconButton
+              size="small"
+              onClick={(e) => handleActionClick(e, () => onEdit(task))}
+              sx={{
+                width: 24,
+                height: 24,
+                color: theme.palette.primary.main,
+                "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.1) },
+              }}
+            >
+              <EditIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={(e) => handleActionClick(e, () => onDelete(task))}
+              sx={{
+                width: 24,
+                height: 24,
+                color: "#EF4444",
+                "&:hover": { bgcolor: alpha("#EF4444", 0.1) },
+              }}
+            >
+              <DeleteIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Box>
+        </Fade>
       </Paper>
     );
   };
@@ -706,6 +837,38 @@ const Matrix: React.FC = () => {
           </Paper>
         ) : null}
       </DragOverlay>
+
+      {/* Edit Task Modal */}
+      <TaskFormModal
+        open={!!editingTask}
+        onClose={() => setEditingTask(null)}
+        onSave={handleSaveTask}
+        task={editingTask}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Task?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete "{taskToDelete?.title}"? This action
+            cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DndContext>
   );
 };
