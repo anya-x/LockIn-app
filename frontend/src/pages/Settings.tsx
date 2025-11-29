@@ -25,6 +25,7 @@ import type { ThemeColor } from "../themes/themeConfig";
 import PageHeader from "../components/shared/PageHeader";
 import CalendarSettings from "../components/calendar/CalendarSettings";
 import NotificationSettings from "../components/notifications/NotificationSettings";
+import DataPrivacySettings from "../components/settings/DataPrivacySettings";
 
 const Settings: React.FC = () => {
   const theme = useTheme();
@@ -254,6 +255,7 @@ const Settings: React.FC = () => {
       </Card>
       <CalendarSettings />
       <NotificationSettings />
+      <DataPrivacySettings />
     </Box>
   );
 };

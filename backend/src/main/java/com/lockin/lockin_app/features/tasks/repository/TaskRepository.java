@@ -163,4 +163,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findTasksToSyncToGoogle(
             @Param("userId") Long userId,
             @Param("maxDueDate") LocalDateTime maxDueDate);
+
+    void deleteByUserId(Long userId);
 }

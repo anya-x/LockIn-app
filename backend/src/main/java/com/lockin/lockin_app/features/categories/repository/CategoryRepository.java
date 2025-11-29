@@ -28,4 +28,6 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     @Query(
             "SELECT c.id, COUNT(t) FROM Category c LEFT JOIN Task t ON t.category.id = c.id WHERE c.user.id = :userId GROUP BY c.id")
     List<Object[]> countTasksPerCategoryForUser(@Param("userId") Long userId);
+
+    void deleteByUserId(Long userId);
 }

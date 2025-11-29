@@ -16,4 +16,6 @@ public interface BadgeRepository extends JpaRepository<Badge, Long> {
     boolean existsByUserIdAndBadgeType(Long userId, BadgeType badgeType);
 
     long countByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }
