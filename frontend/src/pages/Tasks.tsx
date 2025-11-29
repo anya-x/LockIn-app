@@ -54,22 +54,22 @@ import AITaskBreakdown from "../components/ai/AITaskBreakdown";
 import EmptyState from "../components/shared/EmptyState";
 import { getStatusColor, getPriorityLevel } from "../utils/colorMaps";
 
-// Status options for filter dropdown
+// Status options for filter dropdown with colors
 const STATUS_OPTIONS = [
-  { value: "all", label: "All Status" },
-  { value: "TODO", label: "To Do" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "ARCHIVED", label: "Archived" },
+  { value: "all", label: "All Status", color: "#64748b" },
+  { value: "TODO", label: "To Do", color: "#64748b" },
+  { value: "IN_PROGRESS", label: "In Progress", color: "#F59E0B" },
+  { value: "COMPLETED", label: "Completed", color: "#10B981" },
+  { value: "ARCHIVED", label: "Archived", color: "#9CA3AF" },
 ] as const;
 
-// Priority options based on Eisenhower Matrix
+// Priority options based on Eisenhower Matrix with colors
 const PRIORITY_OPTIONS = [
-  { value: "all", label: "All Priority" },
-  { value: "do-first", label: "Do First (Urgent & Important)" },
-  { value: "schedule", label: "Schedule (Important)" },
-  { value: "delegate", label: "Delegate (Urgent)" },
-  { value: "eliminate", label: "Consider (Neither)" },
+  { value: "all", label: "All Priority", color: "#64748b" },
+  { value: "do-first", label: "Do First", hint: "Urgent & Important", color: "#EF4444" },
+  { value: "schedule", label: "Schedule", hint: "Important", color: "#3B82F6" },
+  { value: "delegate", label: "Delegate", hint: "Urgent", color: "#F59E0B" },
+  { value: "eliminate", label: "Consider", hint: "Neither", color: "#64748b" },
 ] as const;
 
 const Tasks: React.FC = () => {
@@ -750,51 +750,127 @@ const Tasks: React.FC = () => {
         <Divider orientation="vertical" flexItem />
 
         {/* Status Filter */}
-        <FormControl size="small" sx={{ minWidth: 130 }}>
+        <FormControl size="small" sx={{ minWidth: 140 }}>
           <Select
             value={filters.status}
             onChange={(e: SelectChangeEvent) => handleFilterChange("status", e.target.value)}
             displayEmpty
-            startAdornment={
-              <FilterIcon sx={{ fontSize: 18, mr: 0.5, color: "text.secondary" }} />
-            }
+            renderValue={(value) => {
+              const opt = STATUS_OPTIONS.find((o) => o.value === value);
+              return (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: opt?.color || "#64748b",
+                      flexShrink: 0,
+                    }}
+                  />
+                  {opt?.label || "All Status"}
+                </Box>
+              );
+            }}
           >
             {STATUS_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: opt.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  {opt.label}
+                </Box>
               </MenuItem>
             ))}
           </Select>
         </FormControl>
 
         {/* Category Filter */}
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
           <Select
             value={filters.category}
             onChange={(e: SelectChangeEvent) => handleFilterChange("category", e.target.value)}
             displayEmpty
+            renderValue={(value) => {
+              if (value === "all") return "All Categories";
+              const cat = categories.find((c) => c.id?.toString() === value);
+              return cat ? `${cat.icon} ${cat.name}` : "All Categories";
+            }}
           >
             <MenuItem value="all">All Categories</MenuItem>
             {categories.map((cat) => (
               <MenuItem key={cat.id} value={cat.id!.toString()}>
-                {cat.icon} {cat.name}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: cat.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  {cat.icon} {cat.name}
+                </Box>
               </MenuItem>
             ))}
           </Select>
         </FormControl>
 
         {/* Priority Filter */}
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
           <Select
             value={filters.priority}
             onChange={(e: SelectChangeEvent) =>
               handleFilterChange("priority", e.target.value as FilterState["priority"])
             }
             displayEmpty
+            renderValue={(value) => {
+              const opt = PRIORITY_OPTIONS.find((o) => o.value === value);
+              return (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: opt?.color || "#64748b",
+                      flexShrink: 0,
+                    }}
+                  />
+                  {opt?.label || "All Priority"}
+                </Box>
+              );
+            }}
           >
             {PRIORITY_OPTIONS.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: opt.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Box>
+                    <Typography variant="body2">{opt.label}</Typography>
+                    {"hint" in opt && opt.hint && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
+                        {opt.hint}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
               </MenuItem>
             ))}
           </Select>
