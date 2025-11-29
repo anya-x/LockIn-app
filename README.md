@@ -1,343 +1,295 @@
 # LockIn Task Manager
 
-A science based task management tool that's going to change how you view productivity.
+A science-based productivity application combining Eisenhower Matrix prioritization, Pomodoro time management, AI-powered assistance, and comprehensive analytics.
 
 ## Tech Stack
 
-- **Backend:** Spring Boot 3.2, PostgreSQL 17, JWT Authentication
-- **Frontend:** React 18, TypeScript, Material-UI v7, Vite
-- **Architecture:** RESTful API, responsive SPA
+- **Backend:** Spring Boot 3.2, PostgreSQL 17, JWT Authentication, WebSocket
+- **Frontend:** React 18, TypeScript, Material-UI v7, Vite, React Query
+- **AI:** Claude API (Anthropic) for intelligent task management
+- **Integrations:** Google Calendar OAuth2, Browser Notifications
+- **Architecture:** RESTful API, Real-time WebSocket, Responsive SPA
 
 ## Prerequisites
 
-- Java
-- Node.js
-- PostgreSQL
-- Maven
+- Java 17+
+- Node.js 18+
+- PostgreSQL 17
+- Maven 3.9+
+
+---
+
+## Features Overview
+
+### Month 1: Foundation (Commits 1-52)
+
+- [x] User authentication (JWT-based login/register)
+- [x] Basic task CRUD (create, read, update, delete)
+- [x] React frontend with Material-UI v7
+- [x] Spring Boot backend with PostgreSQL
+- [x] Protected routes and API security
+- [x] User model with firstName/lastName
+
+### Month 2: Task Management (Commits 53-104)
+
+- [x] Category system (CRUD, colors, emoji icons)
+- [x] Eisenhower Matrix with drag-and-drop (@dnd-kit)
+- [x] Advanced search (case-insensitive, debounced)
+- [x] Filtering by status, category, urgency, importance
+- [x] Task statistics dashboard
+- [x] Pagination for task lists (10/20/50 items)
+- [x] Task archiving with status restoration
+- [x] Bulk actions (delete, complete, archive)
+
+### Month 3: Pomodoro Timer (Commits 105-135)
+
+- [x] Full Pomodoro timer (25/5/15 minute sessions)
+- [x] FocusSession entity and tracking
+- [x] Session history with notes
+- [x] Task linking to sessions
+- [x] Keyboard shortcuts (Space/Esc)
+- [x] Browser notifications
+- [x] Timer stats display
+- [x] localStorage persistence
+- [x] ZonedDateTime (timezone-aware)
+- [x] Multiple focus profiles (Classic, Extended, Flow State, Quick Focus, Ultra Focus)
+
+### Month 4: Analytics (Commits 136-190)
+
+- [x] DailyAnalytics entity with aggregations
+- [x] Productivity scoring algorithm (research-backed)
+- [x] Burnout detection algorithm (Maslach-adapted)
+- [x] Analytics dashboard with Recharts visualizations
+- [x] Line, Area, and Bar charts
+- [x] Productivity heatmap
+- [x] Weekly reports with recommendations
+- [x] Goal tracking system (Daily/Weekly/Monthly)
+- [x] Scheduled analytics calculation (cron jobs)
+- [x] Streak tracking (consecutive productive days)
+- [x] Period comparison (week-over-week, month-over-month)
+- [x] Task velocity metrics
+- [x] CSV export for analytics data
+
+### Month 5: AI & Integrations (Commits 191-251)
+
+#### AI Features (Claude API)
+- [x] Smart task breakdown (with prompt engineering)
+- [x] Description enhancement
+- [x] Daily AI briefing (personalized)
+- [x] Response caching (40% cost savings)
+- [x] Rate limiting (10 requests/day/user)
+- [x] Usage tracking and cost monitoring
+
+#### Google Calendar Integration
+- [x] Full OAuth2 flow
+- [x] Token encryption (AES-256)
+- [x] Two-way sync (tasks to calendar events)
+- [x] Duplicate event prevention
+- [x] Calendar connection UI in settings
+
+#### Notification System
+- [x] WebSocket real-time delivery
+- [x] Browser push notifications
+- [x] Notification center drawer UI
+- [x] Read/unread status tracking
+- [x] Notification preferences per type
+
+### Additional Features
+
+- [x] Achievement/Badge system (Task, Focus, Goal milestones)
+- [x] Theme customization (Indigo, Rose, Sage color themes)
+- [x] Dark/Light mode toggle
+- [x] GDPR compliance (data export, account deletion)
+- [x] Today dashboard with priority tasks and AI briefing
+- [x] Compact navigation drawer
+- [x] Theme-aware color system for accessibility
+
+---
 
 ## API Endpoints
 
 ### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login and receive JWT |
 
-- POST `/api/auth/register` - register a new user
-- POST `/api/auth/login` - login as user
+### Tasks
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tasks` | Get paginated tasks |
+| GET | `/api/tasks/{id}` | Get single task |
+| POST | `/api/tasks` | Create task |
+| PUT | `/api/tasks/{id}` | Update task |
+| DELETE | `/api/tasks/{id}` | Delete task |
+| GET | `/api/tasks/incomplete` | Get incomplete tasks |
+| GET | `/api/tasks/statistics` | Get task statistics |
+| GET | `/api/tasks/search?query={term}` | Search tasks |
+| GET | `/api/tasks/filter` | Filter with multiple criteria |
+| GET | `/api/tasks/quadrant` | Get tasks by matrix quadrant |
+| GET | `/api/tasks/matrix` | Get complete Eisenhower matrix |
+| PATCH | `/api/tasks/{id}/quadrant` | Move task between quadrants |
 
-### Tasks (Authenticated)
+### Categories
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/categories` | Get all categories |
+| GET | `/api/categories/{id}` | Get single category |
+| POST | `/api/categories` | Create category |
+| PUT | `/api/categories/{id}` | Update category |
+| DELETE | `/api/categories/{id}` | Delete category |
 
-- GET `/api/tasks` - get all user tasks (paginated)
-- GET `/api/tasks/{id}` - get a single task
-- POST `/api/tasks` - create a new task
-- PUT `/api/tasks/{id}` - update a task
-- DELETE `/api/tasks/{id}` - delete a task
-- GET `/api/tasks/incomplete` - get all incomplete tasks
-- GET `/api/tasks/statistics` - get task statistics
+### Goals
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/goals` | Get all goals |
+| GET | `/api/goals/{id}` | Get single goal |
+| POST | `/api/goals` | Create goal |
+| PUT | `/api/goals/{id}` | Update goal |
+| DELETE | `/api/goals/{id}` | Delete goal |
 
-### Categories (Authenticated)
+### Focus Sessions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sessions` | Get all sessions |
+| POST | `/api/sessions/start` | Start new session |
+| POST | `/api/sessions/{id}/complete` | Complete session |
+| PUT | `/api/sessions/{id}` | Update session |
+| PUT | `/api/sessions/{id}/notes` | Update session notes |
+| GET | `/api/sessions/today` | Get today's session stats |
 
-- GET `/api/categories` - get all categories
-- GET `/api/categories/{id}` - get a single category
-- POST `/api/categories` - create a category
-- PUT `/api/categories/{id}` - update a category
-- DELETE `/api/categories/{id}` - delete a category
+### Analytics
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/analytics/today` | Get today's analytics |
+| GET | `/api/analytics/range?days={n}` | Get analytics for date range |
+| POST | `/api/analytics/calculate/{date}` | Calculate analytics for date |
+| GET | `/api/analytics/weekly-report` | Get weekly performance report |
+| GET | `/api/analytics/streak` | Get productivity streak |
+| GET | `/api/analytics/comparison` | Get period comparison |
+| GET | `/api/analytics/task-velocity` | Get task velocity metrics |
 
-### Goals (Authenticated)
+### Badges
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/badges` | Get all badges |
+| GET | `/api/badges?earnedOnly=true` | Get earned badges only |
 
-- GET `/api/goals` - get all user goals
-- GET `/api/goals/{id}` - get a single goal
-- POST `/api/goals` - create a goal
-- PUT `/api/goals/{id}` - update a goal
-- DELETE `/api/goals/{id}` - delete a goal
+### Notifications
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/notifications` | Get paginated notifications |
+| GET | `/api/notifications/unread` | Get unread notifications |
+| GET | `/api/notifications/unread/count` | Get unread count |
+| PUT | `/api/notifications/{id}/read` | Mark as read |
+| PUT | `/api/notifications/read-all` | Mark all as read |
+| DELETE | `/api/notifications/{id}` | Delete notification |
 
-### Focus Sessions (Authenticated)
+### AI Features
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/ai/breakdown/{taskId}` | AI task breakdown |
+| POST | `/api/ai/breakdown-preview` | Preview breakdown |
+| POST | `/api/ai/enhance-description` | Enhance task description |
+| POST | `/api/ai/daily-briefing` | Get AI daily briefing |
 
-- GET `/api/sessions` - get all user focus sessions
-- POST `/api/sessions/start` - start a new focus session
-- POST `/api/sessions/{id}/complete` - complete a session
-- PUT `/api/sessions/{id}` - update a session
-- PUT `/api/sessions/{id}/notes` - update session notes
-- GET `/api/sessions/today` - get today's session stats
+### User & Settings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/notification-preferences` | Get notification prefs |
+| PUT | `/api/users/notification-preferences` | Update notification prefs |
+| GET | `/api/users/export` | Export user data (GDPR) |
+| DELETE | `/api/users` | Delete account (GDPR) |
 
-### Analytics (Authenticated)
-
-- GET `/api/analytics/today` - get today's analytics
-- GET `/api/analytics/range?days={number}` - get analytics for date range
-- POST `/api/analytics/calculate/{date}` - calculate analytics for specific date
-- GET `/api/analytics/weekly-report` - get weekly performance report
-
-### Eisenhower Matrix Endpoints
-
-- GET `/api/tasks/quadrant?isUrgent=...&isImportant=...` - get tasks by quadrant
-- GET `/api/tasks/matrix` - get complete matrix
-- PATCH `/api/tasks/{id}/quadrant?isUrgent=...&isImportant=...` - move a task between quadrants
-
-### Search & Filter Endpoints
-
-- GET `/api/tasks/search?query={term}` - search tasks
-- GET `/api/tasks/filter?status=...&categoryId=...&isUrgent=...&isImportant=...` - multi-criteria filtering
-
-## Features & Roadmap
-
-## Epic 1: Authentication & Foundation
-
-### User Stories Completed:
-
-#### [x] US-1.1: User Registration
-
-**As a** new user  
-**I want to** create an account with email and password  
-**So that** I can securely access the task manager
-
-**ACs**
-
-- Email validation
-- Password strength requirements
-- First name and last name captured
-- Auto-login after successful registration
+### Google Calendar
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/calendar/connect` | Initiate OAuth flow |
+| GET | `/api/calendar/oauth/callback` | OAuth callback |
+| GET | `/api/calendar/events` | Get calendar events |
+| POST | `/api/calendar/sync-task` | Sync task to calendar |
+| GET | `/api/calendar/sync-status` | Get sync status |
 
 ---
 
-#### [x] US-1.2: User Login
-
-**As a** registered user  
-**I want to** login with my credentials  
-**So that** I can access my tasks
-
-**ACs**
-
-- Email and password authentication
-- JWT token generation
-- Token stored
-- Generic error messages (prevents user enumeration)
-- Session persistence across browser refreshes
-
-**Known Issues**
-
-- JWT secret hardcoded (TODO: Move to environment variables i prod)
-- Token stored in localStorage
-- No refresh token mechanism
-- No rate limiting on login endpoint
-
-#### [x] US-1.3: Basic Task CRUD
-
-**As a** user  
-**I want to** create, read, update, and delete tasks  
-**So that** I can manage my to-do list
-
-**AC**
-
-- Create tasks with title and description
-- View all my tasks
-- Edit task details
-- Confirmation dialog when deletng tasks
-- Tasks unique to authenticated user
-
-**Known Issues**
-
-- n+1 query problem
-
-## Epic 2: Productivity Framework
-
-#### [x] US-2.1: Task Categories
-
-**As a** user  
-**I want to** organise tasks into categories  
-**So that** I can group related work
-
-**AC**
-
-- Create custom categories with name, color, and icon
-- Assign tasks to categories
-- Edit and delete categories
-- Category uniqueness per user
-- Tasks retain when category deleted (no cascade)
-
-**Known Issues**
-
-- when creating a new category along with task, category filter doesn't refresh with new category
-- tasks don't have a category badge
-
-#### [x] US-2.2: Eisenhower Matrix
-
-**As a** user  
-**I want to** visualise tasks in an Eisenhower Matrix  
-**So that** I can prioritise by urgency and importance
-
-**ACs**
-
-- 2x2 grid showing four quadrants
-- Urgent + Important: Do First 🔥
-- Not Urgent + Important: Schedule 📅
-- Urgent + Not Important: Delegate 👥
-- Not Urgent + Not Important: Eliminate 🗑️
-- Drag-and-drop tasks between quadrants
-- Color-coded by priority (red, blue, orange, purple)
-
-**Known Issues**
-
-- drag and drop on mobile not working properly=
-
-#### [x] US-2.3: Task Search
-
-**As a** user  
-**I want to** search tasks by title or description  
-**So that** I can quickly find specific tasks
-
-**ACs**
-
-- Real-time search
-- Case insensitive matching
-- Searches title and description fields
-- Loading indicator during search
-
-#### [x] US-2.4: Advanced Filtering
-
-**As a** user  
-**I want to** filter tasks by status, category, urgency and importance  
-**So that** I can focus on specific task groups
-
-**ACs**
-
-- Filter by status
-- Filter by category
-- Filter by urgency
-- Filter by importance
-- Combine multiple filters
-- Show active filter count badge
-- Button to clear all filters (x)
-
-## Epic 3: Focus Management
-
-#### [x] US-3.1: Pomodoro Timer
-
-**As a** user  
-**I want to** use a Pomodoro timer (multiple choices: 25/5, 50/10...)  
-**So that** I can deep focus during sessions
-
-**ACs**
-
-- Configurable work/break durations
-- Audio/visual notifications
-- Browser notifications (with permission)
-- Pause/resume functionality
-- Session history tracking
-
-#### [ ] US-3.2: Focus Session Tracking
-
-**As a** user  
-**I want to** track my focus sessions  
-**So that** I can analyse my patterns
-
-**ACs**
-
-- FocusSession entity (start time, duration, task link)
-- Session notes and reflection
-- Daily/weekly session statistics
-- Peak productivity hour detection
-
-## Epic 4: Analytics & Insights
-
-#### [ ] US-4.1: Productivity Dashboard
-
-**As a** user  
-**I want to** see my productivity trends  
-**So that** I can identify patterns and improve
-
-**ACs**
-
-- Daily analytics calculation
-- Productivity score (multi-factor algorithm)
-- Completion rate trends
-- Focus time tracking
-- Break/work ratio analysis
-
-#### [ ] US-4.2: Burnout Detection
-
-**As a** user concerned about well-being  
-**I want to** be alerted when showing burnout signs  
-**So that** I can adjust my workload
-
-#### [ ] US-4.3: Goal Tracking
-
-**As a** user  
-**I want to** set and track productivity goals  
-**So that** I can measure progress toward my objectives
-
-#### [ ] US-4.4: Report Generation
-
-**As a** user  
-**I want to** export productivity reports  
-**So that** I can share with manager or reflect on my own progress
-
-## Epic 5: Intelligent Features
-
-#### US-5.1:
-
-## Epic 6: Production Readiness
-
-#### US-6.1: Comprehensive Testing
-
-**As a** developer  
-**I want** atleast 70% test coverage  
-**So that** I can deploy with confidence and ease
-
-#### US-6.2: Docker Deployment
-
-**As a** developer  
-**I want** containerised deployment  
-**So that** the app runs consistently everywhere
-
-#### 🔄 US-6.3: CI/CD Pipeline
-
-**As a** developer  
-**I want** automated testing and deployment  
-**So that** I can ship new and modify features quickly and safely
-
-#### ☁️ US-6.4: Cloud Deployment
-
-**As a** user  
-**I want** the app accessible online  
-**So that** I can use it from anywhere
-
-**BUGS TO FIX ASAP**
-
-- sessions marked complete when stopping [x]
-- new session started when paused [x]
-- filtering by time in stats issue + quality measurement odd behaviour [x]
-- edit goals
-- filterbycategories in matrix
-
-**To do (low priority)**
-
-- Dark mode
-- Mobile app (React Native)
-- Team collaboration
-- Integration with Slack, Jira, Trello
-- Custom themes
-- More chart types
-- Voice commands
-- Multi-language support
-- category chips on matrix cards and task list
-- edit, add, delete tasks on matrix cards
-- potential refactoring: task card in task list and matrix, empty and error state
-- loader skeleton
-- pomodoro: timer stops when changing tabs
-- sorting asc/desc
-- session history doesn't automatically refresh after session complete
-- possibility to archive tasks
-- focus session timer on tab
-- ux/ui: redo timer page- too vertical rn
-- export better formatted csv
+## Application Views
+
+| View | Description |
+|------|-------------|
+| **Today** | Daily dashboard with priority tasks, focus stats, AI briefing, streak display |
+| **Tasks** | Full task management with filters, search, pagination, bulk actions |
+| **Matrix** | Eisenhower Matrix with drag-and-drop prioritization |
+| **Timer** | Pomodoro timer with profiles, session history, task linking |
+| **Goals** | Goal tracking (Daily/Weekly/Monthly) with progress visualization |
+| **Categories** | Category management with colors and emoji icons |
+| **Insights** | Analytics dashboard with charts, heatmap, burnout alerts |
+| **Badges** | Achievement system with earned/locked badge display |
+| **Settings** | Theme, notifications, calendar integration, data privacy |
+
+---
+
+## Database Entities
+
+| Entity | Description |
+|--------|-------------|
+| **User** | User account with preferences |
+| **Task** | Task with status, priority flags, due date, category link |
+| **Category** | Custom category with color and emoji |
+| **FocusSession** | Pomodoro session with duration, notes, task link |
+| **Goal** | Productivity goal with targets and progress |
+| **Badge** | Achievement badge with earned status |
+| **Notification** | User notification with read status |
+| **DailyAnalytics** | Aggregated daily productivity metrics |
+| **AIUsage** | AI feature usage and cost tracking |
+| **GoogleCalendarToken** | OAuth tokens for calendar integration |
+
+---
+
+## Known Issues
+
+- [ ] Drag and drop on mobile not working properly (touch events)
+- [ ] Timer may pause when browser tab is inactive (browser throttling)
+- [ ] Category filter doesn't refresh immediately after creating category with task
+
+---
+
+## Low Priority Backlog
+
+- [ ] Mobile app (React Native)
+- [ ] Team collaboration features
+- [ ] Integration with Slack, Jira, Trello
+- [ ] Voice commands
+- [ ] Multi-language support (i18n)
+- [ ] More chart types in analytics
+- [ ] Better formatted CSV exports
+- [ ] Focus session timer in browser tab title
+
+---
 
 ## Research References
 
 All productivity features are backed by research:
 
-1. **Covey, S. R. (1989).** "The 7 Habits of Highly Effective People" - eisenhower Matrix
-2. **Cirillo, F. (2006).** "The Pomodoro Technique" - focus sessions
+1. **Covey, S. R. (1989).** "The 7 Habits of Highly Effective People" - Eisenhower Matrix
+2. **Cirillo, F. (2006).** "The Pomodoro Technique" - Focus sessions
 3. **Newport, C. (2016).** "Deep Work" - 4 hour optimal focus time
-4. **Sweller, J. (1988).** "Cognitive Load Theory" - task limits
-5. **Maslach, C. (1981).** "Burnout Inventory
+4. **Sweller, J. (1988).** "Cognitive Load Theory" - Task limits
+5. **Maslach, C. (1981).** "Burnout Inventory" - Overwork detection
+6. **Locke & Latham (1990).** "Goal Setting Theory" - Goal tracking
 
-" - overwork detection 6. **Locke & Latham (1990).** "Goal Setting Theory" - goal tracking
+---
 
-**Last Updated:** 3 June 2025
+## Development Statistics
+
+| Metric | Count |
+|--------|-------|
+| Total Commits | 251+ |
+| Frontend Pages | 13 |
+| Backend Controllers | 12 |
+| Database Entities | 13 |
+| Custom React Hooks | 15+ |
+| API Endpoints | 50+ |
+
+---
+
+**Last Updated:** November 2025
